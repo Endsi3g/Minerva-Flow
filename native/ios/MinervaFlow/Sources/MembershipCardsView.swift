@@ -9,9 +9,6 @@ struct MembershipCardsView: View {
     var embedded = false
     @EnvironmentObject private var supabase: SupabaseManager
     @State private var selectedRestaurantID: String?
-    @State private var walletPass: PKPass?
-    @State private var isAddingWalletPass = false
-    @State private var walletError: String?
 
     @ViewBuilder
     private func container<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
@@ -38,7 +35,7 @@ struct MembershipCardsView: View {
 
                         if let selected = selectedMembership {
                             membershipCard(selected, emphasized: true)
-                            walletButton(for: selected)
+                            AddToAppleWalletButton(customerId: selected.customerId)
                         }
 
                         if supabase.allMemberships.count > 1 {
@@ -60,12 +57,6 @@ struct MembershipCardsView: View {
         }
         .onAppear { selectDefaultMembershipIfNeeded() }
         .onChange(of: supabase.allMemberships.count) { _, _ in selectDefaultMembershipIfNeeded() }
-        .sheet(isPresented: Binding(get: { walletPass != nil }, set: { if !$0 { walletPass = nil } })) {
-            if let walletPass {
-                WalletPassSheet(pass: walletPass)
-                    .presentationDetents([.medium, .large])
-            }
-        }
     }
 
     private var selectedMembership: RestaurantMembership? {
@@ -103,7 +94,7 @@ struct MembershipCardsView: View {
                         .font(.mv(size: 15, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                     Text("Carte fidélité active")
-                        .font(.mv(size: 11.5))
+                        .font(.mv(size: 12))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
                 Spacer()
@@ -124,46 +115,10 @@ struct MembershipCardsView: View {
         .shadow(color: emphasized ? MinervaColor.emerald.opacity(0.10) : .clear, radius: 12, y: 5)
     }
 
-    private func walletButton(for membership: RestaurantMembership) -> some View {
-        Button {
-            guard !isAddingWalletPass else { return }
-            isAddingWalletPass = true
-            walletError = nil
-            Task {
-                defer { isAddingWalletPass = false }
-                guard let data = await supabase.downloadAppleWalletPass(customerId: membership.customerId),
-                      let pass = try? PKPass(data: data) else {
-                    walletError = "Impossible d’ajouter cette carte pour le moment."
-                    return
-                }
-                walletPass = pass
-            }
-        } label: {
-            HStack(spacing: 8) {
-                if isAddingWalletPass { ProgressView().tint(.white) }
-                Image(systemName: "wallet.pass.fill")
-                Text(isAddingWalletPass ? "Préparation…" : "Ajouter à Apple Wallet")
-            }
-            .font(.mv(size: 13, weight: .semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 13)
-        }
-        .foregroundStyle(.white)
-        .background(MinervaColor.ink)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .buttonStyle(PressableButtonStyle())
-        .disabled(isAddingWalletPass)
-        .alert("Apple Wallet", isPresented: Binding(get: { walletError != nil }, set: { if !$0 { walletError = nil } })) {
-            Button("OK", role: .cancel) { walletError = nil }
-        } message: {
-            Text(walletError ?? "")
-        }
-    }
-
     private func metric(value: String, label: String) -> some View {
         VStack(spacing: 3) {
             Text(value).font(.mv(size: 14, weight: .semibold)).foregroundStyle(MinervaColor.ink)
-            Text(label).font(.mv(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+            Text(label).font(.mv(size: 12)).foregroundStyle(MinervaColor.inkFaint)
         }
         .frame(maxWidth: .infinity)
     }
@@ -196,7 +151,7 @@ struct MembershipCardsView: View {
     }
 }
 
-private struct WalletPassSheet: UIViewControllerRepresentable {
+struct WalletPassSheet: UIViewControllerRepresentable {
     let pass: PKPass
 
     func makeUIViewController(context: Context) -> UIViewController {
@@ -205,4 +160,66 @@ private struct WalletPassSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ controller: UIViewController, context: Context) {}
+}
+
+
+/// One obvious action: put this loyalty card into Apple Wallet. Shared by "Mes cartes" and "Ma carte".
+/// Each outcome has its own plain message instead of one generic failure.
+struct AddToAppleWalletButton: View {
+    @EnvironmentObject private var supabase: SupabaseManager
+    let customerId: String
+    @State private var pass: PKPass?
+    @State private var isAdding = false
+    @State private var message: String?
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Button {
+                guard !isAdding else { return }
+                isAdding = true
+                message = nil
+                Task {
+                    defer { isAdding = false }
+                    switch await supabase.downloadAppleWalletPass(customerId: customerId) {
+                    case .pass(let data):
+                        if let built = try? PKPass(data: data), PKPassLibrary.isPassLibraryAvailable() {
+                            pass = built
+                        } else {
+                            message = "Cette carte n’a pas pu être ajoutée à Wallet. Réessayez dans un instant."
+                        }
+                    case .notAvailable:
+                        message = "L’ajout à Wallet sera bientôt disponible. En attendant, donnez votre numéro de téléphone à la caisse."
+                    case .signedOut:
+                        message = "Votre session a expiré. Reconnectez-vous puis réessayez."
+                    case .failure:
+                        message = "Impossible de préparer la carte. Vérifiez votre connexion et réessayez."
+                    }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    if isAdding { ProgressView().tint(.white) }
+                    Image(systemName: "wallet.pass.fill")
+                    Text(isAdding ? "Préparation…" : "Ajouter à Apple Wallet")
+                }
+                .font(.mv(size: 14, weight: .semibold))
+                .frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .foregroundStyle(.white)
+            .background(MinervaColor.ink)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .buttonStyle(PressableButtonStyle())
+            .disabled(isAdding)
+
+            if let message {
+                Text(message)
+                    .font(.mv(size: 12))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .sheet(isPresented: Binding(get: { pass != nil }, set: { if !$0 { pass = nil } })) {
+            if let pass { WalletPassSheet(pass: pass).ignoresSafeArea() }
+        }
+    }
 }

@@ -8,10 +8,11 @@ import { buildGoogleWalletSaveUrl } from "@/lib/wallet/google-wallet";
 
 export async function GET(req: Request) {
   if (!isGoogleWalletConfigured()) {
+    console.warn("[Google Wallet] missing GOOGLE_WALLET_ISSUER_ID / GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL / GOOGLE_WALLET_PRIVATE_KEY");
     return NextResponse.json(
       {
-        error:
-          "Google Wallet n'est pas encore configuré (GOOGLE_WALLET_ISSUER_ID / GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL / GOOGLE_WALLET_PRIVATE_KEY manquants).",
+        error: "L'ajout à Google Wallet n'est pas encore disponible.",
+        code: "WALLET_NOT_CONFIGURED",
       },
       { status: 503 }
     );

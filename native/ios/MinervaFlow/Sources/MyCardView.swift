@@ -368,8 +368,29 @@ struct MyCardView: View {
             }
 
             Text("Montrez ce code au personnel à la caisse.")
-                .font(.mv(size: 11))
+                .font(.mv(size: 12))
                 .foregroundStyle(MinervaColor.inkFaint)
+
+            // The counter finds a guest by phone number, so say so and show which number is on file.
+            VStack(spacing: 4) {
+                if let phone = customer.phone, !phone.isEmpty {
+                    Label("Au comptoir, donnez votre numéro : \(phone)", systemImage: "phone.fill")
+                        .font(.mv(size: 13, weight: .semibold))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                } else {
+                    Label("Ajoutez votre numéro de téléphone pour être reconnu à la caisse", systemImage: "phone.badge.plus")
+                        .font(.mv(size: 13, weight: .semibold))
+                        .foregroundStyle(MinervaColor.ink)
+                    Link("Ajouter mon numéro", destination: Config.publicLinkBaseURL.appending(path: "/portal"))
+                        .font(.mv(size: 13, weight: .semibold))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                        .frame(minHeight: 44)
+                }
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+
+            AddToAppleWalletButton(customerId: customer.id)
         }
         .frame(maxWidth: .infinity)
     }

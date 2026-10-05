@@ -1,5 +1,6 @@
 "use client";
 
+import { AddToWalletButtons } from "@/components/portal/AddToWalletButtons";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -117,10 +118,6 @@ function LoyaltyWalletCard({
   const tier = getLoyaltyTier(totalSpent, thresholds);
   const { icon: Icon } = loyaltyTierBadge[tier];
 
-  function handleUnavailableWallet(platform: string) {
-    toast.info(`Ajout à ${platform} bientôt disponible — le restaurant doit d'abord l'activer.`);
-  }
-
   const prevTarget = tier === "ambassadeur" ? thresholds.tier3 : tier === "privilegie" ? thresholds.tier2 : 0;
   const nextTarget = tier === "habitue" ? thresholds.tier2 : tier === "privilegie" ? thresholds.tier3 : null;
   const progress = nextTarget ? Math.min(1, Math.max(0, (totalSpent - prevTarget) / (nextTarget - prevTarget))) : 1;
@@ -163,40 +160,7 @@ function LoyaltyWalletCard({
         <UtensilsCrossed size={16} /> {t("homeOrderCta")}
       </button>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {googleWalletEnabled ? (
-          <a
-            href={`/api/wallet/google?customerId=${customerId}`}
-            className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12px] font-semibold transition-colors hover:bg-white/25"
-          >
-            <Smartphone size={13} /> Google Wallet
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={() => handleUnavailableWallet("Google Wallet")}
-            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold opacity-70 transition-colors hover:opacity-90"
-          >
-            <Smartphone size={13} /> Google Wallet
-          </button>
-        )}
-        {appleWalletEnabled ? (
-          <a
-            href={`/api/wallet/apple?customerId=${customerId}`}
-            className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12px] font-semibold transition-colors hover:bg-white/25"
-          >
-            <Smartphone size={13} /> Apple Wallet
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={() => handleUnavailableWallet("Apple Wallet")}
-            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold opacity-70 transition-colors hover:opacity-90"
-          >
-            <Smartphone size={13} /> Apple Wallet
-          </button>
-        )}
-      </div>
+      <AddToWalletButtons customerId={customerId} appleEnabled={appleWalletEnabled} googleEnabled={googleWalletEnabled} />
     </div>
   );
 }

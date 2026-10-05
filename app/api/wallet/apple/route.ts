@@ -17,10 +17,10 @@ import { buildAppleLoyaltyPass } from "@/lib/wallet/apple-wallet";
  */
 export async function GET(request: Request) {
   if (!isAppleWalletConfigured()) {
+    console.warn("[Apple Wallet] missing APPLE_WALLET_* certificate settings");
     return NextResponse.json(
       {
-        error:
-          "Apple Wallet n'est pas encore configuré. Un compte Apple Developer Program et un certificat Pass Type ID sont requis — voir lib/wallet/config.ts.",
+        error: "L'ajout à Apple Wallet n'est pas encore disponible.",
         code: "WALLET_NOT_CONFIGURED",
       },
       { status: 503 }

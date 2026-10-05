@@ -2001,16 +2001,31 @@ final class SupabaseManager: ObservableObject {
     /// request carries the current Supabase bearer token, so the server can
     /// scope the pass to the authenticated customer instead of trusting a
     /// client-provided identity.
-    func downloadAppleWalletPass(customerId: String) async -> Data? {
+    enum WalletPassResult { case pass(Data), notAvailable, signedOut, failure }
+
+    /// Apple Wallet pass for one of the signed-in person's cards. The server answers 503
+    /// while the restaurant platform has no Wallet certificate, 401 when the session ended.
+    func downloadAppleWalletPass(customerId: String) async -> WalletPassResult {
+        guard let token = await bearerToken() else { return .signedOut }
+        var components = URLComponents(url: Config.apiBaseURL.appending(path: "/api/wallet/apple"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "customerId", value: customerId)]
+        guard let url = components?.url else { return .failure }
+        var request = URLRequest(url: url, timeoutInterval: 20)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         do {
-            return try await authorizedRequest(
-                Config.apiBaseURL.appending(path: "/api/wallet/apple")
-                    .appending(queryItems: [URLQueryItem(name: "customerId", value: customerId)])
-            )
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else { return .failure }
+            switch http.statusCode {
+            case 200..<300: return .pass(data)
+            case 401: return .signedOut
+            case 503: return .notAvailable
+            default:
+                AppLog.failure("downloadAppleWalletPass", URLError(.badServerResponse))
+                return .failure
+            }
         } catch {
-            lastError = "La carte Apple Wallet n’a pas pu être téléchargée. Réessayez."
             AppLog.failure("downloadAppleWalletPass", error)
-            return nil
+            return .failure
         }
     }
 
