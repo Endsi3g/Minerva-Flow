@@ -7,13 +7,9 @@ import { getLoyaltyTier, loyaltyTierLabel } from "@/lib/loyalty-tiers";
 import { buildAppleLoyaltyPass } from "@/lib/wallet/apple-wallet";
 
 /**
- * Apple Wallet passes need a full PKCS#7-signed .pkpass bundle, which needs
- * an Apple Developer Program membership and its Pass Type ID certificate —
- * see the comment on isAppleWalletConfigured() in lib/wallet/config.ts for
- * why that signing step is a documented follow-up rather than code here.
- * This route is real and ready to build the pass from once those certs
- * exist; until then it degrades to a clear "not available yet" response
- * instead of a broken pass.
+ * Returns a signed, static Apple Wallet loyalty pass for its authenticated
+ * customer. Balance changes appear after the customer adds a newly generated
+ * pass; live Wallet updates require a separate PassKit web service.
  */
 export async function GET(request: Request) {
   if (!isAppleWalletConfigured()) {
