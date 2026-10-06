@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderMinervaEmail } from "@/lib/email/brand-shell";
 import {
   PRIORITIZED_CAMPAIGN_TEMPLATES,
   POST_MVP_CAMPAIGNS,
@@ -24,7 +25,7 @@ vi.mock("@/lib/sms/send", () => ({
 
 // Mock Email sending
 vi.mock("@/lib/email/resend", () => ({
-  sendRetentionEmail: vi.fn().mockResolvedValue({ id: "msg_mock" }),
+  sendRetentionEmail: vi.fn().mockResolvedValue({ ok: true, id: "msg_mock" }),
 }));
 
 // Mock activity logger
@@ -49,8 +50,12 @@ describe("Prioritized Campaign Templates & LCAP/CASL Compliance", () => {
       );
       expect(rendered.htmlBody).toContain("Café de la Paix");
       expect(rendered.htmlBody).toContain("Votre première récompense vous attend");
-      expect(rendered.htmlBody).toContain("Minerva Technologies Inc. · Montréal (Québec), Canada");
-      expect(rendered.htmlBody).toContain("Se désabonner des communications marketing");
+      const html = renderMinervaEmail({ bodyHtml: rendered.htmlBody, emailKind: "marketing", ctaLabel: rendered.ctaLabel, ctaUrl: rendered.ctaUrl });
+      expect(html).toContain("Minerva Technologies Inc.");
+      expect(html).toContain("367 rue Laberge, Repentigny (Québec) J6A 4C2, Canada");
+      expect(html).toContain("Se désabonner");
+      expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
+      expect((html.match(/<!doctype html>/gi) ?? []).length).toBe(1);
     });
 
     it("renders 'second_visit' template sent days after 1st visit if not returned", () => {
@@ -64,7 +69,7 @@ describe("Prioritized Campaign Templates & LCAP/CASL Compliance", () => {
         "Café de la Paix : Sophie, il ne vous manque qu’une visite pour débloquer votre prochaine récompense !"
       );
       expect(rendered.htmlBody).toContain("Il ne vous manque qu’une seule visite");
-      expect(rendered.htmlBody).toContain("Découvrir mes récompenses");
+      expect(rendered.ctaLabel).toBe("Découvrir mes récompenses");
     });
 
     it("renders 'reactivation_21d' template triggered after 21 days of absence", () => {
@@ -125,7 +130,7 @@ describe("Prioritized Campaign Templates & LCAP/CASL Compliance", () => {
 
       expect(rendered.subject).toContain("Invitez un ami");
       expect(rendered.smsBody).toContain("Invitez un proche");
-      expect(rendered.htmlBody).toContain("Partager mon lien de parrainage");
+      expect(rendered.ctaLabel).toBe("Partager mon lien de parrainage");
     });
 
     it("renders 'winback_60d' template re-engaging customers after 60 days", () => {
