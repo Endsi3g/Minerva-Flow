@@ -6,6 +6,14 @@ Les parcours authentifiés et les écrans iOS restent non vérifiés. Le déploi
 
 Date de préparation : 2026-10-03 · Branche source : `feat/team-portal-and-native-account-uplift` (fusionnée à `main`)
 
+## Contrôles live du 6 octobre 2026
+
+- **Preview** : le déploiement Ready de `fix/team-login-redirect` (PR #176, basé sur `main` `bfcf613`) sert `/equipe/connexion` en HTTP 200 et la page de connexion s’ouvre dans Safari. Les parcours authentifiés owner, équipe et partage ne sont pas validés faute de session de test.
+- **Consentement Resend** : le segment global contient 102 contacts, dont 57 désabonnés; seuls 22 contacts figurent dans le segment actif au consentement explicite et aucun de ces 22 n’est désabonné. Les 45 contacts non désabonnés du segment global ne sont pas tous attestés comme opt-in : ne pas les ajouter à la campagne.
+- **Composer / courriel** : brouillon Resend créé et rendu dans l’éditeur, statut `draft`, segment explicite uniquement, expéditeur `Minerva Flow <flow@minervaflow.app>`; domaine `minervaflow.app` vérifié. ID du brouillon `73a16f1d-617b-46be-b536-98e281593c88`. Aucun courriel de test ou campagne n’a été envoyé.
+- **iOS** : le garde-fou statique retourne 0 critique, 0 élevé, 1 avertissement manuel; les deux manifests de confidentialité sont valides. App Store Connect ne montre que le build TestFlight 1.0.0 (15), en cours de test; le build 1.0.1 (16) n’est pas téléversé. La version App Store 1.0 est « À finaliser avant soumission » : les déclarations App Privacy ne sont pas commencées, l’URL de confidentialité est vide, les captures iPhone sont à 0/10 et les identifiants de démonstration pour la revue sont vides. La fiche affiche aussi l’avis de statut professionnel UE à confirmer. Aucun achat intégré n’est configuré; le code indique que les abonnements sont gérés sur le web. La suppression de compte existe dans le code, mais son parcours n’a pas été validé sur l’artefact distribué.
+- **Décision** : ne pas envoyer à toute la base ni publier la release tant que le test email, les parcours Preview authentifiés et les contrôles App Store manuels ne sont pas clos. Le brouillon reste non envoyé.
+
 ## Contenu
 
 - **Portail équipe et ambassadeurs** (`/equipe`, web et iOS) : indicateurs internes réservés à l'équipe, entonnoir, objectifs du mois, Académie, profils de membres. Les ambassadeurs ne voient jamais les revenus. Voir `docs/engineering/TEAM_PORTAL.md`.
@@ -48,10 +56,12 @@ Les captures d'écran du journal sont **à produire** à partir de l'application
 | TypeScript (`npx tsc --noEmit`) | PASS |
 | Tests web (`npx vitest run`, délai de test 60 s) | PASS — 396 tests dans 72 fichiers (avec le délai par défaut, un test Stripe est instable à l'import à froid) |
 | CI GitHub de la PR #167 (typage, lint non bloquant, tests, build) | PASS — deux exécutions |
-| Déploiement de prévisualisation Vercel | PASS — déployé; non testé depuis cette session (accès réseau et session indisponibles) |
+| Déploiement de prévisualisation Vercel | PASS — `/equipe/connexion` répond et s’ouvre; parcours authentifiés toujours non vérifiés |
 | Tests natifs ciblés (NFC, Nouveautés) | PASS — 7 tests |
 | Build iOS simulateur et appareil | PASS |
-| Audit App Store (`native/ios`) | 0 critique, 0 élevé, 3 moyens |
+| Audit App Store (`native/ios`) | 0 critique, 0 élevé, 1 avertissement manuel; App Store Connect reste incomplet |
+| Consentement Resend (6 octobre) | 22 opt-ins explicites actifs; 57 désabonnés dans le segment global; campagne brouillon seulement |
+| App Store Connect (6 octobre) | Build 15 seulement; build 16 absent; fiche « À finaliser avant soumission » |
 | Rendu visuel et vidéo du partage (navigateur sans interface) | PASS — voir `docs/engineering/SHARE_RESULTS.md` |
 | Parcours authentifiés (propriétaire, `/equipe`, partage) sur le build déployé | **NON VÉRIFIÉ** — aucune session accessible |
 | Rendu visuel des écrans iOS | **NON VÉRIFIÉ** — à contrôler à la main sur l'appareil |

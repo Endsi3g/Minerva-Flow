@@ -1,9 +1,10 @@
 import "server-only";
 import { Resend } from "resend";
 import { renderMinervaEmail } from "@/lib/email/brand-shell";
+import { MINERVA_EMAIL_FROM } from "@/lib/email/identity";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <flow@minervaflow.app>";
+const FROM_EMAIL = MINERVA_EMAIL_FROM;
 
 /**
  * The native iOS/Android apps ask for a typed 6-digit code rather than a
@@ -24,7 +25,7 @@ export async function sendCustomerOtpEmail({ to, code }: { to: string; code: str
     eyebrow: "Connexion sécurisée",
     title: "Votre code de connexion",
     bodyHtml: `<p style="margin:0 0 20px">Entrez ce code dans l’application Minerva Flow. Il reste valide pendant 10 minutes.</p><table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0"><tr>${cells}</tr></table><p style="margin:20px 0 0;font-size:12px;color:#818a7d">Si vous n’avez pas demandé ce code, ignorez ce courriel. Personne ne peut se connecter sans lui.</p>`,
-    footer: "Minerva Flow · Minerva Technologies Inc.",
+    footer: "Message de sécurité lié à votre compte.",
   });
 
   const { error } = await resend.emails.send({

@@ -1,4 +1,5 @@
 import { getGoogleTokens } from "@/lib/data/google-connections";
+import { renderMinervaEmail } from "@/lib/email/brand-shell";
 
 const GMAIL_SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send";
 
@@ -30,7 +31,12 @@ export async function sendReportEmail(
   const tokens = await getGoogleTokens(restaurantId);
   if (!tokens) return false;
 
-  const raw = buildMimeMessage({ to, subject, html });
+  const brandedHtml = renderMinervaEmail({
+    title: subject,
+    bodyHtml: html,
+    footer: "Envoyé depuis l’adresse Google Workspace connectée à votre établissement.",
+  });
+  const raw = buildMimeMessage({ to, subject, html: brandedHtml });
 
   const res = await fetch(GMAIL_SEND_URL, {
     method: "POST",

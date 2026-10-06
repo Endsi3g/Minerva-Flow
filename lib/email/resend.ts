@@ -1,13 +1,18 @@
 import "server-only";
 import { Resend } from "resend";
 import { ACTIVE_PRODUCT_UPDATES_SEGMENT_ID } from "@/lib/email/product-updates";
+import {
+  MINERVA_EMAIL_FROM,
+  MINERVA_EMAIL_POSTAL_ADDRESS,
+  MINERVA_EMAIL_REPLY_TO,
+} from "@/lib/email/identity";
 import { renderMinervaEmail } from "@/lib/email/brand-shell";
 import { renderCampaignAnnouncementEmail } from "@/lib/email/campaign-template";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <flow@minervaflow.app>";
-const REPLY_TO = process.env.RESEND_REPLY_TO ?? "support@minervaflow.app";
+const FROM_EMAIL = MINERVA_EMAIL_FROM;
+const REPLY_TO = MINERVA_EMAIL_REPLY_TO;
 
 export { sendLifecycleEmail, processLifecycleEngine } from "./lifecycle";
 export {
@@ -19,8 +24,15 @@ export {
 
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
-function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string, language: "fr" | "en" = "fr"): string {
-  return renderMinervaEmail({ bodyHtml, ctaLabel, ctaUrl, language });
+function emailShell(
+  bodyHtml: string,
+  ctaLabel: string,
+  ctaUrl: string,
+  language: "fr" | "en" = "fr",
+  title?: string,
+  eyebrow?: string
+): string {
+  return renderMinervaEmail({ bodyHtml, ctaLabel, ctaUrl, language, title, eyebrow, preheader: title });
 }
 
 const AUTH_ACTION_COPY: Record<string, { subject: string; body: string; cta: string }> = {
@@ -113,8 +125,8 @@ export async function sendAuthActionEmail({
 
   const body = `<p>${copy.body}</p>`;
   const html = verifyUrl
-    ? emailShell(body, copy.cta, verifyUrl)
-    : emailShell(body, copy.cta, APP_ORIGIN);
+    ? emailShell(body, copy.cta, verifyUrl, "fr", copy.subject, "Compte Minerva Flow")
+    : emailShell(body, copy.cta, APP_ORIGIN, "fr", copy.subject, "Compte Minerva Flow");
 
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
@@ -163,7 +175,7 @@ export async function sendOrderStatusEmail(input: {
     to: input.to,
     replyTo: REPLY_TO,
     subject: `${en ? "Order" : "Commande"} ${orderReference} — ${content.label} · Minerva Flow`,
-    html: emailShell(body, en ? "Open Flow Direct" : "Consulter Flow Direct", APP_ORIGIN, en ? "en" : "fr"),
+    html: emailShell(body, en ? "Open Flow Direct" : "Consulter Flow Direct", APP_ORIGIN, en ? "en" : "fr", en ? "Order update" : "Suivi de votre commande", `Commande ${orderReference} · ${content.label}`),
   });
   return { ok: !error };
 }
@@ -194,9 +206,12 @@ export async function sendInviteEmail({
     to,
     subject: `Invitation à rejoindre ${workspaceName} sur Minerva Flow`,
     html: emailShell(
-      `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Vous avez été invité·e à rejoindre <strong>${workspaceName}</strong> en tant que <strong>${role}</strong> sur Minerva Flow.</p>`,
+      `<p style="font-size:14px;line-height:1.6">Vous avez été invité·e à rejoindre <strong>${escapeHtml(workspaceName)}</strong> en tant que <strong>${escapeHtml(role)}</strong> sur Minerva Flow.</p>`,
       "Accepter l'invitation",
-      inviteUrl
+      inviteUrl,
+      "fr",
+      "Votre invitation Minerva Flow",
+      workspaceName
     ),
   });
   return { ok: !error };
@@ -227,9 +242,12 @@ export async function sendEmployeeInviteEmail({
     to,
     subject: `${employeeName}, connectez-vous à votre espace chez ${restaurantName}`,
     html: emailShell(
-      `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">${restaurantName} vous invite à créer votre compte pour accéder à votre espace personnel — vos tâches et votre horaire.</p>`,
+      `<p style="font-size:14px;line-height:1.6">${escapeHtml(restaurantName)} vous invite à créer votre compte pour accéder à votre espace personnel — vos tâches et votre horaire.</p>`,
       "Créer mon compte",
-      inviteUrl
+      inviteUrl,
+      "fr",
+      "Votre espace employé vous attend",
+      restaurantName
     ),
   });
   return { ok: !error };
@@ -275,7 +293,7 @@ export async function sendReputationAlertEmail({
     from: FROM_EMAIL,
     to,
     subject: `${restaurantName} — nouvel avis Google Maps (${rating}★)`,
-    html: emailShell(bodyHtml, "Voir et répondre", `${APP_ORIGIN}/reputation`),
+    html: emailShell(bodyHtml, "Voir et répondre", `${APP_ORIGIN}/reputation`, "fr", "Nouvel avis Google Maps", restaurantName),
   });
   return { ok: !error };
 }
@@ -290,11 +308,24 @@ export async function sendRetentionEmail({
   to,
   subject,
   bodyHtml,
+  ctaLabel,
+  ctaUrl,
+  title,
+  emailKind = "transactional",
+  unsubscribeUrl,
+  consentReason,
   language = "fr",
 }: {
   to: string;
   subject: string;
   bodyHtml: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  /** Set to null when bodyHtml already includes its own heading. */
+  title?: string | null;
+  emailKind?: "transactional" | "marketing";
+  unsubscribeUrl?: string;
+  consentReason?: string;
   language?: "fr" | "en";
 }): Promise<{ ok: boolean }> {
   if (!resend) return { ok: false };
@@ -303,7 +334,18 @@ export async function sendRetentionEmail({
     from: FROM_EMAIL,
     to,
     subject,
-    html: emailShell(bodyHtml, language === "en" ? "View my points" : "Voir mes points", `${APP_ORIGIN}${language === "en" ? "/en" : ""}/portal`, language),
+    html: renderMinervaEmail({
+      documentTitle: subject,
+      preheader: subject,
+      title: title === null ? undefined : title ?? subject,
+      bodyHtml,
+      ctaLabel: ctaLabel ?? (language === "en" ? "View my points" : "Voir mes points"),
+      ctaUrl: ctaUrl ?? `${APP_ORIGIN}${language === "en" ? "/en" : ""}/portal`,
+      emailKind,
+      unsubscribeUrl,
+      consentReason,
+      language,
+    }),
   });
   return { ok: !error };
 }
@@ -334,7 +376,7 @@ export async function sendTransactionalEmail({
     from: FROM_EMAIL,
     to,
     subject,
-    html: emailShell(bodyHtml, ctaLabel, ctaUrl, language),
+    html: emailShell(bodyHtml, ctaLabel, ctaUrl, language, subject),
   });
   return { ok: !error };
 }
@@ -408,7 +450,7 @@ export async function sendFlowAmbassadorEmail(input: {
     bodyHtml: `<p style="margin:0">${copy.body}</p>`,
     ctaLabel: input.kind.startsWith("ugc-") ? "Voir mon contenu" : "Ouvrir mon espace ambassadeur",
     ctaUrl: `${APP_ORIGIN}/workspace/ambassadeurs`,
-    footer: "Minerva Flow · Minerva Technologies Inc.<br />Vous recevez ce courriel au sujet de votre compte ambassadeur.",
+    footer: "Notification au sujet de votre compte ambassadeur.",
   });
   const { error } = await resend.emails.send({ from: FROM_EMAIL, to: input.to, subject: copy.subject, html });
   return !error;
@@ -469,7 +511,7 @@ export async function sendChangelogCampaignEmail({
     subject: `Nouveauté sur Minerva Flow : ${title}`,
     previewText: description.slice(0, 120),
     html: campaignEmailHtml({ title, description, category, ctaUrl }),
-    text: `${CAMPAIGN_CATEGORY_LABEL[category]}\n${title}\n\n${description}\n\n${ctaUrl}\n\nVous recevez ce courriel parce que vous avez choisi de recevoir les annonces produit de Minerva Flow.\nSe désabonner : {{{RESEND_UNSUBSCRIBE_URL}}}\nMinerva Technologies Inc. · 367 rue Laberge, Repentigny (Québec) J6A 4C2`,
+    text: `${CAMPAIGN_CATEGORY_LABEL[category]}\n${title}\n\n${description}\n\n${ctaUrl}\n\nVous recevez ce courriel parce que vous avez choisi de recevoir les annonces produit de Minerva Flow.\nSe désabonner : {{{RESEND_UNSUBSCRIBE_URL}}}\nMinerva Flow · Minerva Technologies Inc. · ${MINERVA_EMAIL_POSTAL_ADDRESS}`,
     send: true,
   });
 
@@ -511,7 +553,12 @@ export async function sendFeatureFeedbackEmail({
     to: FEEDBACK_RECIPIENT,
     replyTo: submitterEmail,
     subject: `Feedback Minerva Flow — ${submitterName}`,
-    html: `<div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">${bodyHtml}</div>`,
+    html: renderMinervaEmail({
+      eyebrow: "Retour produit",
+      title: "Nouveau commentaire",
+      bodyHtml,
+      footer: "Notification interne destinée à l’équipe Minerva Flow.",
+    }),
   });
   return { ok: !error };
 }
@@ -551,7 +598,12 @@ export async function sendSurveyResponseEmail({
     to: FEEDBACK_RECIPIENT,
     replyTo: customerEmail ?? REPLY_TO,
     subject: `Sondage app — ${restaurantName} (${rating}/5)`,
-    html: `<div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">${bodyHtml}</div>`,
+    html: renderMinervaEmail({
+      eyebrow: "Retour produit",
+      title: "Nouvelle réponse au sondage",
+      bodyHtml,
+      footer: "Notification interne destinée à l’équipe Minerva Flow.",
+    }),
   });
   return { ok: !error };
 }
@@ -590,7 +642,6 @@ export async function sendEmployeeScheduleEmail({
     .join("");
 
   const bodyHtml = `
-    <h2 style="margin:0 0 8px; font-family:'New York', Georgia, serif; font-size:22px; font-weight:600; color:#1a1e16;">Votre horaire — ${safeRestaurantName}</h2>
     <p style="margin:0 0 18px; font-size:14px; color:#565f52; line-height:1.5;">
       Bonjour <strong>${safeEmployeeName}</strong>, voici vos prochains quarts de travail planifiés chez <strong>${safeRestaurantName}</strong> :
     </p>
@@ -615,7 +666,7 @@ export async function sendEmployeeScheduleEmail({
     from: FROM_EMAIL,
     to,
     subject: `Votre horaire de travail — ${restaurantName}`,
-    html: emailShell(bodyHtml, "Consulter mon horaire en ligne", scheduleUrl),
+    html: emailShell(bodyHtml, "Consulter mon horaire en ligne", scheduleUrl, "fr", "Votre horaire de travail", restaurantName),
   });
 
   if (error) return { ok: false, error: error.message };
@@ -654,25 +705,23 @@ export async function sendServiceQuotePaymentEmail(input: {
     <td style="padding:9px 0;border-bottom:1px solid #eee9db;font-size:13px;color:#1a1e16">${escapeHtml(line.name)} <span style="color:#8d9488">× ${line.quantity}</span></td>
     <td align="right" style="padding:9px 0;border-bottom:1px solid #eee9db;font-size:13px;color:#1a1e16">${new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(line.quantity * line.unitPrice)}</td>
   </tr>`).join("");
-  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head>
-    <body style="margin:0;padding:28px;background:#f5f1e6;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1e16">
-      <main style="max-width:540px;margin:0 auto;padding:36px 30px;background:#fffefa;border:1px solid #e6e0d0;border-radius:22px">
-        <p style="margin:0 0 18px"><img src="https://minervaflow.app/icon-192.png" width="44" height="44" alt="Minerva Flow" border="0" style="display:block;width:44px;height:44px;border:0;border-radius:13px" /></p>
-        <p style="margin:0 0 18px;color:#167f5b;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Minerva Flow · Devis</p>
-        <h1 style="font-family:'New York',Georgia,serif;font-size:26px;line-height:1.2;margin:0 0 16px">Votre devis est prêt</h1>
-        <p style="font-size:14px;line-height:1.7;color:#565f52">Bonjour ${escapeHtml(input.guestName)}, <strong>${escapeHtml(input.restaurantName)}</strong> a préparé votre proposition pour le ${escapeHtml(event)}.</p>
-        <section style="margin:22px 0;padding:18px;border:1px solid #e6e0d0;border-radius:14px;background:#fbf9f3">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tbody>${lineRows}</tbody></table>
-          <p style="margin:14px 0 7px;font-size:12px;color:#565f52">Sous-total <strong style="float:right;color:#1a1e16">${subtotal}</strong></p>
-          <p style="margin:0 0 7px;font-size:12px;color:#565f52">Taxes <strong style="float:right;color:#1a1e16">${taxAmount}</strong></p>
-          <p style="margin:0 0 12px;font-size:13px;color:#565f52">Total du devis <strong style="float:right;color:#1a1e16">${total}</strong></p>
-          <p style="margin:0;font-size:13px;color:#565f52">Acompte à régler <strong style="float:right;color:#0e5a40">${amount}</strong></p>
-        </section>
-        <p style="font-size:12px;color:#8d9488">Le lien de paiement expire le ${escapeHtml(expiry)}. Le solde, s’il y a lieu, sera à régler selon les modalités convenues avec le restaurant.</p>
-        <p style="margin:28px 0;text-align:center"><a href="${escapeHtml(checkoutUrl.toString())}" style="display:inline-block;padding:14px 28px;background:#167f5b;color:#fffefa;text-decoration:none;border-radius:999px;font-weight:700">Consulter et régler le devis</a></p>
-        <p style="border-top:1px solid #eee9db;padding-top:18px;color:#8d9488;font-size:11px;text-align:center">Minerva Flow · Minerva Technologies Inc.</p>
-      </main>
-    </body></html>`;
+  const html = renderMinervaEmail({
+    eyebrow: `Devis · ${input.restaurantName}`,
+    title: "Votre devis est prêt",
+    bodyHtml: `
+      <p style="margin:0 0 18px">Bonjour ${escapeHtml(input.guestName)}, <strong>${escapeHtml(input.restaurantName)}</strong> a préparé votre proposition pour le ${escapeHtml(event)}.</p>
+      <div style="margin:22px 0;padding:18px;border:1px solid #e6e0d0;border-radius:14px;background:#fbf9f3">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tbody>${lineRows}</tbody></table>
+        <p style="margin:14px 0 7px;font-size:12px">Sous-total <strong style="float:right;color:#1a1e16">${subtotal}</strong></p>
+        <p style="margin:0 0 7px;font-size:12px">Taxes <strong style="float:right;color:#1a1e16">${taxAmount}</strong></p>
+        <p style="margin:0 0 12px;font-size:13px">Total du devis <strong style="float:right;color:#1a1e16">${total}</strong></p>
+        <p style="margin:0;font-size:13px">Acompte à régler <strong style="float:right;color:#0e5a40">${amount}</strong></p>
+      </div>
+      <p style="font-size:12px;color:#8d9488">Le lien de paiement expire le ${escapeHtml(expiry)}. Le solde, s’il y a lieu, sera à régler selon les modalités convenues avec le restaurant.</p>`,
+    ctaLabel: "Consulter et régler le devis",
+    ctaUrl: checkoutUrl.toString(),
+    footer: "Ce message concerne un devis préparé par le restaurant.",
+  });
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: input.to,

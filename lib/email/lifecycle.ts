@@ -1,6 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { MINERVA_EMAIL_FROM, MINERVA_EMAIL_REPLY_TO } from "@/lib/email/identity";
 import {
   renderLifecycleEmail,
   type LifecycleStep,
@@ -8,8 +9,8 @@ import {
 } from "@/lib/email/lifecycle-templates";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <flow@minervaflow.app>";
-const REPLY_TO = process.env.RESEND_REPLY_TO ?? "support@minervaflow.app";
+const FROM_EMAIL = MINERVA_EMAIL_FROM;
+const REPLY_TO = MINERVA_EMAIL_REPLY_TO;
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
 /**

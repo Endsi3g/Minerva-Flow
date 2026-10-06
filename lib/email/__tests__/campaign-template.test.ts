@@ -12,11 +12,11 @@ describe("renderCampaignAnnouncementEmail", () => {
       ctaUrl: "https://www.minervaflow.app/fr/changelog",
     });
 
-    expect(html).toContain("https://www.minervaflow.app/icon-192.png");
+    expect(html).toContain("https://minervaflow.app/icon-192.png");
     expect(html).toContain("background-color:#f5f1e6");
-    expect(html).toContain("background-color:#fffdf7");
-    expect(html).toContain("font-family:Georgia,'Times New Roman',serif");
-    expect(html).toContain("background-color:#0e5a40");
+    expect(html).toContain("background-color:#fffefa");
+    expect(html).toContain("font-family:'New York','-apple-system-serif','Playfair Display',Georgia,serif");
+    expect(html).toContain("background-color:#167f5b");
     expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
     expect(html).toContain("367 rue Laberge, Repentigny (Québec) J6A 4C2");
     expect(html).not.toContain("border-radius:16px");
