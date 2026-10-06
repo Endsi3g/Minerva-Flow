@@ -1,3 +1,5 @@
+import { renderMinervaEmail } from "./brand-shell.ts";
+
 export type LifecycleStep =
   | "welcome"
   | "activation"
@@ -86,7 +88,6 @@ function cleanShell({
   contentHtml,
   ctaText,
   ctaUrl,
-  appUrl,
   secondaryStatsHtml,
   isPromotional = false,
 }: {
@@ -101,149 +102,23 @@ function cleanShell({
   secondaryStatsHtml?: string;
   isPromotional?: boolean;
 }): string {
-  const safePreheader = escapeHtml(preheader);
-  const safeTitle = escapeHtml(title);
-  const safeCtaText = escapeHtml(ctaText);
-
   const badgeStyles = {
-    green: "background-color: #E2EFE7; color: #0E5A40; border: 1px solid #B8DCC8;",
-    gold: "background-color: #F6EFD9; color: #8A6414; border: 1px solid #E5D6A7;",
-    slate: "background-color: #ECEEEA; color: #3A4338; border: 1px solid #D6DAD3;",
+    green: "background-color:#e2efe7;color:#0e5a40;border:1px solid #b8dcc8;",
+    gold: "background-color:#f6efd9;color:#8a6414;border:1px solid #e5d6a7;",
+    slate: "background-color:#eceeea;color:#3a4338;border:1px solid #d6dad3;",
   }[badgeTone];
+  const badge = `<p style="margin:0 0 14px;text-align:center"><span style="${badgeStyles}display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:4px 12px;border-radius:999px">${escapeHtml(badgeText)}</span></p>`;
+  const signature = `<div style="margin:24px 0 0;padding-top:16px;border-top:1px solid #eee9db;text-align:center;font-size:12px;line-height:1.5;color:#6f786b"><p style="margin:0;font-weight:600;color:#1a1e16">L'équipe Minerva Flow</p><p style="margin:2px 0 0;font-size:11px;color:#8d9488">Gestion de rentabilité pour cafés et restaurants</p></div>`;
+  const stats = secondaryStatsHtml ? `<div style="margin:22px 0 16px">${secondaryStatsHtml}</div>` : "";
 
-  return `<!doctype html>
-<html lang="fr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="color-scheme" content="light" />
-  <meta name="supported-color-schemes" content="light" />
-  <title>${safeTitle}</title>
-  <!--[if mso]>
-  <noscript>
-    <xml>
-      <o:OfficeDocumentSettings>
-        <o:PixelsPerInch>96</o:PixelsPerInch>
-      </o:OfficeDocumentSettings>
-    </xml>
-  </noscript>
-  <![endif]-->
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-    
-    body {
-      margin: 0 !important;
-      padding: 0 !important;
-      background-color: #F5F1E6 !important;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-      -webkit-font-smoothing: antialiased;
-      color: #1A1E16;
-    }
-    .font-serif {
-      font-family: 'New York', 'Playfair Display', Georgia, serif !important;
-    }
-    @media screen and (max-width: 600px) {
-      .email-container { width: 100% !important; max-width: 100% !important; }
-      .content-cell { padding: 28px 16px 24px !important; }
-      .stat-col { display: block !important; width: 100% !important; margin-bottom: 8px !important; }
-      .cta-button { display: block !important; width: 100% !important; text-align: center !important; }
-    }
-  </style>
-</head>
-<body style="margin: 0; padding: 0; background-color: #F5F1E6;">
-  
-  <!-- Preheader invisible -->
-  <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; font-size: 1px; line-height: 1px; color: #F5F1E6;">
-    ${safePreheader}
-  </div>
-
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F5F1E6;">
-    <tr>
-      <td align="center" style="padding: 32px 12px 40px;">
-        
-        <table role="presentation" class="email-container" width="580" cellpadding="0" cellspacing="0" border="0" style="width: 580px; max-width: 580px; margin: 0 auto;">
-          
-          <!-- Carte Principale -->
-          <tr>
-            <td class="content-cell" style="background-color: #FFFEFA; border: 1px solid #E6E0D0; border-radius: 20px; padding: 38px 34px 32px;">
-              
-              <!-- Emblème / Logo Officiel Minerva (Squircle centré sobre) -->
-              <div style="text-align: center; margin-bottom: 20px;">
-                <img src="https://minervaflow.app/icon-192.png" width="56" height="56" alt="Minerva Flow" style="display: inline-block; border-radius: 14px; border: 0;" />
-              </div>
-
-              <!-- Badge de contexte -->
-              <div style="text-align: center; margin-bottom: 14px;">
-                <span style="${badgeStyles} display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 12px; border-radius: 999px;">
-                  ${escapeHtml(badgeText)}
-                </span>
-              </div>
-
-              <!-- Titre Principal -->
-              <h1 class="font-serif" style="margin: 0 0 14px; font-size: 24px; line-height: 1.35; font-weight: 700; color: #1A1E16; letter-spacing: -0.01em; text-align: center;">
-                ${safeTitle}
-              </h1>
-
-              <!-- Corps de texte dense -->
-              <div style="font-size: 14px; line-height: 1.65; color: #4A5245;">
-                ${contentHtml}
-              </div>
-
-              <!-- Bloc KPI / Grille Optionnelle -->
-              ${
-                secondaryStatsHtml
-                  ? `<div style="margin: 22px 0 16px;">${secondaryStatsHtml}</div>`
-                  : ""
-              }
-
-              <!-- Bouton d'action épuré sans effet glow -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 26px 0 18px;">
-                <tr>
-                  <td align="center">
-                    <a href="${ctaUrl}" class="cta-button" style="display: inline-block; padding: 13px 32px; background-color: #167F5B; color: #FFFEFA; text-decoration: none; border-radius: 999px; font-size: 14px; font-weight: 600;">
-                      ${safeCtaText} →
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Signature -->
-              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #EEE9DB; text-align: center; font-size: 12px; line-height: 1.5; color: #6F786B;">
-                <p style="margin: 0; font-weight: 600; color: #1A1E16;">L'équipe Minerva Flow</p>
-                <p style="margin: 2px 0 0; font-size: 11px; color: #8D9488;">Gestion de rentabilité pour cafés et restaurants</p>
-              </div>
-
-            </td>
-          </tr>
-
-          <!-- Pied de page LCAP Canada -->
-          <tr>
-            <td style="padding: 20px 10px 0; text-align: center; font-size: 11.5px; line-height: 1.6; color: #8D9488;">
-              <p style="margin: 0 0 4px;">
-                <strong style="color: #565F52;">Minerva Flow</strong> · Minerva Technologies Inc.
-              </p>
-              <p style="margin: 0 0 6px;">
-                Montréal (Québec), Canada · Standards LCAP / CASL
-              </p>
-              <p style="margin: 0;">
-                ${
-                  isPromotional
-                    ? `<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color: #8D9488; text-decoration: underline;">Se désabonner</a> · `
-                    : ""
-                }
-                <a href="${appUrl}" style="color: #8D9488; text-decoration: underline;">Ouvrir l'application</a> · 
-                <a href="mailto:support@minervaflow.app" style="color: #8D9488; text-decoration: underline;">Support</a>
-              </p>
-            </td>
-          </tr>
-
-        </table>
-
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+  return renderMinervaEmail({
+    title,
+    preheader,
+    bodyHtml: `${badge}${contentHtml}${stats}${signature}`,
+    ctaLabel: ctaText,
+    ctaUrl,
+    emailKind: isPromotional ? "marketing" : "transactional",
+  });
 }
 
 /**

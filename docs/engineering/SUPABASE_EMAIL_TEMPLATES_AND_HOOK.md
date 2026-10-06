@@ -18,6 +18,25 @@ POST https://minervaflow.app/api/auth/send-email-hook
 Elle accepte les événements Supabase signés avec `standardwebhooks`, choisit le
 template selon `email_action_type`, puis envoie via Resend.
 
+## Gabarit commun à tous les envois
+
+Les courriels de l’application utilisent `renderMinervaEmail` dans
+`lib/email/brand-shell.ts`. Les expéditeurs et coordonnées sont définis dans
+`lib/email/identity.ts`. Les fonctions d’envoi reçoivent le contenu du message
+et ne recréent pas leur propre document HTML.
+
+- Messages de compte et de service : type `transactional`, sans lien de
+  désabonnement.
+- Campagnes et relances marketing : type `marketing`, motif de consentement et
+  URL de désabonnement fournis à l’envoi. Vérifier le consentement avant de
+  construire l’audience.
+- Les gabarits Resend sont produits par `scripts/sync-resend-templates.ts`.
+  Pour regénérer le fichier HTML public de bienvenue, lancer
+  `node --experimental-strip-types scripts/export-welcome-email.mjs`.
+
+Ne pas créer un second en-tête, bouton ou pied légal dans un corps de courriel.
+Les fragments HTML doivent échapper les valeurs dynamiques avant insertion.
+
 ## 1. Resend
 
 Dans Resend :
@@ -136,4 +155,3 @@ Si aucun message n’arrive, consulter simultanément :
 - **Resend → Emails** : statut `delivered`, `bounced` ou `failed`.
 
 Un test n’est validé que lorsque l’événement apparaît dans ces trois endroits.
-

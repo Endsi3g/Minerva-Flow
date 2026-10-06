@@ -1,10 +1,12 @@
 import { Resend } from "resend";
 import { createHash } from "crypto";
 import { isExpectedClientDisconnect } from "@/lib/alerts/request-errors";
+import { renderMinervaEmail } from "@/lib/email/brand-shell";
+import { MINERVA_EMAIL_FROM } from "@/lib/email/identity";
 
 // Fallback recipient if ALERT_NOTIFICATION_EMAIL is not set
 const DEFAULT_ALERT_RECIPIENT = "kbelceus776@gmail.com";
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <flow@minervaflow.app>";
+const FROM_EMAIL = MINERVA_EMAIL_FROM;
 function getResendClient(): Resend | null {
   const key = process.env.RESEND_API_KEY;
   return key ? new Resend(key) : null;
@@ -106,100 +108,52 @@ function renderCriticalAlertEmail(
   const timestamp = new Date().toISOString();
   const env = process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
   const source = details.source ?? "serveur";
-
-  const subject = `🚨 [Minerva Flow] Alerte Critique : ${errName} (${source})`;
-
+  const subject = `🚨 [Minerva Flow] Alerte critique : ${errName} (${source})`;
+  const escapeHtml = (value: string) => value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
   const metadataRows = Object.entries(details.metadata ?? {})
-    .map(
-      ([key, val]) =>
-        `<tr><td style="padding:4px 8px; font-weight:600; color:#565f52; border-bottom:1px solid #eee9db;">${key}</td><td style="padding:4px 8px; color:#1a1e16; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #eee9db;">${String(val)}</td></tr>`
-    )
+    .map(([key, value]) => `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee9db;font-weight:600">${escapeHtml(key)}</td><td style="padding:6px 8px;border-bottom:1px solid #eee9db;font-family:'JetBrains Mono',monospace">${escapeHtml(String(value))}</td></tr>`)
     .join("");
-
-  const html = `<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <title>${subject}</title>
-</head>
-<body style="margin:0; padding:28px 16px; background-color:#f5f1e6; font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color:#1a1e16;">
-  <div style="max-width:680px; margin:0 auto; background:#fffefa; border:1px solid #e6e0d0; border-radius:24px; box-shadow:0 12px 36px rgba(26, 30, 22, 0.08); overflow:hidden;">
-    
-    <!-- En-tête de marque avec accent émeraude -->
-    <div style="background:#0e5a40; padding:28px 32px; border-bottom:3px solid #167f5b; color:#fffefa;">
-      <img src="https://minervaflow.app/icon-192.png" width="40" height="40" alt="Minerva Flow" border="0" style="display:block;width:40px;height:40px;margin-bottom:14px;border:0;border-radius:12px;" />
-      <div style="display:inline-block; padding:4px 12px; background:#f6efd9; color:#8a6414; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; border-radius:999px; margin-bottom:12px;">
-        Alerte Système Critique
-      </div>
-      <h1 style="margin:0; font-family:'New York', -apple-system-serif, 'Playfair Display', Georgia, serif; font-size:24px; font-weight:700; line-height:1.25; color:#ffffff;">
-        Incident détecté sur Minerva Flow
-      </h1>
-      <p style="margin:8px 0 0; font-size:13px; color:#dcece3; opacity:0.9;">
-        Environnement : <strong>${env.toUpperCase()}</strong> · Source : <strong>${source}</strong>
-      </p>
+  const optionalEntries: [string, string | undefined][] = [
+    ["URL requêtée", details.url],
+    ["ID utilisateur", details.userId],
+    ["Courriel utilisateur", details.userEmail],
+  ];
+  const optionalRows = optionalEntries
+    .filter((entry): entry is [string, string] => Boolean(entry[1]))
+    .map(([label, value]) => `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee9db;font-weight:600">${label}</td><td style="padding:6px 8px;border-bottom:1px solid #eee9db;font-family:'JetBrains Mono',monospace">${escapeHtml(value)}</td></tr>`)
+    .join("");
+  const bodyHtml = `
+    <p style="margin:0 0 14px"><strong>Environnement :</strong> ${escapeHtml(env.toUpperCase())} · <strong>Source :</strong> ${escapeHtml(source)}</p>
+    <div style="margin:18px 0;padding:16px;border:1px solid #e6e0d0;border-left:4px solid #ab7d1f;border-radius:12px;background:#fcfaf5">
+      <p style="margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#8d9488;font-weight:700">Type et message de l’exception</p>
+      <p style="margin:0;font-family:'JetBrains Mono',monospace;overflow-wrap:anywhere"><strong>${escapeHtml(errName)}:</strong> ${escapeHtml(errMessage)}</p>
+      ${details.context ? `<p style="margin:8px 0 0"><strong>Contexte :</strong> ${escapeHtml(details.context)}</p>` : ""}
     </div>
+    <h2 style="margin:20px 0 10px;font-family:'New York','Playfair Display',Georgia,serif;color:#0e5a40;font-size:18px">Contexte d’exécution</h2>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:12px;margin-bottom:20px">
+      <tbody><tr><td style="padding:6px 8px;border-bottom:1px solid #eee9db;font-weight:600">Date et heure</td><td style="padding:6px 8px;border-bottom:1px solid #eee9db;font-family:'JetBrains Mono',monospace">${timestamp}</td></tr>
+      <tr><td style="padding:6px 8px;border-bottom:1px solid #eee9db;font-weight:600">Empreinte</td><td style="padding:6px 8px;border-bottom:1px solid #eee9db;font-family:'JetBrains Mono',monospace">${fingerprint} · ${occurrences} occurrence(s)</td></tr>${optionalRows}${metadataRows}</tbody>
+    </table>
+    <h2 style="margin:20px 0 10px;font-family:'New York','Playfair Display',Georgia,serif;color:#0e5a40;font-size:18px">Trace d’exécution</h2>
+    <pre style="margin:0;padding:16px;border:1px solid #0e5a40;border-radius:12px;background:#1a1e16;color:#dcece3;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(errStack)}</pre>`;
 
-    <!-- Corps de l'alerte -->
-    <div style="padding:32px;">
-      
-      <!-- Erreur principale -->
-      <div style="background:#fcfaf5; border:1px solid #e6e0d0; border-left:4px solid #ab7d1f; border-radius:12px; padding:18px 20px; margin-bottom:24px;">
-        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#8d9488; font-weight:700; margin-bottom:4px;">
-          Type & Message de l'exception
-        </div>
-        <div style="font-size:16px; font-weight:700; color:#1a1e16; font-family:'JetBrains Mono', monospace; word-break:break-word;">
-          ${errName}: ${errMessage}
-        </div>
-        ${details.context ? `<p style="margin:8px 0 0; font-size:13px; color:#565f52;"><strong>Contexte :</strong> ${details.context}</p>` : ""}
-      </div>
-
-      <!-- Métadonnées d'exécution -->
-      <h3 style="font-family:'New York', serif; font-size:16px; margin:0 0 12px; color:#1a1e16;">
-        Contexte d'exécution
-      </h3>
-      <table style="width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:24px;">
-        <tbody>
-          <tr>
-            <td style="padding:6px 8px; font-weight:600; color:#565f52; border-bottom:1px solid #eee9db; width:35%;">Date & Heure</td>
-            <td style="padding:6px 8px; color:#1a1e16; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #eee9db;">${timestamp}</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 8px; font-weight:600; color:#565f52; border-bottom:1px solid #eee9db;">Empreinte (Fingerprint)</td>
-            <td style="padding:6px 8px; color:#1a1e16; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #eee9db;">${fingerprint} (Vu ${occurrences} fois)</td>
-          </tr>
-          ${details.url ? `<tr><td style="padding:6px 8px; font-weight:600; color:#565f52; border-bottom:1px solid #eee9db;">URL Requêtée</td><td style="padding:6px 8px; color:#167f5b; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #eee9db;">${details.url}</td></tr>` : ""}
-          ${details.userId ? `<tr><td style="padding:6px 8px; font-weight:600; color:#565f52; border-bottom:1px solid #eee9db;">ID Utilisateur</td><td style="padding:6px 8px; color:#1a1e16; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #eee9db;">${details.userId}</td></tr>` : ""}
-          ${details.userEmail ? `<tr><td style="padding:6px 8px; font-weight:600; color:#565f52; border-bottom:1px solid #eee9db;">Email Utilisateur</td><td style="padding:6px 8px; color:#1a1e16; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #eee9db;">${details.userEmail}</td></tr>` : ""}
-          ${metadataRows}
-        </tbody>
-      </table>
-
-      <!-- Stack Trace -->
-      <h3 style="font-family:'New York', serif; font-size:16px; margin:0 0 10px; color:#1a1e16;">
-        Trace d'exécution (Stack Trace)
-      </h3>
-      <div style="background:#1a1e16; color:#dcece3; border-radius:12px; padding:16px; font-family:'JetBrains Mono', monospace; font-size:11.5px; line-height:1.55; overflow-x:auto; white-space:pre-wrap; max-height:320px; overflow-y:auto; border:1px solid #0e5a40;">${errStack}</div>
-
-      <!-- Action rapide -->
-      <div style="margin-top:28px; text-align:center;">
-        <a href="https://minervaflow.app" style="display:inline-block; padding:12px 28px; background-color:#167f5b; color:#ffffff; font-size:13.5px; font-weight:700; text-decoration:none; border-radius:999px;">
-          Ouvrir Minerva Flow →
-        </a>
-      </div>
-
-    </div>
-
-    <!-- Pied de page officiel -->
-    <div style="padding:20px 32px; background:#fbf9f3; border-top:1px solid #eee9db; text-align:center; font-size:12px; color:#8d9488;">
-      Ce message est une notification technique automatique générée par Minerva Flow.<br />
-      © 2026 Minerva Flow · Minerva Technologies Inc. · Montréal (Québec), Canada
-    </div>
-
-  </div>
-</body>
-</html>`;
-
-  return { subject, html };
+  return {
+    subject,
+    html: renderMinervaEmail({
+      eyebrow: "Alerte système critique",
+      title: "Incident détecté sur Minerva Flow",
+      preheader: `${errName} · ${source} · ${env}`,
+      bodyHtml,
+      ctaLabel: "Ouvrir Minerva Flow",
+      ctaUrl: "https://minervaflow.app",
+      footer: "Notification technique automatique.",
+    }),
+  };
 }
 
 /**

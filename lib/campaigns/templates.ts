@@ -122,98 +122,44 @@ export type RenderTemplateOptions = {
   customerName: string;
   timeSlot?: string;
   offerText?: string;
-  unsubscribeUrl?: string;
 };
 
 export type RenderedCampaignMessage = {
   subject: string;
   smsBody: string;
   htmlBody: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
 };
 
 /**
- * Builds the luxury editorial email HTML compliant with Minerva Flow design system and CASL / LCAP.
+ * Builds the campaign content fragment; the shared email sender adds the wrapper,
+ * legal footer, consent reason and unsubscribe link.
  */
 function buildEditorialEmailHtml({
-  restaurantName,
   customerName,
   title,
   messageParagraph,
-  callToAction,
-  unsubscribeUrl,
 }: {
-  restaurantName: string;
   customerName: string;
   title: string;
   messageParagraph: string;
-  callToAction?: { label: string; url: string };
-  unsubscribeUrl: string;
 }): string {
   const firstName = customerName.trim().split(/\s+/)[0] || customerName;
+  const safeFirstName = escapeHtml(firstName);
+  const safeTitle = escapeHtml(title);
+  const safeMessage = escapeHtml(messageParagraph);
 
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #F5F1E6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1A1E16;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F1E6; padding: 40px 16px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" style="max-width: 540px; background-color: #FFFEFA; border: 1px solid #E6E0D0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(26,30,22,0.04);">
-          <!-- Header -->
-          <tr>
-            <td style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #EEE9DB; text-align: left;">
-              <span style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #8D9488; font-weight: 600;">Minerva Flow · ${restaurantName}</span>
-              <h1 style="margin: 8px 0 0 0; font-family: 'New York', Georgia, serif; font-size: 24px; font-weight: 600; color: #1A1E16; line-height: 1.3;">
-                ${title}
-              </h1>
-            </td>
-          </tr>
+  return `<h1 style="margin:0 0 16px;font-family:'New York','Playfair Display',Georgia,serif;font-size:24px;font-weight:600;line-height:1.3;color:#0e5a40">${safeTitle}</h1><p style="margin:0 0 16px">Bonjour ${safeFirstName},</p><p style="margin:0 0 16px">${safeMessage}</p>`;
+}
 
-          <!-- Body Content -->
-          <tr>
-            <td style="padding: 28px 32px; text-align: left;">
-              <p style="margin: 0 0 16px 0; font-size: 15px; color: #1A1E16; line-height: 1.6;">
-                Bonjour ${firstName},
-              </p>
-              <p style="margin: 0 0 24px 0; font-size: 15px; color: #565F52; line-height: 1.6;">
-                ${messageParagraph}
-              </p>
-              ${
-                callToAction
-                  ? `<div style="margin: 28px 0 12px 0;">
-                      <a href="${callToAction.url}" style="display: inline-block; background-color: #167F5B; color: #FFFFFF; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
-                        ${callToAction.label}
-                      </a>
-                    </div>`
-                  : ""
-              }
-            </td>
-          </tr>
-
-          <!-- LCAP / CASL Mandatory Legal Footer -->
-          <tr>
-            <td style="padding: 24px 32px; background-color: #FBF9F3; border-top: 1px solid #EEE9DB; font-size: 11px; color: #8D9488; line-height: 1.5; text-align: left;">
-              <p style="margin: 0 0 6px 0;">
-                Vous recevez ce courriel car vous avez consenti aux communications de <strong>${restaurantName}</strong> via la plateforme <strong>Minerva Flow</strong>.
-              </p>
-              <p style="margin: 0 0 8px 0;">
-                Minerva Technologies Inc. · Montréal (Québec), Canada
-              </p>
-              <p style="margin: 0;">
-                <a href="${unsubscribeUrl}" style="color: #167F5B; text-decoration: underline;">Se désabonner des communications marketing</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /**
@@ -226,9 +172,6 @@ export function renderCampaignTemplate(
   const { restaurantName, customerName, timeSlot, offerText } = options;
   const firstName = customerName.trim().split(/\s+/)[0] || customerName;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app";
-  const unsubscribeUrl =
-    options.unsubscribeUrl || `${appUrl}/api/consent/unsubscribe?r=${encodeURIComponent(restaurantName)}`;
-
   switch (templateId) {
     case "welcome": {
       const title = `Bienvenue chez ${restaurantName}`;
@@ -237,17 +180,9 @@ export function renderCampaignTemplate(
       return {
         subject: `Bienvenue chez ${restaurantName} — votre première récompense vous attend`,
         smsBody,
-        htmlBody: buildEditorialEmailHtml({
-          restaurantName,
-          customerName,
-          title,
-          messageParagraph: message,
-          callToAction: {
-            label: "Voir mon passeport fidélité",
-            url: `${appUrl}/portal`,
-          },
-          unsubscribeUrl,
-        }),
+        htmlBody: buildEditorialEmailHtml({ customerName, title, messageParagraph: message }),
+        ctaLabel: "Voir mon passeport fidélité",
+        ctaUrl: `${appUrl}/portal`,
       };
     }
 
@@ -258,17 +193,9 @@ export function renderCampaignTemplate(
       return {
         subject: `${firstName}, il ne vous manque qu'une visite chez ${restaurantName}`,
         smsBody,
-        htmlBody: buildEditorialEmailHtml({
-          restaurantName,
-          customerName,
-          title,
-          messageParagraph: message,
-          callToAction: {
-            label: "Découvrir mes récompenses",
-            url: `${appUrl}/portal`,
-          },
-          unsubscribeUrl,
-        }),
+        htmlBody: buildEditorialEmailHtml({ customerName, title, messageParagraph: message }),
+        ctaLabel: "Découvrir mes récompenses",
+        ctaUrl: `${appUrl}/portal`,
       };
     }
 
@@ -279,17 +206,9 @@ export function renderCampaignTemplate(
       return {
         subject: `${firstName}, votre offre réservée aux habitués vous attend chez ${restaurantName}`,
         smsBody,
-        htmlBody: buildEditorialEmailHtml({
-          restaurantName,
-          customerName,
-          title,
-          messageParagraph: message,
-          callToAction: {
-            label: "Réserver ou commander",
-            url: `${appUrl}/portal`,
-          },
-          unsubscribeUrl,
-        }),
+        htmlBody: buildEditorialEmailHtml({ customerName, title, messageParagraph: message }),
+        ctaLabel: "Réserver ou commander",
+        ctaUrl: `${appUrl}/portal`,
       };
     }
 
@@ -302,17 +221,9 @@ export function renderCampaignTemplate(
       return {
         subject: `${slot} calme chez ${restaurantName} — offre exclusive`,
         smsBody,
-        htmlBody: buildEditorialEmailHtml({
-          restaurantName,
-          customerName,
-          title,
-          messageParagraph: message,
-          callToAction: {
-            label: "Consulter le menu",
-            url: `${appUrl}/portal`,
-          },
-          unsubscribeUrl,
-        }),
+        htmlBody: buildEditorialEmailHtml({ customerName, title, messageParagraph: message }),
+        ctaLabel: "Consulter le menu",
+        ctaUrl: `${appUrl}/portal`,
       };
     }
 
@@ -323,17 +234,9 @@ export function renderCampaignTemplate(
       return {
         subject: `Votre récompense vous attend chez ${restaurantName} 🎁`,
         smsBody,
-        htmlBody: buildEditorialEmailHtml({
-          restaurantName,
-          customerName,
-          title,
-          messageParagraph: message,
-          callToAction: {
-            label: "Voir ma récompense",
-            url: `${appUrl}/portal`,
-          },
-          unsubscribeUrl,
-        }),
+        htmlBody: buildEditorialEmailHtml({ customerName, title, messageParagraph: message }),
+        ctaLabel: "Voir ma récompense",
+        ctaUrl: `${appUrl}/portal`,
       };
     }
 
@@ -344,17 +247,9 @@ export function renderCampaignTemplate(
       return {
         subject: `Félicitations ${firstName}, vous accédez au statut Privilégié chez ${restaurantName} ⭐`,
         smsBody,
-        htmlBody: buildEditorialEmailHtml({
-          restaurantName,
-          customerName,
-          title,
-          messageParagraph: message,
-          callToAction: {
-            label: "Découvrir mes privilèges",
-            url: `${appUrl}/portal`,
-          },
-          unsubscribeUrl,
-        }),
+        htmlBody: buildEditorialEmailHtml({ customerName, title, messageParagraph: message }),
+        ctaLabel: "Découvrir mes privilèges",
+        ctaUrl: `${appUrl}/portal`,
       };
     }
 
@@ -365,17 +260,9 @@ export function renderCampaignTemplate(
       return {
         subject: `Invitez un ami chez ${restaurantName} et gagnez tous les deux ✨`,
         smsBody,
-        htmlBody: buildEditorialEmailHtml({
-          restaurantName,
-          customerName,
-          title,
-          messageParagraph: message,
-          callToAction: {
-            label: "Partager mon lien de parrainage",
-            url: `${appUrl}/portal`,
-          },
-          unsubscribeUrl,
-        }),
+        htmlBody: buildEditorialEmailHtml({ customerName, title, messageParagraph: message }),
+        ctaLabel: "Partager mon lien de parrainage",
+        ctaUrl: `${appUrl}/portal`,
       };
     }
 
@@ -386,17 +273,9 @@ export function renderCampaignTemplate(
       return {
         subject: `${firstName}, vous nous manquez chez ${restaurantName} — une attention spéciale vous attend`,
         smsBody,
-        htmlBody: buildEditorialEmailHtml({
-          restaurantName,
-          customerName,
-          title,
-          messageParagraph: message,
-          callToAction: {
-            label: "Réserver ma table",
-            url: `${appUrl}/portal`,
-          },
-          unsubscribeUrl,
-        }),
+        htmlBody: buildEditorialEmailHtml({ customerName, title, messageParagraph: message }),
+        ctaLabel: "Réserver ma table",
+        ctaUrl: `${appUrl}/portal`,
       };
     }
   }
@@ -496,7 +375,6 @@ export async function dispatchCampaignToCustomer({
     customerName: customer.name,
     timeSlot,
     offerText,
-    unsubscribeUrl,
   });
 
   // Record campaign_sent lifecycle event
@@ -520,12 +398,18 @@ export async function dispatchCampaignToCustomer({
 
   if (!channelUsed && customer.email) {
     try {
-      await sendRetentionEmail({
+      const result = await sendRetentionEmail({
         to: customer.email,
         subject: rendered.subject,
         bodyHtml: rendered.htmlBody,
+        title: null,
+        ctaLabel: rendered.ctaLabel,
+        ctaUrl: rendered.ctaUrl,
+        emailKind: "marketing",
+        unsubscribeUrl,
+        consentReason: `Vous recevez ce courriel car vous avez consenti aux communications de ${restaurant.name} via Minerva Flow.`,
       });
-      channelUsed = "email";
+      if (result.ok) channelUsed = "email";
     } catch (e) {
       console.error("Email send failed in dispatchCampaignToCustomer:", e);
     }

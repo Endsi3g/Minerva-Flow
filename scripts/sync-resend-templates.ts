@@ -1,4 +1,6 @@
 import { Resend } from "resend";
+import { renderMinervaEmail } from "../lib/email/brand-shell";
+import { MINERVA_EMAIL_FROM, MINERVA_EMAIL_REPLY_TO } from "../lib/email/identity";
 import {
   renderWelcomeEmail,
   renderActivationEmail,
@@ -32,16 +34,7 @@ const templateVariablesParams = {
 };
 
 function getTransactionalShell(bodyHtml: string, ctaLabel: string, ctaUrl: string): string {
-  return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:28px 14px;background:#f5f1e6;color:#25342b;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;margin:0 auto;background:#fffefa;border:1px solid #e6e0d0;border-radius:18px;border-collapse:separate;overflow:hidden">
-    <tr><td align="center" style="padding:30px 24px 15px"><img src="https://minervaflow.app/icon-192.png" width="48" height="48" alt="Minerva Flow" border="0" style="display:block;width:48px;height:48px;border:0;border-radius:14px"></td></tr>
-    <tr><td style="padding:8px 30px 24px;color:#4a5245;font-size:14px;line-height:1.75">${bodyHtml}</td></tr>
-    <tr><td align="center" style="padding:5px 30px 30px"><a href="${ctaUrl}" style="display:inline-block;padding:13px 24px;border-radius:999px;background:#167f5b;color:#fffefa;text-decoration:none;font-size:14px;font-weight:700">${ctaLabel} &rarr;</a></td></tr>
-    <tr><td align="center" style="border-top:1px solid #eee9db;padding:17px 24px;color:#818a7d;font-size:11px;line-height:1.6">Minerva Flow · Minerva Technologies Inc. · Montréal (Québec), Canada</td></tr>
-  </table>
-</body></html>`;
+  return renderMinervaEmail({ bodyHtml, ctaLabel, ctaUrl });
 }
 
 interface TemplateDef {
@@ -198,37 +191,37 @@ async function syncTemplates() {
     {
       name: "Ambassadeurs — Votre lien est prêt",
       subject: "Bienvenue dans le programme ambassadeur Minerva Flow",
-      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Programme ambassadeur</p><h1 style="margin:0 0 14px;color:#173d2d;font-family:Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Votre lien est prêt.</h1><p>Partagez votre expérience avec les restaurateurs de votre réseau. Vos recommandations et les commissions admissibles seront suivies depuis votre espace ambassadeur.</p><p>Vous recevez 10 % de la première facture payée d’un client admissible. La commission devient payable après 30 jours; les versements passent par Stripe après vérification de votre compte.</p>`, "Ouvrir mon espace ambassadeur", "{{{AMBASSADOR_URL}}}"),
+      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Programme ambassadeur</p><h1 style="margin:0 0 14px;color:#0e5a40;font-family:'New York','-apple-system-serif','Playfair Display',Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Votre lien est prêt.</h1><p>Partagez votre expérience avec les restaurateurs de votre réseau. Vos recommandations et les commissions admissibles seront suivies depuis votre espace ambassadeur.</p><p>Vous recevez 10 % de la première facture payée d’un client admissible. La commission devient payable après 30 jours; les versements passent par Stripe après vérification de votre compte.</p>`, "Ouvrir mon espace ambassadeur", "{{{AMBASSADOR_URL}}}"),
       variables: [{ key: "AMBASSADOR_URL", type: "string", fallback: `${APP_ORIGIN}/workspace/ambassadeurs` }],
     },
     {
       name: "Ambassadeurs — Commission enregistrée",
       subject: "Une commission Minerva Flow est en attente",
-      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Programme ambassadeur</p><h1 style="margin:0 0 14px;color:#173d2d;font-family:Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Une commission a été enregistrée.</h1><p>Une recommandation admissible a généré <strong>{{{COMMISSION_AMOUNT}}}</strong>, soit 10 % de la première facture payée.</p><p>Elle devient payable après le délai de 30 jours, à partir du <strong>{{{PAYABLE_DATE}}}</strong>. Vous pourrez suivre son état et configurer les versements dans votre espace.</p>`, "Voir mes commissions", "{{{AMBASSADOR_URL}}}"),
+      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Programme ambassadeur</p><h1 style="margin:0 0 14px;color:#0e5a40;font-family:'New York','-apple-system-serif','Playfair Display',Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Une commission a été enregistrée.</h1><p>Une recommandation admissible a généré <strong>{{{COMMISSION_AMOUNT}}}</strong>, soit 10 % de la première facture payée.</p><p>Elle devient payable après le délai de 30 jours, à partir du <strong>{{{PAYABLE_DATE}}}</strong>. Vous pourrez suivre son état et configurer les versements dans votre espace.</p>`, "Voir mes commissions", "{{{AMBASSADOR_URL}}}"),
       variables: [{ key: "COMMISSION_AMOUNT", type: "string", fallback: "0,00 $ CA" }, { key: "PAYABLE_DATE", type: "string", fallback: "la date indiquée dans votre espace" }, { key: "AMBASSADOR_URL", type: "string", fallback: `${APP_ORIGIN}/workspace/ambassadeurs` }],
     },
     {
       name: "Ambassadeurs — Versement envoyé",
       subject: "Votre versement ambassadeur a été envoyé à Stripe",
-      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Programme ambassadeur</p><h1 style="margin:0 0 14px;color:#173d2d;font-family:Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Votre versement est parti.</h1><p>Un montant de <strong>{{{PAYOUT_AMOUNT}}}</strong> a été envoyé à votre compte Stripe connecté. Stripe dépose ensuite les fonds selon son calendrier bancaire.</p><p>Référence : <span style="font-family:monospace">{{{PAYOUT_REFERENCE}}}</span></p>`, "Consulter mon espace ambassadeur", "{{{AMBASSADOR_URL}}}"),
+      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Programme ambassadeur</p><h1 style="margin:0 0 14px;color:#0e5a40;font-family:'New York','-apple-system-serif','Playfair Display',Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Votre versement est parti.</h1><p>Un montant de <strong>{{{PAYOUT_AMOUNT}}}</strong> a été envoyé à votre compte Stripe connecté. Stripe dépose ensuite les fonds selon son calendrier bancaire.</p><p>Référence : <span style="font-family:monospace">{{{PAYOUT_REFERENCE}}}</span></p>`, "Consulter mon espace ambassadeur", "{{{AMBASSADOR_URL}}}"),
       variables: [{ key: "PAYOUT_AMOUNT", type: "string", fallback: "0,00 $ CA" }, { key: "PAYOUT_REFERENCE", type: "string", fallback: "consultable dans votre espace" }, { key: "AMBASSADOR_URL", type: "string", fallback: `${APP_ORIGIN}/workspace/ambassadeurs` }],
     },
     {
       name: "Ambassadeurs — Publication UGC approuvée",
       subject: "Votre contenu restaurant est approuvé",
-      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Contenu ambassadeur</p><h1 style="margin:0 0 14px;color:#173d2d;font-family:Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Votre publication est approuvée.</h1><p>Votre contenu pour <strong>{{{RESTAURANT_NAME}}}</strong> a été approuvé par l’équipe Minerva Flow.</p><p>Merci de mettre en valeur les restaurants avec leur accord et de respecter les règles de divulgation publicitaire indiquées dans le programme.</p>`, "Voir mon contenu", "{{{AMBASSADOR_URL}}}"),
+      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Contenu ambassadeur</p><h1 style="margin:0 0 14px;color:#0e5a40;font-family:'New York','-apple-system-serif','Playfair Display',Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Votre publication est approuvée.</h1><p>Votre contenu pour <strong>{{{RESTAURANT_NAME}}}</strong> a été approuvé par l’équipe Minerva Flow.</p><p>Merci de mettre en valeur les restaurants avec leur accord et de respecter les règles de divulgation publicitaire indiquées dans le programme.</p>`, "Voir mon contenu", "{{{AMBASSADOR_URL}}}"),
       variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "le restaurant partenaire" }, { key: "AMBASSADOR_URL", type: "string", fallback: `${APP_ORIGIN}/workspace/ambassadeurs` }],
     },
     {
       name: "Ambassadeurs — Publication UGC à modifier",
       subject: "Une modification est requise pour votre contenu",
-      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Contenu ambassadeur</p><h1 style="margin:0 0 14px;color:#173d2d;font-family:Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Votre publication demande une modification.</h1><p>Consultez la note de révision dans votre espace ambassadeur, puis soumettez une nouvelle version lorsque les ajustements sont faits.</p>`, "Voir la note de révision", "{{{AMBASSADOR_URL}}}"),
+      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Contenu ambassadeur</p><h1 style="margin:0 0 14px;color:#0e5a40;font-family:'New York','-apple-system-serif','Playfair Display',Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Votre publication demande une modification.</h1><p>Consultez la note de révision dans votre espace ambassadeur, puis soumettez une nouvelle version lorsque les ajustements sont faits.</p>`, "Voir la note de révision", "{{{AMBASSADOR_URL}}}"),
       variables: [{ key: "AMBASSADOR_URL", type: "string", fallback: `${APP_ORIGIN}/workspace/ambassadeurs` }],
     },
     {
       name: "Ambassadeurs — Mise à jour du programme",
       subject: "Le programme ambassadeur Minerva Flow évolue",
-      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Nouveautés Minerva Flow</p><h1 style="margin:0 0 14px;color:#173d2d;font-family:Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Recommandations et contenu, réunis au même endroit.</h1><p>Votre espace ambassadeur rassemble votre lien de recommandation, les commissions admissibles, la configuration Stripe et les soumissions de contenu pour les restaurants participants.</p><p>Les modalités de commission et d’approbation restent celles affichées dans votre espace.</p>`, "Découvrir le programme", "{{{AMBASSADOR_URL}}}"),
+      html: getTransactionalShell(`<p style="margin:0 0 12px;color:#167f5b;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Nouveautés Minerva Flow</p><h1 style="margin:0 0 14px;color:#0e5a40;font-family:'New York','-apple-system-serif','Playfair Display',Georgia,serif;font-size:27px;font-weight:500;line-height:1.25">Recommandations et contenu, réunis au même endroit.</h1><p>Votre espace ambassadeur rassemble votre lien de recommandation, les commissions admissibles, la configuration Stripe et les soumissions de contenu pour les restaurants participants.</p><p>Les modalités de commission et d’approbation restent celles affichées dans votre espace.</p>`, "Découvrir le programme", "{{{AMBASSADOR_URL}}}"),
       variables: [{ key: "AMBASSADOR_URL", type: "string", fallback: `${APP_ORIGIN}/workspace/ambassadeurs` }],
     },
   ];
@@ -254,8 +247,8 @@ async function syncTemplates() {
         name: tpl.name,
         subject: tpl.subject,
         html: tpl.html,
-        from: "Minerva Flow <flow@minervaflow.app>",
-        replyTo: ["support@minervaflow.app"],
+        from: MINERVA_EMAIL_FROM,
+        replyTo: [MINERVA_EMAIL_REPLY_TO],
         variables: tpl.variables?.map(({ key, type, fallback }) => type === "number"
           ? { key, type: "number" as const, ...(typeof fallback === "number" ? { fallbackValue: fallback } : {}) }
           : { key, type: "string" as const, ...(typeof fallback === "string" ? { fallbackValue: fallback } : {}) }),
