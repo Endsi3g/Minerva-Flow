@@ -83,3 +83,6 @@ native/android/.idea/
 native/android/captures/
 *.jks
 *.keystore
+
+# Personal screenshots
+*.heic

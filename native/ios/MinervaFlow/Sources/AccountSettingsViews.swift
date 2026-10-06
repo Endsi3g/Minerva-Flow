@@ -11,84 +11,19 @@ struct AppearanceSettingsView: View {
     @AppStorage("appAppearance") private var storedAppearance = AppAppearance.light.rawValue
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
-    private var selectedAppearance: AppAppearance {
-        AppAppearance(rawValue: storedAppearance) ?? .light
-    }
-
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(isFrench ? "Votre Flow, à votre façon" : "Your Flow, your way")
-                        .font(MinervaFont.display(27))
-                        .foregroundStyle(MinervaColor.ink)
-                    Text(isFrench ? "Choisissez une ambiance pour vos cartes, vos récompenses et votre compte. Le changement s’applique immédiatement." : "Choose a look for your cards, rewards and account. Changes apply immediately.")
-                        .font(.mv(size: 14)).foregroundStyle(MinervaColor.inkSoft)
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(isFrench ? "APERÇU" : "PREVIEW")
-                        .font(.mv(size: 11, weight: .semibold))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Minerva Flow").font(MinervaFont.display(22))
-                            Text(isFrench ? "Votre carte de fidélité" : "Your loyalty card")
-                                .font(.mv(size: 12))
-                        }
-                        Spacer()
-                        Image(systemName: "sparkles").font(.mv(size: 24))
-                    }
-                    .foregroundStyle(.white).padding(20)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(MinervaColor.emeraldDark)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    HStack(spacing: 12) {
-                        Image(systemName: "gift.fill").foregroundStyle(MinervaColor.emeraldDark)
-                        Text(isFrench ? "Vos prochaines récompenses" : "Your next rewards")
-                            .font(.mv(size: 14, weight: .medium)).foregroundStyle(MinervaColor.ink)
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundStyle(MinervaColor.inkFaint)
-                    }
-                    .padding(16).background(MinervaColor.creamSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(isFrench ? "Aperçu du thème choisi" : "Selected theme preview")
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(isFrench ? "Choisir un thème" : "Choose a theme")
-                        .font(.mv(size: 15, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(isFrench ? "Thème" : "Theme")
+                    .font(.mv(size: 13, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                Picker(isFrench ? "Thème" : "Theme", selection: $storedAppearance) {
                     ForEach(AppAppearance.allCases) { option in
-                        Button { storedAppearance = option.rawValue } label: {
-                            HStack(spacing: 14) {
-                                Image(systemName: icon(for: option))
-                                    .font(.mv(size: 20)).foregroundStyle(MinervaColor.emeraldDark)
-                                    .frame(width: 28)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(option.label(isFrench: isFrench)).font(.mv(size: 15, weight: .semibold))
-                                        .foregroundStyle(MinervaColor.ink)
-                                    Text(detail(for: option)).font(.mv(size: 12))
-                                        .foregroundStyle(MinervaColor.inkSoft)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                Spacer(minLength: 8)
-                                Image(systemName: selectedAppearance == option ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(selectedAppearance == option ? MinervaColor.emeraldDark : MinervaColor.inkFaint)
-                            }
-                            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(MinervaColor.creamSoft)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .overlay(RoundedRectangle(cornerRadius: 16)
-                                .stroke(selectedAppearance == option ? MinervaColor.emeraldDark : MinervaColor.border, lineWidth: 1))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityElement(children: .combine)
-                        .accessibilityAddTraits(selectedAppearance == option ? [.isSelected] : [])
+                        Text(option.label(isFrench: isFrench)).tag(option.rawValue)
                     }
                 }
-                Label(isFrench ? "Votre choix est enregistré sur cet appareil. La taille du texte suit vos réglages iOS." : "Your choice is saved on this device. Text size follows your iOS settings.", systemImage: "textformat.size")
-                    .font(.mv(size: 12)).foregroundStyle(MinervaColor.inkSoft)
+                .pickerStyle(.segmented)
+                .accessibilityLabel(isFrench ? "Choisir le thème de l’application" : "Choose app theme")
             }
             .padding(18)
         }
@@ -96,23 +31,6 @@ struct AppearanceSettingsView: View {
         .navigationTitle(isFrench ? "Apparence" : "Appearance")
         .navigationBarTitleDisplayMode(.inline)
     }
-
-    private func icon(for option: AppAppearance) -> String {
-        switch option {
-        case .light: "sun.max.fill"
-        case .system: "iphone"
-        case .dark: "moon.fill"
-        }
-    }
-
-    private func detail(for option: AppAppearance) -> String {
-        switch option {
-        case .light: isFrench ? "Des surfaces crème et des accents émeraude." : "Cream surfaces and emerald accents."
-        case .system: isFrench ? "Suit automatiquement le thème clair ou sombre de votre iPhone." : "Automatically follows your iPhone’s light or dark theme."
-        case .dark: isFrench ? "Des surfaces profondes pour les ambiances tamisées." : "Deep surfaces for dim surroundings."
-        }
-    }
-
 }
 
 struct NotificationSettingsView: View {
