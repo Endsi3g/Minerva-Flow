@@ -6,6 +6,7 @@ import { AppShell } from "@/components/shell/AppShell";
 import { PostHogIdentifier } from "@/components/PostHogIdentifier";
 import { DemoGuideTour } from "@/components/demo/DemoGuideTour";
 import { getAppSessionData } from "@/lib/data/session";
+import { getCustomersForUser } from "@/lib/data/customer-portal";
 
 // Private dashboard pages must never appear in search results.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -16,6 +17,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (authUser && !onboardingCompleted) {
     redirect({ href: "/onboarding", locale: await getLocale() });
+  }
+
+  // A customer who signed in on the restaurant login has no restaurant here:
+  // send them to their own portal instead of an empty workspace.
+  if (authUser && restaurants.length === 0 && !isPlatformAdmin) {
+    const customerRows = await getCustomersForUser(authUser.id).catch(() => []);
+    if (customerRows.length > 0) redirect({ href: "/portal", locale: await getLocale() });
   }
 
   return (
