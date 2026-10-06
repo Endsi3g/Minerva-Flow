@@ -70,8 +70,6 @@ final class SupabaseManager: ObservableObject {
     private var hasClaimedAppBonusThisSession = false
     @Published var allTransactions: [LoyaltyTransaction] = []
     @Published var allRedemptions: [RewardRedemption] = []
-    @Published var isLoadingHistory = false
-    @Published var historyError: String?
     @Published var myOrders: [CustomerOrder] = []
     @Published var isLoadingOrders = false
     @Published var isLoadingData = false
@@ -1879,34 +1877,34 @@ final class SupabaseManager: ObservableObject {
     }
 
     func fetchAllMemberships() async {
-        guard !isLoadingHistory else { return }
-        isLoadingHistory = true
-        historyError = nil
-        defer { isLoadingHistory = false }
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurants"))
             let decoded = try JSONDecoder().decode(RestaurantMembershipsResponse.self, from: data)
             allMemberships = decoded.memberships
         } catch {
-            historyError = "Impossible de charger vos cartes. Réessayez."
             AppLog.failure("fetchAllMemberships", error)
         }
 
-        // Load each ledger independently: one failed request must not erase
-        // successfully loaded activity or turn a network failure into an empty state.
         do {
-            allTransactions = try await client.from("loyalty_transactions")
-                .select().order("created_at", ascending: false).limit(500).execute().value
+            async let txsFetch: [LoyaltyTransaction] = client
+                .from("loyalty_transactions")
+                .select()
+                .order("created_at", ascending: false)
+                .limit(50)
+                .execute()
+                .value
+
+            async let redemptionsFetch: [RewardRedemption] = client
+                .from("reward_redemptions")
+                .select()
+                .order("created_at", ascending: false)
+                .limit(50)
+                .execute()
+                .value
+
+            (allTransactions, allRedemptions) = try await (txsFetch, redemptionsFetch)
         } catch {
-            historyError = "Impossible de charger tous les mouvements de points. Réessayez."
-            AppLog.failure("fetchAllMemberships (transactions)", error)
-        }
-        do {
-            allRedemptions = try await client.from("reward_redemptions")
-                .select().order("created_at", ascending: false).limit(500).execute().value
-        } catch {
-            historyError = "Impossible de charger tous les échanges de récompenses. Réessayez."
-            AppLog.failure("fetchAllMemberships (redemptions)", error)
+            AppLog.failure("fetchAllMemberships (history)", error)
         }
     }
 
@@ -1928,18 +1926,7 @@ final class SupabaseManager: ObservableObject {
     /// as it did before this existed.
     var combinedHistory: [LoyaltyHistoryEntry] {
         let showRestaurant = allMemberships.count > 1
-        // Redemption RPC writes both rows in the same database transaction.
-        // Match one-for-one so two equally priced rewards remain distinct.
-        var unmatchedRedemptions = allRedemptions
-        let ledgerTransactions = allTransactions.filter { tx in
-            guard tx.type == "echange", let index = unmatchedRedemptions.firstIndex(where: {
-                $0.restaurantId == tx.restaurantId && $0.pointsSpent == -tx.pointsDelta &&
-                abs($0.createdAt.timeIntervalSince(tx.createdAt)) < 0.001
-            }) else { return true }
-            unmatchedRedemptions.remove(at: index)
-            return false
-        }
-        let fromTransactions = ledgerTransactions.map { tx in
+        let fromTransactions = allTransactions.map { tx in
             LoyaltyHistoryEntry(
                 id: "tx-\(tx.id)",
                 title: historyLabel(forTransactionType: tx.type),

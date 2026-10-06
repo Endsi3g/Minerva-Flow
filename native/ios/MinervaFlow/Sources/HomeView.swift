@@ -46,6 +46,7 @@ struct HomeView: View {
                         if !supabase.appBonusAwards.isEmpty {
                             appBonusBanner
                         }
+                        HStack { NativeRealtimeStatusPill(isFrench: isFrench); Spacer() }
 
                         if !supabase.announcements.isEmpty {
                             ForEach(supabase.announcements) { announcement in
