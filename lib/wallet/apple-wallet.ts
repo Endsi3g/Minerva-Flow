@@ -34,7 +34,7 @@ export function buildAppleLoyaltyPass(input: {
     logoText: input.restaurantName,
     backgroundColor: input.brandColor || "rgb(14, 90, 64)",
     foregroundColor: "rgb(255, 255, 255)",
-    labelColor: "rgb(223, 255, 95)",
+    labelColor: "rgb(245, 241, 230)",
     // No webServiceURL / authenticationToken: Apple requires both together and a live
     // registration service behind them, which does not exist. A static pass is valid;
     // adding live point updates means building that service first.

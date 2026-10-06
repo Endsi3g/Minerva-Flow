@@ -38,12 +38,29 @@ struct PointsHistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                if let error = supabase.historyError {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(error, systemImage: "exclamationmark.triangle")
+                            .font(.mv(size: 13)).foregroundStyle(MinervaColor.inkSoft)
+                        Button("Réessayer") { Task { await supabase.fetchAllMemberships() } }
+                            .disabled(supabase.isLoadingHistory)
+                            .foregroundStyle(MinervaColor.emeraldDark)
+                    }
+                    .padding(14).background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                if supabase.isLoadingHistory && supabase.combinedHistory.isEmpty {
+                    ProgressView("Chargement de l’historique…")
+                        .frame(maxWidth: .infinity).padding(.vertical, 20)
+                }
                 summaryRow
                 membershipsSection
                 historySection
             }
             .padding(18)
         }
+        .refreshable { await supabase.fetchAllMemberships() }
+        .task { await supabase.fetchAllMemberships() }
         .background(MinervaColor.cream.ignoresSafeArea())
         .navigationTitle("Historique de points")
         .navigationBarTitleDisplayMode(.inline)
@@ -56,8 +73,8 @@ struct PointsHistoryView: View {
         let earned = supabase.combinedHistory.filter { $0.pointsDelta >= 0 }.reduce(0) { $0 + $1.pointsDelta }
         let redeemed = supabase.combinedHistory.filter { $0.pointsDelta < 0 }.reduce(0) { $0 + abs($1.pointsDelta) }
         return HStack(spacing: 10) {
-            statTile(value: "\(earned)", label: "gagnés au total")
-            statTile(value: "\(redeemed)", label: "échangés au total")
+            statTile(value: "\(earned)", label: "gagnés · historique")
+            statTile(value: "\(redeemed)", label: "échangés · historique")
         }
     }
 
@@ -139,12 +156,12 @@ struct PointsHistoryView: View {
             .pickerStyle(.segmented)
             .onChange(of: historyFilter) { _, _ in showAllHistory = false }
 
-            if supabase.combinedHistory.isEmpty {
+            if supabase.combinedHistory.isEmpty && !supabase.isLoadingHistory && supabase.historyError == nil {
                 Text("Aucun mouvement de points pour l'instant.")
                     .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(.vertical, 4)
-            } else if filteredHistory.isEmpty {
+            } else if filteredHistory.isEmpty && !supabase.combinedHistory.isEmpty {
                 Text("Aucun résultat pour ce filtre.")
                     .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
