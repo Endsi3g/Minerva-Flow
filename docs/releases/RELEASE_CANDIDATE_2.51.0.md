@@ -2,6 +2,15 @@
 
 **Statut au 2026-10-06 : correctifs web et CGV déployés et vérifiés en Production (`cb69f92`, déploiement Vercel `dpl_BeAR8cmTi3MFqmEu6w7MnWakCXUj`, `https://minervaflow.app`).** Les routes authentifiées renvoient les 14 adhésions nommées, la fiche restaurant, l’image de marque et un code QR résolu correctement. Le build iOS `1.0.1 (19)` est installé sur l’iPhone 13 et téléversé; son dernier état connu chez Apple était « en traitement ». L’adresse légale complète, sans suite, et le téléphone (514) 451-5232 figurent dans les CGV et le pied de page email. Le broadcast détaillé a été envoyé au segment des 22 consentements explicites le 6 octobre à 21:19 HAE; les métriques de livraison Resend ne sont pas encore disponibles.
 
+### Clôture web — 6 octobre 2026, 23:07 HAE
+
+- `main` inclut la préparation 2.51.0 (`f37c1c8`) et le correctif de la page d’assistance publique (`fc984f7`). Le tag annoté `v2.51.0` pointe vers `fc984f7` et est poussé sur `origin`.
+- Déploiement Vercel Production `dpl_3JAmwqE376tfytdwSFWLiR7j89Un` : `READY`, alias `https://minervaflow.app`.
+- Les pages `/fr/app-support` (canonisée vers `/app-support`), `/en/app-support`, `/fr/legal/privacy` et `/en/legal/privacy` répondent 200 sans session. Le contenu public expose le courriel de soutien, le téléphone et les coordonnées confirmées; la politique française expose `privacy@minervaflow.app`.
+- Build local de production : PASS; TypeScript et 307 routes statiques générées. Playwright local : 2/2 tests ciblés de page publique FR/EN; captures visuelles FR bureau/mobile dans `test-results/` (non suivies par Git).
+- L’annonce email existante (22 contacts consentants) n’a pas été renvoyée. Aucun GitHub Release/Webhook n’a été déclenché.
+- Le projet Supabase Staging reste inactif; les parcours authentifiés propriétaire/équipe/partage et l’onboarding QR restent `BLOCKED`. App Store Connect reste déconnecté; les déclarations App Privacy, les captures courantes iPhone/iPad et les comptes d’examen manquent. La release iOS n’est pas déclarée prête pour soumission publique.
+
 ### Reprise — 6 octobre 2026, 22:58 HAE
 
 - Le brouillon de fiche App Store bilingue est consigné dans `docs/mobile/APP_STORE_CONNECT_DRAFT_1.0.md`. L’icône 1024 × 1024 est bien incluse dans l’asset catalog. App Store Connect est actuellement déconnecté; le traitement du build 19 n’a pas pu être recontrôlé.
