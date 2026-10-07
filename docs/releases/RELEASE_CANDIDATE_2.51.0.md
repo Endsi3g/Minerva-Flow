@@ -4,6 +4,15 @@
 
 ### Reprise — 7 octobre 2026, 03:49 UTC — correctif 2.51.1
 
+### Clôture web — 7 octobre 2026, 13:18 UTC
+
+- Déploiement Production `dpl_74ti3ruEL1qko8eiwYSGsA75zxWu` : **READY**, source `d9581c4` (`main`). Le build `82041bb` avait échoué au contrôle TypeScript du nouvel E2E QR (`joined` de type `unknown`); assertion corrigée, puis build complet et génération des 307 pages réussis. Le tag annoté `v2.51.1` reste attaché à `82041bb`; le correctif de typage suivant ne change aucun code applicatif.
+- Vérification Production après alias : `/fr/app-support`, `/legal/terms` et les quatre images du journal répondent 200. Le webhook de release n’a pas été appelé.
+- Les deux entrées du journal 2.51.1 sont publiées directement avec leurs audiences (`owner`, `client`) et leurs captures. Cette écriture n’appelle aucune notification aux restaurants. Le courriel à 22 destinataires avait déjà été envoyé le 7 octobre à 01:19 UTC; aucun second envoi n’a eu lieu.
+- Tournée UI propriétaire iPhone 17 Pro simulateur : **ÉCHEC**. Le formulaire a accepté les identifiants de démonstration, mais l’espace propriétaire n’est jamais apparu; l’app affiche le parcours client « Reliez votre compte à un restaurant ». Le compte possède bien une adhésion `owner` active, son profil d’onboarding est terminé et la requête Supabase RLS propriétaire renvoie la relation attendue. Il reste à diagnostiquer le comportement du client iOS; ne pas présenter le parcours natif propriétaire comme validé.
+- App Store Connect/TestFlight reste à contrôler dans un navigateur Chrome/Codex contrôlable, qui n’est pas exposé à cette session (aucun navigateur connecté). Le build 1.0.1 (19), la fiche, App Privacy et les captures n’ont donc pas été modifiés ni déclarés prêts à soumettre.
+- `main` est poussé. Le seul écart de préparation web est le diagnostic du parcours propriétaire natif; la sortie iOS reste conditionnelle. L’annonce email n’est pas renvoyée.
+
 - Supabase MCP est connecté. Staging `lhosxxtvgmedwarwgjhb` est restauré et `ACTIVE_HEALTHY`; ses API Auth et PostgREST répondent. Les variables Supabase de Vercel Preview ont été mises à jour uniquement avec les identifiants Staging. Les variables sensibles restent masquées au téléchargement.
 - Les migrations de schéma manquantes `0133`, `0150`, `0167`–`0170`, `0172`, `0175`–`0179` sont appliquées sur Staging. Le durcissement `0173` est adapté aux seules fonctions présentes, car `search_onboarding_candidates(text)` n’existe pas dans ce projet. Les migrations de données Production `0171`/`0174` ne sont pas rejouées. Le RPC QR n’est pas exécutable par `anon`, mais l’est par `authenticated`.
 - Preview `dpl_DCgqS7hQ9PLcH6ri2TqRyxnhct8w`, code `5db3a04`, est `READY`. Quatre parcours passent : routage client avant l’onboarding (45 s), invitation et liaison employé (57,1 s), connexion propriétaire/équipe et export PNG (19,4 s), onboarding complet et création QR (2,5 min). Les comptes et données de test sont temporaires et isolés sur Staging.
