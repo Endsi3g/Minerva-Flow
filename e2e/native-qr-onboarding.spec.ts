@@ -43,7 +43,7 @@ test("native bearer API connects a new customer by QR with real RLS", async ({ r
     for (let attempt = 0; attempt < 2; attempt++) {
       const { data: joined, error: joinError } = await customerClient.rpc("join_restaurant_as_customer", { p_restaurant_id: restaurantId }).single();
       expect(joinError).toBeNull();
-      expect(joined.user_id).toBe(customerUserId);
+      expect(joined).toEqual(expect.objectContaining({ user_id: customerUserId }));
     }
     const { count: after } = await customerClient.from("customers")
       .select("id", { count: "exact", head: true }).eq("user_id", customerUserId);
