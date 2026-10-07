@@ -2,6 +2,14 @@
 
 **Statut au 2026-10-06 : correctifs web et CGV déployés et vérifiés en Production (`cb69f92`, déploiement Vercel `dpl_BeAR8cmTi3MFqmEu6w7MnWakCXUj`, `https://minervaflow.app`).** Les routes authentifiées renvoient les 14 adhésions nommées, la fiche restaurant, l’image de marque et un code QR résolu correctement. Le build iOS `1.0.1 (19)` est installé sur l’iPhone 13 et téléversé; son dernier état connu chez Apple était « en traitement ». L’adresse légale complète, sans suite, et le téléphone (514) 451-5232 figurent dans les CGV et le pied de page email. Le broadcast détaillé a été envoyé au segment des 22 consentements explicites le 6 octobre à 21:19 HAE; les métriques de livraison Resend ne sont pas encore disponibles.
 
+### Reprise — 6 octobre 2026, 23:28 HAE
+
+- Les branches `origin/fix/customer-login-to-portal` et `origin/revert/customer-login-redirect` sont maintenant dans l’historique de `main` (`9e93c97`, `dd138a1`). Le correctif client a été réconcilié avant le garde d’onboarding; la branche `revert` a été intégrée sans appliquer son arbre, car celui-ci annule les améliorations iOS d’apparence et d’historique déjà présentes sur `main`. Aucune capture `.heic` n’est suivie par Git.
+- Le routage des comptes clients est préparé dans `43538ff`: un client lié sans adhésion d’équipe est envoyé au portail avant l’onboarding, y compris si son profil est incomplet; la page d’onboarding applique aussi ce garde.
+- Vérifications locales: build Next.js/TypeScript réussi (307 routes), ESLint réussi, test unitaire ciblé 2/2, E2E public FR/EN 2/2. Les parcours authentifiés restent à valider de bout en bout.
+- Aucun commit de cette reprise n’a été poussé ni déployé. Supabase Staging est toujours inactif et le compte Supabase MCP n’est pas connecté. Le lien ouvert dans Comet mène à l’écran de connexion Supabase; l’authentification doit être effectuée dans le navigateur par le titulaire du compte avant de restaurer Staging et de lancer l’E2E. Production n’a pas été touchée.
+- Le broadcast email déjà envoyé n’a pas été renvoyé et aucun webhook de publication n’a été déclenché.
+
 ### Clôture web — 6 octobre 2026, 23:07 HAE
 
 - `main` inclut la préparation 2.51.0 (`f37c1c8`) et le correctif de la page d’assistance publique (`fc984f7`). Le tag annoté `v2.51.0` pointe vers `fc984f7` et est poussé sur `origin`.
@@ -19,7 +27,7 @@
 - `package.json`/`package-lock.json` sont passés à 2.51.0. Le build web de production, le contrôle TypeScript et la génération des 307 pages statiques réussissent; le commit, push, déploiement puis tag `v2.51.0` restent à faire.
 - La page d’assistance publique et le contact de confidentialité corrigé sont dans l’arbre de travail; leur réponse HTTP en Production reste à vérifier après le déploiement.
 - Les nouvelles entrées de journal propriétaires/clientes ne sont pas publiées : il manque des captures actuelles authentifiées, dont une capture iPad 13 pouces exigée car la cible iOS inclut iPad. Le webhook GitHub n’a pas été relancé et aucun email/push supplémentaire n’a été envoyé.
-- `origin/fix/customer-login-to-portal` et `origin/revert/customer-login-redirect` ne sont pas intégrées : leurs arbres restaurent une ancienne redirection qui a déjà bouclé sur `/login`. La branche revert supprime aussi des captures personnelles; aucune de ces branches n’est fusionnable telle quelle.
+- À cette heure, `origin/fix/customer-login-to-portal` et `origin/revert/customer-login-redirect` n’étaient pas encore intégrées. Leur reprise est consignée ci-dessus.
 
 Les routes corrigées, l’accès aux données client existantes et la compilation iOS sont vérifiés. Les parcours authentifiés propriétaire/équipe/partage et le nouvel onboarding QR complet n’ont pas été validés de bout en bout sur Preview; le build TestFlight attend le traitement Apple. Conserver le lancement sous conditions jusqu’aux contrôles manuels ci-dessous.
 
