@@ -54,6 +54,7 @@ export async function proxy(request: NextRequest) {
     "/app",
     "/customer-sign-up",
     "/customer-join",
+    "/app-support",
   ];
   // skipTrailingSlashRedirect (next.config.ts) means "/login" and "/login/"
   // are both live, distinct paths — strip the trailing slash before matching
@@ -150,7 +151,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!hasAuthCookies && (isAuthRoute || isServerCallbackRoute)) {
-    if (pathWithoutLocale.startsWith("/legal/")) {
+    if (pathWithoutLocale.startsWith("/legal/") || pathWithoutLocale === "/app-support") {
       response.headers.set("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
     } else if (
       pathWithoutLocale.startsWith("/m/") ||
