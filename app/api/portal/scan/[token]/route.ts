@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveNativeUserId } from "@/lib/auth/native-bearer";
-import { getMenuShareByToken } from "@/lib/data/menu-shares";
-import { getLoyaltyShareByToken } from "@/lib/data/loyalty-shares";
-import { getPublicTenantBranding } from "@/lib/data/public-tenant-branding";
+import { resolveNativeUserContext } from "@/lib/auth/native-bearer";
 
 /**
  * Resolves a physical QR code to a restaurant id — the native app's
@@ -22,31 +19,34 @@ import { getPublicTenantBranding } from "@/lib/data/public-tenant-branding";
  * user.
  */
 export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
-  const userId = await resolveNativeUserId(req);
-  if (!userId) {
+  const verified = await resolveNativeUserContext(req);
+  if (!verified) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
   const { token } = await params;
-
-  const menuLanding = await getMenuShareByToken(token);
-  if (menuLanding) {
-    const branding = await getPublicTenantBranding(menuLanding.restaurantId);
-    return NextResponse.json({
-      restaurantId: menuLanding.restaurantId,
-      restaurantName: menuLanding.restaurantName,
-      branding,
-    });
+  if (!token || token.length > 256) {
+    return NextResponse.json({ error: "Code invalide ou expiré" }, { status: 404 });
   }
 
-  const loyaltyLanding = await getLoyaltyShareByToken(token);
-  if (loyaltyLanding) {
-    const branding = await getPublicTenantBranding(loyaltyLanding.restaurantId);
-    return NextResponse.json({
-      restaurantId: loyaltyLanding.restaurantId,
-      restaurantName: loyaltyLanding.restaurantName,
-      branding,
-    });
+  // Resolve only the exact, user-scanned token. The scoped database
+  // function returns a restaurant's public id/name and never exposes the
+  // share-token tables, restaurant financial columns, or admin credentials.
+  const { data, error } = await verified.client.rpc("resolve_restaurant_connection", {
+    p_token: token,
+  });
+  if (error) {
+    console.error("resolve restaurant connection failed:", error.message);
+    return NextResponse.json({ error: "Impossible de vérifier ce code" }, { status: 503 });
   }
 
-  return NextResponse.json({ error: "Code invalide ou expiré" }, { status: 404 });
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result || typeof result.restaurant_id !== "string" || typeof result.restaurant_name !== "string") {
+    return NextResponse.json({ error: "Code invalide ou expiré" }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    restaurantId: result.restaurant_id,
+    restaurantName: result.restaurant_name,
+    branding: null,
+  });
 }

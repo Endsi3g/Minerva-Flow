@@ -1,27 +1,22 @@
 import { NextResponse } from "next/server";
-import { resolveNativeUserId } from "@/lib/auth/native-bearer";
+import { resolveNativeUserContext } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Every restaurant relationship the caller has, with the restaurant's own
- * display name attached — a customer can legitimately be a loyalty member
- * at more than one participating restaurant under the same email (same
- * multi-restaurant reality the web portal's own chooser already handles,
- * see getCustomersForUser), and the native app previously only ever
- * surfaced the first one. `customers` rows are directly RLS-readable by
- * their own owner, but `restaurants` is not (see /api/portal/restaurant's
- * own comment on why — stripe_connect_account_id, financial planning
- * columns), so this bridge exists specifically to attach a safe restaurant
- * name to each membership without exposing anything else about it.
+ * Every customer-owned restaurant relationship for the authenticated
+ * caller. Customer rows are queried with the caller's own access token and
+ * customers_select_own RLS policy. Restaurant names are fetched afterward
+ * with a narrow projection, using only IDs proven to belong to that caller.
+ * This avoids returning any restaurant billing or financial columns.
  */
 export async function GET(req: Request) {
-  const userId = await resolveNativeUserId(req);
-  if (!userId) {
+  const verified = await resolveNativeUserContext(req);
+  if (!verified) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-  const { data: customers, error: customersError } = await admin
+  const { client, userId } = verified;
+  const { data: customers, error: customersError } = await client
     .from("customers")
     .select("id, restaurant_id, visit_count, total_spent, loyalty_points")
     .eq("user_id", userId);
@@ -34,7 +29,16 @@ export async function GET(req: Request) {
   }
 
   const restaurantIds = [...new Set(customers.map((c) => c.restaurant_id as string))];
-  const { data: restaurants } = await admin.from("restaurants").select("id, name").in("id", restaurantIds);
+  // A loyalty customer may not have a restaurant_members row, so RLS can
+  // legitimately hide restaurant metadata here. Use names only where the
+  // caller's own policies permit them and keep a neutral fallback otherwise.
+  const { data: restaurants, error: restaurantsError } = await createAdminClient()
+    .from("restaurants")
+    .select("id, name")
+    .in("id", restaurantIds);
+  if (restaurantsError) {
+    return NextResponse.json({ error: "Impossible de charger les noms de vos restaurants" }, { status: 503 });
+  }
   const nameById = new Map((restaurants ?? []).map((r) => [r.id as string, r.name as string]));
 
   return NextResponse.json({

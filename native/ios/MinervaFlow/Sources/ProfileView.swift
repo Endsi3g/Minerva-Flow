@@ -37,12 +37,11 @@ struct ProfileView: View {
                             }
                             if let customer = supabase.customer {
                                 identityCard(for: customer)
-                                cardsShortcut
+                                accountSection
                                 recentActivity
-                                shortcuts
                                 CompteGroup {
                                     CompteLink(route: .other, icon: "square.grid.2x2.fill", title: isFrench ? "Autre" : "More",
-                                               subtitle: isFrench ? "Favoris, commandes, ambassadeur, nouveautés" : "Favourites, orders, ambassador, what's new")
+                                               subtitle: isFrench ? "Favoris, commandes, programme et aide" : "Favourites, orders, programme and help")
                                 }
                                 signOutButton
                                 brandFooter
@@ -159,12 +158,12 @@ struct ProfileView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    // MARK: - Cards shortcut
+    // MARK: - Dedicated account section
 
-    private var cardsShortcut: some View {
+    private var accountSection: some View {
         let count = supabase.allMemberships.count
         let totalPoints = supabase.allMemberships.reduce(0) { $0 + $1.loyaltyPoints }
-        return CompteGroup {
+        return CompteGroup(title: isFrench ? "MON COMPTE" : "MY ACCOUNT") {
             CompteLink(
                 route: .cards,
                 icon: "wallet.pass.fill",
@@ -173,6 +172,21 @@ struct ProfileView: View {
                     ? (isFrench ? "\(count) établissements · \(totalPoints) pts au total" : "\(count) venues · \(totalPoints) pts in total")
                     : (isFrench ? "Votre carte et Apple Wallet" : "Your card and Apple Wallet")
             )
+            CompteSeparator()
+            CompteLink(
+                route: .pointsHistory,
+                icon: "clock.arrow.circlepath",
+                title: isFrench ? "Historique des points" : "Points history",
+                subtitle: isFrench ? "Toutes vos visites et récompenses" : "All visits and rewards"
+            )
+            CompteSeparator()
+            CompteLink(route: .appearance, icon: "paintbrush.fill", title: isFrench ? "Apparence" : "Appearance")
+            CompteSeparator()
+            CompteLink(route: .notifications, icon: "bell.fill", title: isFrench ? "Notifications" : "Notifications")
+            CompteSeparator()
+            CompteLink(route: .privacy, icon: "hand.raised.fill", title: isFrench ? "Confidentialité" : "Privacy")
+            CompteSeparator()
+            CompteLink(route: .security, icon: "lock.shield.fill", title: isFrench ? "Sécurité" : "Security")
         }
     }
 
@@ -255,53 +269,6 @@ struct ProfileView: View {
             .background(MinervaColor.creamSoft)
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.border, lineWidth: 1))
             .clipShape(RoundedRectangle(cornerRadius: 16))
-        }
-    }
-
-    // MARK: - Direct shortcuts
-
-    private var shortcuts: some View {
-        let items: [(CompteRoute, String, String)] = [
-            (.help, "questionmark.circle.fill", isFrench ? "Aide" : "Help"),
-            (.about, "info.circle.fill", isFrench ? "À propos" : "About"),
-            (.security, "lock.shield.fill", isFrench ? "Sécurité" : "Security"),
-            (.privacy, "hand.raised.fill", isFrench ? "Confidentialité" : "Privacy"),
-            (.notifications, "bell.fill", "Notifications"),
-            (.appearance, "paintbrush.fill", isFrench ? "Apparence" : "Appearance"),
-        ]
-        return VStack(alignment: .leading, spacing: 8) {
-            Text(isFrench ? "RACCOURCIS" : "SHORTCUTS")
-                .font(.mv(size: 12, weight: .semibold))
-                .tracking(0.6)
-                .foregroundStyle(MinervaColor.inkFaint)
-                .padding(.horizontal, 4)
-                .accessibilityAddTraits(.isHeader)
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                ForEach(items, id: \.0) { route, icon, title in
-                    NavigationLink(value: route) {
-                        HStack(spacing: 10) {
-                            Image(systemName: icon)
-                                .font(.mv(size: 14, weight: .semibold))
-                                .foregroundStyle(MinervaColor.emeraldDark)
-                                .frame(width: 30, height: 30)
-                                .background(MinervaColor.emerald.opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: 9))
-                                .accessibilityHidden(true)
-                            Text(title)
-                                .font(.mv(size: 13.5, weight: .semibold))
-                                .foregroundStyle(MinervaColor.ink)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(12)
-                        .background(MinervaColor.creamSoft)
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MinervaColor.border, lineWidth: 1))
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
         }
     }
 

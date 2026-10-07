@@ -26,7 +26,7 @@ struct AuthView: View {
     @State private var code = ""
     @State private var step: Step = .email
     @State private var acceptedTerms = false
-    @State private var marketingOptIn = true
+    @State private var marketingOptIn = false
     @State private var isBusy = false
     @State private var errorMessage: String?
     @State private var resendCooldown = 0
@@ -75,14 +75,21 @@ struct AuthView: View {
                 VStack(spacing: 32) {
                     Spacer(minLength: 60)
 
-                    HStack(spacing: 9) {
-                        Image("LogoMark")
-                            .resizable()
-                            .frame(width: 28, height: 28)
-                        (Text("Minerva ").foregroundStyle(MinervaColor.ink)
-                            + Text("Flow").foregroundStyle(MinervaColor.emeraldDark))
-                            .font(.mv(size: 16, weight: .bold))
-                        Spacer()
+                    ZStack(alignment: .trailing) {
+                        HStack(spacing: 9) {
+                            Image("LogoMark")
+                                .resizable()
+                                .frame(width: 28, height: 28)
+                                .accessibilityHidden(true)
+                            Text("Minerva Flow")
+                                .font(MinervaFont.display(18, weight: .semibold))
+                                .italic(language == .fr)
+                                .foregroundStyle(MinervaColor.ink)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Minerva Flow")
+
                         LanguageMenu(language: Binding(get: { language }, set: { storedLanguage = $0.rawValue }), tint: MinervaColor.emeraldDark)
                             .environment(\.colorScheme, .light)
                     }
@@ -222,9 +229,6 @@ struct AuthView: View {
                 .disabled(isBusy)
             }
 
-            #if DEBUG
-            devBypassButton
-            #endif
         }
         .animation(.easeInOut(duration: 0.2), value: authMode)
         .animation(.easeInOut(duration: 0.2), value: passwordSubMode)
@@ -456,37 +460,6 @@ struct AuthView: View {
         oauthBusy = nil
     }
 
-    #if DEBUG
-    /// Debug-only shortcut while OTP email delivery is unreliable — signs
-    /// into a real, seeded Supabase session (see Config.devTestEmail) with
-    /// a password grant, so every screen behind it still runs against real
-    /// RLS-scoped data rather than mocked state. Stripped from Release
-    /// builds by the surrounding #if DEBUG, never ships to TestFlight/App
-    /// Store.
-    private var devBypassButton: some View {
-        Button {
-            isBusy = true
-            errorMessage = nil
-            Task {
-                defer { isBusy = false }
-                do {
-                    try await supabase.signInWithDevTestAccount()
-                } catch {
-                    errorMessage = "Bypass dev échoué : \(error.localizedDescription)"
-                }
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "hammer.fill")
-                Text("Sauter la connexion (dev, OTP désactivé)")
-            }
-            .font(.mv(size: 12, weight: .semibold))
-        }
-        .foregroundStyle(.orange)
-        .padding(.top, 4)
-    }
-    #endif
-
     // MARK: - Step 2: code
 
     private var codeStep: some View {
@@ -654,7 +627,7 @@ struct AuthView: View {
         case .password:
             return passwordSubMode == .login
                 ? (language == .fr ? "Connectez-vous pour accéder à vos points et récompenses." : "Sign in to access your points and rewards.")
-                : (language == .fr ? "Aucune carte requise — rejoignez votre restaurant préféré en quelques secondes." : "No card required — join your favourite restaurant in seconds.")
+                : (language == .fr ? "Créez votre compte, puis rattachez-le au restaurant que vous fréquentez." : "Create your account, then connect it to the restaurant you visit.")
         }
     }
 
@@ -682,40 +655,53 @@ struct AuthView: View {
             consentRow(checked: $marketingOptIn) {
                 Text("J'aimerais recevoir des offres par courriel. Optionnel.")
             }
-            consentRow(checked: $acceptedTerms) {
-                (Text("J'accepte les ")
-                    + Text("Conditions d'utilisation").underline()
-                    + Text(" et la ")
-                    + Text("Politique de confidentialité").underline())
+            HStack(alignment: .top, spacing: 9) {
+                consentCheckbox(checked: $acceptedTerms)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 3) {
+                        Text("J'accepte les")
+                        Button("Conditions d'utilisation") { legalSheet = .terms }
+                            .underline()
+                            .foregroundStyle(MinervaColor.emeraldDark)
+                            .buttonStyle(.plain)
+                    }
+                    HStack(spacing: 3) {
+                        Text("et la")
+                        Button("Politique de confidentialité") { legalSheet = .privacy }
+                            .underline()
+                            .foregroundStyle(MinervaColor.emeraldDark)
+                            .buttonStyle(.plain)
+                    }
+                }
+                .font(.mv(size: 11.5))
+                .foregroundStyle(MinervaColor.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
 
     private func consentRow<Label: View>(checked: Binding<Bool>, @ViewBuilder label: () -> Label) -> some View {
         HStack(alignment: .top, spacing: 9) {
-            Button {
-                checked.wrappedValue.toggle()
-            } label: {
-                Image(systemName: checked.wrappedValue ? "checkmark.square.fill" : "square")
-                    .font(.mv(size: 16))
-                    .foregroundStyle(MinervaColor.emeraldDark)
-            }
-            .buttonStyle(.plain)
+            consentCheckbox(checked: checked)
 
             label()
                 .font(.mv(size: 11.5))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
-                .onTapGesture {
-                    // Tapping the sentence itself opens the relevant
-                    // document rather than toggling the checkbox — the
-                    // checkbox glyph is the only tap target for consent
-                    // itself, matching how the web's own <Link> elements
-                    // work inside a still-clickable label.
-                    legalSheet = .terms
-                }
         }
+    }
+
+    private func consentCheckbox(checked: Binding<Bool>) -> some View {
+        Button {
+            checked.wrappedValue.toggle()
+        } label: {
+            Image(systemName: checked.wrappedValue ? "checkmark.square.fill" : "square")
+                .font(.mv(size: 16))
+                .foregroundStyle(MinervaColor.emeraldDark)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(checked.wrappedValue ? "Consentement accepté" : "Accepter le consentement")
     }
 
     // MARK: - Actions

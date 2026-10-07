@@ -42,7 +42,14 @@ enum NFCTagError: Error, Equatable {
 
 /// Reads one NDEF tag; the result is already validated (see NFCTagURL).
 final class NFCTagReader: NSObject, NFCNDEFReaderSessionDelegate {
-    static var isAvailable: Bool { NFCNDEFReaderSession.readingAvailable }
+    /// NFC stays out of the current TestFlight build until Apple signing has
+    /// the NFC reader capability enabled for this app identifier. The feature
+    /// flag keeps both scan and write UI hidden and prevents starting a reader
+    /// session with an entitlement the installed profile does not grant.
+    static var isAvailable: Bool {
+        let enabled = Bundle.main.object(forInfoDictionaryKey: "NFCFeatureEnabled") as? Bool ?? false
+        return enabled && NFCNDEFReaderSession.readingAvailable
+    }
 
     private var session: NFCNDEFReaderSession?
     private var completion: ((Result<URL, NFCTagError>) -> Void)?

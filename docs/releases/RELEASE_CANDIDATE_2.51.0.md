@@ -1,18 +1,28 @@
 # Minerva Flow 2.51.0 — Portail équipe, Compte client, partage de résultats
 
-**Statut au 2026-10-05 : code web intégré à `main` et déployé en Production; release produit non publiée.** Le déploiement Vercel associé aux domaines de production est `READY`. La branche du portail équipe a été fusionnée à `main` dans `590ac6c`; les changements de préparation GTM et de diagnostic sont également poussés à `main`. La version de `package.json` demeure `2.50.0`; aucune entrée 2.51 du journal n'est publiée et aucune annonce de cette candidate n'est partie.
+**Statut au 2026-10-06 : base 2.51 en Production; correctifs API et iOS prêts localement, en attente du déploiement web.** L’application du schéma Supabase `0179` est confirmée en Production. Le build iOS `1.0.1 (19)` a été installé sur l’iPhone 13 et envoyé à App Store Connect; Apple indique qu’il est en traitement. Il n’est pas encore disponible aux testeurs TestFlight. L’annonce de release attend le déploiement web vérifié et la confirmation des coordonnées des CGV.
 
-Les parcours authentifiés et les écrans iOS restent non vérifiés. Le déploiement web ne vaut pas validation de ces parcours ni disponibilité d'un nouveau build TestFlight. Conserver le statut de lancement sous conditions jusqu'à la clôture des étapes manuelles ci-dessous.
+Les routes corrigées, l’accès aux données client existantes et la compilation iOS sont vérifiés. Les parcours authentifiés propriétaire/équipe/partage et le nouvel onboarding QR complet n’ont pas été validés de bout en bout sur Preview; le build TestFlight attend le traitement Apple. Conserver le lancement sous conditions jusqu’aux contrôles manuels ci-dessous.
 
 Date de préparation : 2026-10-03 · Branche source : `feat/team-portal-and-native-account-uplift` (fusionnée à `main`)
+
+## Avancement des corrections du 6 octobre
+
+- L'écran iOS de connexion est recentré; « Flow » reste noir, le nom français emploie l'italique de la police d'affichage, le bypass de développement a disparu de l'interface et le consentement marketing commence décoché.
+- L’app impose la liaison à un restaurant par QR uniquement aux comptes sans adhésion. Le compte de démonstration réel se connecte et possède 14 adhésions; ses noms, son historique et l’image de marque sont servis correctement. Un parcours QR de nouvel utilisateur doit encore être testé avec un compte sans adhésion.
+- La migration Supabase `0179_resolve_restaurant_connection_token` est appliquée et inscrite dans l’historique Production. La route de résolution QR utilise le RPC sous RLS.
+- Les CGV commerciales FR/EN sont rédigées avec l’essai de 14 jours, les prix, taxes selon la loi, renouvellement, résiliation à la fin de la période payée et absence de remboursement après débit, sous réserve des droits impératifs et des débits erronés. La page reste locale tant que l’adresse postale exacte (tu confirmes « 367 rue Lberge »; le dépôt dit « Laberge »), la suite et le téléphone ne sont pas confirmés.
+- Build iOS `1.0.1 (19)` compilé, archivé et téléversé; App Store Connect indique « Uploaded package is processing ». Le build Debug 19 est installé et lancé sur l’iPhone 13. Il n’est pas encore téléchargeable dans TestFlight.
+- Build web et TypeScript réussissent; les tests ciblés des routes restaurant et QR réussissent (7/7). Les routes corrigées renvoient 200 avec l’environnement de production. La tournée UI complète et les parcours owner/équipe/partage en Preview restent à faire.
+- Le courriel de contrôle à `kbelceus776@gmail.com` a été livré. Le brouillon Resend détaillé reste `draft`, limité au segment des 22 consentements explicites actifs; aucune annonce de release n’a été envoyée.
 
 ## Contrôles live du 6 octobre 2026
 
 - **Preview** : le déploiement Ready de `fix/team-login-redirect` (PR #176, basé sur `main` `bfcf613`) sert `/equipe/connexion` en HTTP 200 et la page de connexion s’ouvre dans Safari. Les parcours authentifiés owner, équipe et partage ne sont pas validés faute de session de test.
 - **Consentement Resend** : le segment global contient 102 contacts, dont 57 désabonnés; seuls 22 contacts figurent dans le segment actif au consentement explicite et aucun de ces 22 n’est désabonné. Les 45 contacts non désabonnés du segment global ne sont pas tous attestés comme opt-in : ne pas les ajouter à la campagne.
-- **Composer / courriel** : brouillon Resend créé et rendu dans l’éditeur, statut `draft`, segment explicite uniquement, expéditeur `Minerva Flow <flow@minervaflow.app>`; domaine `minervaflow.app` vérifié. ID du brouillon `73a16f1d-617b-46be-b536-98e281593c88`. Aucun courriel de test ou campagne n’a été envoyé.
-- **iOS** : le garde-fou statique retourne 0 critique, 0 élevé, 1 avertissement manuel; les deux manifests de confidentialité sont valides. App Store Connect ne montre que le build TestFlight 1.0.0 (15), en cours de test; le build 1.0.1 (16) n’est pas téléversé. La version App Store 1.0 est « À finaliser avant soumission » : les déclarations App Privacy ne sont pas commencées, l’URL de confidentialité est vide, les captures iPhone sont à 0/10 et les identifiants de démonstration pour la revue sont vides. La fiche affiche aussi l’avis de statut professionnel UE à confirmer. Aucun achat intégré n’est configuré; le code indique que les abonnements sont gérés sur le web. La suppression de compte existe dans le code, mais son parcours n’a pas été validé sur l’artefact distribué.
-- **Décision** : ne pas envoyer à toute la base ni publier la release tant que le test email, les parcours Preview authentifiés et les contrôles App Store manuels ne sont pas clos. Le brouillon reste non envoyé.
+- **Composer / courriel** : brouillon Resend détaillé, statut `draft`, segment explicite uniquement, expéditeur `Minerva Flow <flow@minervaflow.app>`; domaine vérifié. Le test interne a été livré. ID du brouillon `73a16f1d-617b-46be-b536-98e281593c88`. L’adresse au pied de page doit être harmonisée avant l’envoi.
+- **iOS** : le garde-fou statique retourne 0 critique, 0 élevé, 1 avertissement manuel. Build `1.0.1 (19)` accepté par le transport et en traitement Apple; app Debug 19 installée et ouverte sur l’iPhone 13. La fiche App Store 1.0 demeure « À finaliser avant soumission » : déclarations App Privacy, captures et identifiants d’examen restent manuels. Aucun achat intégré n’est configuré; les abonnements sont gérés sur le web.
+- **Décision** : les contacts non attestés et désabonnés restent exclus. Envoyer le brouillon seulement après déploiement web vérifié, confirmation des coordonnées de bas de page et contrôle du contenu rendu; l’annonce reste non envoyée.
 
 ## Contenu
 
@@ -55,13 +65,14 @@ Les captures d'écran du journal sont **à produire** à partir de l'application
 | --- | --- |
 | TypeScript (`npx tsc --noEmit`) | PASS |
 | Tests web (`npx vitest run`, délai de test 60 s) | PASS — 396 tests dans 72 fichiers (avec le délai par défaut, un test Stripe est instable à l'import à froid) |
+| Corrections du 6 octobre | TypeScript PASS; build web PASS; tests de routes ciblés 7/7 PASS; build iOS Debug et archive Release 1.0.1 (19) PASS; migration 0179 appliquée; onboarding QR neuf encore à vérifier |
 | CI GitHub de la PR #167 (typage, lint non bloquant, tests, build) | PASS — deux exécutions |
 | Déploiement de prévisualisation Vercel | PASS — `/equipe/connexion` répond et s’ouvre; parcours authentifiés toujours non vérifiés |
 | Tests natifs ciblés (NFC, Nouveautés) | PASS — 7 tests |
 | Build iOS simulateur et appareil | PASS |
 | Audit App Store (`native/ios`) | 0 critique, 0 élevé, 1 avertissement manuel; App Store Connect reste incomplet |
 | Consentement Resend (6 octobre) | 22 opt-ins explicites actifs; 57 désabonnés dans le segment global; campagne brouillon seulement |
-| App Store Connect (6 octobre) | Build 15 seulement; build 16 absent; fiche « À finaliser avant soumission » |
+| App Store Connect (6 octobre) | Build 19 téléversé, en traitement; fiche « À finaliser avant soumission » |
 | Rendu visuel et vidéo du partage (navigateur sans interface) | PASS — voir `docs/engineering/SHARE_RESULTS.md` |
 | Parcours authentifiés (propriétaire, `/equipe`, partage) sur le build déployé | **NON VÉRIFIÉ** — aucune session accessible |
 | Rendu visuel des écrans iOS | **NON VÉRIFIÉ** — à contrôler à la main sur l'appareil |

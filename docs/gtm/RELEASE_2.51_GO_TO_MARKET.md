@@ -1,8 +1,10 @@
 # Préparation du lancement Minerva Flow 2.51.0
 
-**État au 6 octobre 2026 : web en production; annonce et publication suspendues aux vérifications restantes.** Le code du portail équipe est intégré à `main`; Vercel signale `READY` pour le déploiement Production affecté aux domaines `minervaflow.app` et `www.minervaflow.app`. La version produit n'est pas encore publiée : `package.json` indique toujours `2.50.0`, le journal 2.51 n'a pas été créé et le dossier candidat conserve des contrôles manuels ouverts.
+**État au 6 octobre 2026 : base web en production; correctifs du 6 octobre en attente du nouveau déploiement.** Le portail équipe est intégré à `main`, et le déploiement Vercel courant est `READY`. Le déploiement qui inclura les routes de restaurant et le parcours QR corrigés n’a pas encore été vérifié. Le build iOS 1.0.1 (19) a été téléversé à App Store Connect et attend son traitement. Les CGV sont rédigées; leur adresse, la suite et le téléphone doivent être confirmés avant publication. L’annonce email reste en brouillon.
 
-Le Preview de la branche `fix/team-login-redirect` (PR #176, basé sur `main`) s’ouvre et sert `/equipe/connexion`; les parcours authentifiés restent à vérifier. Dans Resend, le segment global compte 102 contacts (57 désabonnés), tandis que 22 contacts sont dans le segment actif explicitement inscrit. Un brouillon non envoyé a été préparé pour ce segment uniquement (ID `73a16f1d-617b-46be-b536-98e281593c88`). L’App Store Connect ne montre que le build TestFlight 1.0.0 (15); le candidat 1.0.1 (16) n’est pas téléversé. La version App Store 1.0 reste à finaliser : App Privacy n’est pas commencé, l’URL de confidentialité et les captures d’écran sont absentes, et les identifiants de démonstration ne sont pas saisis.
+La migration Supabase `0179_resolve_restaurant_connection_token` est appliquée en Production. Les routes corrigées passent en local avec le secret Production actualisé; leur déploiement web reste à vérifier. Le compte `dev-test@minervaflow.app` a 14 adhésions de restaurant réelles, et l’app charge ses données. Le scénario de liaison QR d’un compte sans adhésion reste à valider de bout en bout. Le build Debug 1.0.1 (19) est installé et lancé sur l’iPhone 13; le téléversement TestFlight est accepté et en traitement Apple. Ne pas présenter la bêta comme installable tant que le traitement n’est pas terminé.
+
+Le Preview de la branche `fix/team-login-redirect` (PR #176) sert `/equipe/connexion`; les parcours authentifiés owner, équipe et partage restent à vérifier. Dans Resend, le segment global compte 102 contacts, dont 57 désabonnés; 22 contacts sont attestés actifs et inscrits. Le test interne à `kbelceus776@gmail.com` a été livré. Le brouillon détaillé reste non envoyé et vise le segment explicite uniquement (ID `73a16f1d-617b-46be-b536-98e281593c88`). L’App Store Connect a accepté le build TestFlight 1.0.1 (19), en traitement. La fiche App Store 1.0 reste à finaliser : déclarations App Privacy, captures et identifiants d’examen sont à compléter.
 
 ## Promesse et périmètre
 
@@ -47,7 +49,7 @@ Ce texte reste un brouillon : vérifier les parcours, captures et libellés fina
 | Captures réelles des deux entrées de journal | Accès à l'application | À faire; les captures synthétiques ne conviennent pas |
 | NFC | Périmètre | Exclu de 2.51; ne pas le promouvoir |
 | Vérification du cron Google Reviews | Exploitation | À vérifier ou exclure explicitement de la communication |
-| Contrôle visuel iOS clair/sombre sur appareil | Testeur avec appareil | À faire; le build 1.0.1 (16) n'est pas distribué |
+| Contrôle visuel iOS clair/sombre sur appareil | Testeur avec appareil | Build 1.0.1 (19) envoyé; attendre le traitement Apple puis vérifier les parcours |
 | Courriel de contrôle interne | Accès expéditeur | À faire avant la campagne |
 | Entrées du journal puis campagne segmentée | Responsable publication | Après les étapes précédentes seulement |
 
@@ -95,3 +97,10 @@ Utiliser une capture réelle, sans coordonnées clients ni données confidentiel
 ### Suivi et responsabilités
 
 Conserver le propriétaire du lancement dans l’application et consigner les résultats à J+7 et J+30. Le budget publicitaire initial est nul : aucun achat média ni promesse de performance sans campagne et objectif approuvés. L’activation des canaux sociaux exige les comptes concernés; aucune publication externe n’a encore été effectuée.
+
+## État des blocages — 6 octobre 2026
+
+- Le brouillon Resend détaillé reste non envoyé. Le segment autorisé demeure les 22 contacts explicitement inscrits; 57 contacts de la base globale sont désabonnés et 45 autres n'ont pas de consentement attesté. Le test interne à `kbelceus776@gmail.com` a été livré.
+- La migration `0179_resolve_restaurant_connection_token` est appliquée en Production; l’onboarding QR complet d’un compte sans adhésion reste à vérifier avec un tel compte.
+- Les CGV commerciales FR/EN sont préparées avec les règles confirmées : essai de 14 jours, taxes selon la loi; pas de remboursement après débit, sous réserve des droits impératifs et de la correction des erreurs. La rue confirmée par l’utilisateur est « 367 rue Lberge » tandis que la fiche de courriel existante dit « Laberge »; suite et téléphone attendus avant publication. La campagne email doit reprendre les coordonnées confirmées.
+- Aucun email, entrée de journal, post social ou webhook de publication n'a été déclenché. Envoyer la campagne uniquement après déploiement vérifié et contrôle interne.

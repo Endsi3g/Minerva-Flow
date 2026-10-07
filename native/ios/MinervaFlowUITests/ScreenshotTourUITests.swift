@@ -1,7 +1,7 @@
 import XCTest
 
-/// Visual review aid, not a regression test: signs in through the DEBUG dev
-/// bypass, visits each customer tab (and the Compte subpages) and writes a PNG
+/// Visual review aid, not a regression test: signs in through a hidden DEBUG
+/// UI-test launch argument, visits customer tabs and Compte subpages, and writes a PNG
 /// per screen to MV_SHOT_DIR (pass it as TEST_RUNNER_MV_SHOT_DIR=… to
 /// xcodebuild), so a reviewer can look at what a customer actually sees.
 final class ScreenshotTourUITests: XCTestCase {
@@ -38,18 +38,26 @@ final class ScreenshotTourUITests: XCTestCase {
         try? png.write(to: URL(fileURLWithPath: "\(shotDir)/\(name).png"))
     }
 
-    private func signIn() {
+    @discardableResult
+    private func signIn() -> Bool {
         let tabBar = app.tabBars.firstMatch
-        let devBypass = app.buttons["Sauter la connexion (dev, OTP désactivé)"]
         for _ in 0..<14 {
-            if tabBar.exists { return }
+            if tabBar.exists { return true }
+            if app.staticTexts["Reliez votre compte à un restaurant"].exists { return false }
             // The workspace bootstrap has a watchdog; on a slow network it shows a retry state.
             if app.buttons["Réessayer"].exists { app.buttons["Réessayer"].tap(); _ = tabBar.waitForExistence(timeout: 25); continue }
             if app.buttons["Fermer l'introduction"].exists { app.buttons["Fermer l'introduction"].tap() }
-            else if devBypass.waitForExistence(timeout: 1), devBypass.isHittable { devBypass.tap() }
             else if app.buttons["Se connecter"].exists { app.buttons["Se connecter"].tap() }
             else { _ = tabBar.waitForExistence(timeout: 2) }
         }
+        return tabBar.exists
+    }
+
+    @discardableResult
+    private func launchCustomerApp() -> Bool {
+        app.launchArguments.append("-minervaUITestAuth")
+        app.launch()
+        return signIn()
     }
 
     /// Tabs are addressed by position so the tour works in French and English.
@@ -60,8 +68,7 @@ final class ScreenshotTourUITests: XCTestCase {
     }
 
     func testCaptureCustomerTabs() throws {
-        app.launch()
-        signIn()
+        try XCTSkipUnless(launchCustomerApp(), "The dev-test account has no restaurant membership; the required QR onboarding gate is visible instead of customer tabs.")
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 20), "never reached the tab bar")
         _ = app.staticTexts["Historique récent"].waitForExistence(timeout: 15)
         for (index, title) in ["Accueil", "Commander", "Scanner", "Offres", "Compte"].enumerated() {
@@ -71,6 +78,28 @@ final class ScreenshotTourUITests: XCTestCase {
         // Compte, scrolled to its lower half.
         app.swipeUp()
         shot("7-Compte-bas")
+    }
+
+    func testCaptureLoginFormUsesEmailCodeWithoutDevelopmentBypass() throws {
+        app.launch()
+        if app.buttons["Changer de compte"].waitForExistence(timeout: 2) {
+            app.buttons["Changer de compte"].tap()
+        }
+        let introSignIn = app.buttons["Se connecter"]
+        if introSignIn.waitForExistence(timeout: 5) { introSignIn.tap() }
+
+        let emailCode = app.buttons["Code par courriel"]
+        XCTAssertTrue(emailCode.waitForExistence(timeout: 15), "the email code must be the visible primary authentication option")
+        XCTAssertTrue(app.staticTexts["Minerva Flow"].exists, "the centered wordmark should be present on the auth screen")
+        let obsoleteBypass = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS[c] %@", "OTP désactivé")
+        ).firstMatch
+        XCTAssertFalse(obsoleteBypass.exists, "the development OTP bypass must not be visible")
+
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Connexion — code par courriel"
+        capture.lifetime = .keepAlways
+        add(capture)
     }
 
     /// Taps a pushed row by its visible title (scrolling once if needed) and captures it.
@@ -93,19 +122,20 @@ final class ScreenshotTourUITests: XCTestCase {
     }
 
     func testCaptureCompteSubpages() throws {
-        app.launch()
-        signIn()
+        try XCTSkipUnless(launchCustomerApp(), "The dev-test account has no restaurant membership; Compte subpages require a linked restaurant.")
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 20))
         _ = app.staticTexts["Historique récent"].waitForExistence(timeout: 15)
-        for (title, name) in [("Mes cartes fidélité", "cartes"), ("Aide", "aide"), ("À propos", "apropos"), ("Sécurité", "securite"),
-                              ("Confidentialité", "confidentialite"), ("Notifications", "notifications"), ("Apparence", "apparence")] {
+        for (title, name) in [("Mes cartes fidélité", "cartes"), ("Historique des points", "historique-points"),
+                              ("Apparence", "apparence"), ("Notifications", "notifications"),
+                              ("Confidentialité", "confidentialite"), ("Sécurité", "securite")] {
             openTab("Compte")
             if openRow(title, shotName: "sub-\(name)") { goBack() }
         }
         openTab("Compte")
         if openRow("Autre", shotName: "sub-autre") {
-            for (title, name) in [("Mes favoris", "favoris"), ("Mes commandes", "commandes"), ("Historique de points", "points"),
-                                  ("Ambassadeur", "ambassadeur"), ("Nouveautés", "nouveautes")] {
+            for (title, name) in [("Mes favoris", "favoris"), ("Mes commandes", "commandes"),
+                                  ("Ambassadeur", "ambassadeur"), ("Nouveautés", "nouveautes"),
+                                  ("Aide", "aide"), ("À propos", "apropos")] {
                 if openRow(title, shotName: "sub-autre-\(name)") { goBack() }
             }
         }
@@ -192,6 +222,7 @@ final class ScreenshotTourUITests: XCTestCase {
     /// The first-run explainer must move forward with its visible buttons.
     /// Needs a fresh install (xcrun simctl uninstall) so the intro is shown.
     func testOnboardingNextButtonsAdvance() throws {
+        app.launchArguments.append("-minervaUITestAuth")
         app.launch()
         // The keychain outlives an uninstall: leave a persisted team session first.
         let teamNext = app.buttons["Suivant"]
@@ -206,12 +237,6 @@ final class ScreenshotTourUITests: XCTestCase {
             let out = app.buttons["Se déconnecter"]
             if out.waitForExistence(timeout: 3) { out.tap() }
             Thread.sleep(forTimeInterval: 2)
-        }
-        let devBypass = app.buttons["Sauter la connexion (dev, OTP désactivé)"]
-        for _ in 0..<10 where !app.buttons["Voir mon statut"].exists {
-            if devBypass.waitForExistence(timeout: 1), devBypass.isHittable { devBypass.tap() }
-            else if app.buttons["Se connecter"].exists { app.buttons["Se connecter"].tap() }
-            Thread.sleep(forTimeInterval: 1.5)
         }
         let first = app.buttons["Voir mon statut"]
         if !first.waitForExistence(timeout: 20) { shot("onboarding-diag") }
@@ -312,4 +337,3 @@ final class ScreenshotTourUITests: XCTestCase {
         leavePersistedSession()
     }
 }
-

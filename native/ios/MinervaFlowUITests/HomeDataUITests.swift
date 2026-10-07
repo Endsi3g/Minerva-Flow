@@ -3,7 +3,7 @@ import XCTest
 /// Regression coverage for a real, reported bug: the dev-test account has
 /// real rewards/offers/transactions in the database, but Home has been
 /// reported as looking empty on a physical device. This drives the actual
-/// DEBUG dev-bypass sign-in (real RLS-scoped Supabase session, not a mock)
+/// hidden DEBUG UI-test sign-in (real RLS-scoped Supabase session, not a mock)
 /// and asserts the data-dependent UI actually renders — if this ever
 /// regresses again (a decode mismatch, a broken query), this test catches
 /// it instead of only a person noticing an empty screen.
@@ -13,6 +13,7 @@ final class HomeDataUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments.append("-minervaUITestAuth")
     }
 
     override func tearDownWithError() throws {
@@ -23,6 +24,7 @@ final class HomeDataUITests: XCTestCase {
 
     func testDevAccountHomeShowsRealRewardData() throws {
         app.launch()
+        try XCTSkipUnless(openTestAccount(), "The dev-test account has no restaurant membership; required restaurant onboarding is shown instead of the customer app shell.")
 
         let nextReward = app.staticTexts["Prochaine récompense"]
         let noReward = app.staticTexts["Aucune récompense pour l'instant"]
@@ -39,14 +41,10 @@ final class HomeDataUITests: XCTestCase {
 
             let closeTierOnboarding = app.buttons["Fermer l'introduction"]
             let seConnecter = app.buttons["Se connecter"]
-            let devBypass = app.buttons["Sauter la connexion (dev, OTP désactivé)"]
-
             if closeTierOnboarding.exists {
                 closeTierOnboarding.tap()
             } else if seConnecter.waitForExistence(timeout: 2) {
                 seConnecter.tap()
-            } else if devBypass.waitForExistence(timeout: 2) {
-                devBypass.tap()
             }
         }
 
@@ -60,7 +58,7 @@ final class HomeDataUITests: XCTestCase {
     func testAddingMenuItemOpensCheckoutWithoutBackingOutTwice() throws {
         app.launch()
 
-        openTestAccount()
+        try XCTSkipUnless(openTestAccount(), "The dev-test account has no restaurant membership; checkout requires a linked restaurant.")
         let commander = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Commander")).firstMatch
         XCTAssertTrue(commander.waitForExistence(timeout: 15), "The authenticated Commander tab did not appear")
         commander.tap()
@@ -83,13 +81,14 @@ final class HomeDataUITests: XCTestCase {
 
     func testScannerShowsAccountCodeAndRestaurantScannerAction() throws {
         app.launch()
-        openTestAccount()
+        try XCTSkipUnless(openTestAccount(), "The dev-test account has no restaurant membership; Scanner requires a linked restaurant.")
         let scannerTab = app.buttons.matching(NSPredicate(format: "label == %@", "Scanner")).firstMatch
         XCTAssertTrue(scannerTab.waitForExistence(timeout: 15), "The authenticated Scanner tab did not appear")
         scannerTab.tap()
 
         XCTAssertTrue(app.staticTexts["Présentez votre code"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Scanner le code d’un restaurant"].exists)
+        XCTAssertFalse(app.buttons["Toucher un tag NFC"].exists, "NFC is intentionally excluded from this release.")
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Valide encore")).firstMatch.waitForExistence(timeout: 15))
 
         let scannerCapture = XCTAttachment(screenshot: app.screenshot())
@@ -98,19 +97,18 @@ final class HomeDataUITests: XCTestCase {
         add(scannerCapture)
     }
 
-    /// The auth screen exposes both a "Se connecter" mode selector and a
-    /// dedicated dev-only bypass. Prefer the bypass when it exists, otherwise
-    /// the tests can repeatedly tap the selector without ever authenticating.
-    private func openTestAccount() {
+    /// The launch argument signs into a real seeded account without adding a
+    /// developer-only control to the customer login screen.
+    @discardableResult
+    private func openTestAccount() -> Bool {
         let commander = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Commander")).firstMatch
         let scanner = app.buttons.matching(NSPredicate(format: "label == %@", "Scanner")).firstMatch
-        let devBypass = app.buttons["Sauter la connexion (dev, OTP désactivé)"]
+        let restaurantGate = app.staticTexts["Reliez votre compte à un restaurant"]
 
         for _ in 0..<8 {
-            if commander.exists || scanner.exists { return }
-            if devBypass.waitForExistence(timeout: 1), devBypass.isHittable {
-                devBypass.tap()
-            } else if app.buttons["Fermer l'introduction"].exists {
+            if commander.exists || scanner.exists { return true }
+            if restaurantGate.exists { return false }
+            if app.buttons["Fermer l'introduction"].exists {
                 app.buttons["Fermer l'introduction"].tap()
             } else if app.buttons["Se connecter"].exists {
                 app.buttons["Se connecter"].tap()
@@ -118,5 +116,21 @@ final class HomeDataUITests: XCTestCase {
                 _ = commander.waitForExistence(timeout: 2)
             }
         }
+        return commander.exists || scanner.exists
+    }
+
+    func testDevAccountWithoutMembershipMustConnectRestaurantFirst() throws {
+        app.launch()
+
+        let title = app.staticTexts["Reliez votre compte à un restaurant"]
+        guard title.waitForExistence(timeout: 20) else {
+            throw XCTSkip("The dev-test account already has a restaurant membership, so the first-restaurant gate is not applicable.")
+        }
+
+        XCTAssertTrue(app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "Scannez le code QR Minerva Flow affiché par le restaurant")
+        ).firstMatch.exists)
+        XCTAssertTrue(app.buttons["Scanner le code du restaurant"].exists)
+        XCTAssertFalse(app.tabBars.firstMatch.exists, "Customer app pages must stay closed until a restaurant is connected.")
     }
 }

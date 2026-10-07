@@ -2,7 +2,7 @@ import SwiftUI
 
 private let hasSeenOnboardingKey = "hasSeenTierOnboarding"
 
-private enum RootScreen { case intro, auth, resolvingSession, resolutionError, onboarding, ownerOnboarding, main, ownerMain, teamMain }
+private enum RootScreen { case intro, auth, resolvingSession, resolutionError, restaurantOnboarding, onboarding, ownerOnboarding, main, ownerMain, teamMain }
 
 /// Full flow: Intro (brand-new visitor hero) -> AuthView (real login,
 /// matches the web portal exactly) -> OnboardingWelcomeView (tier-status
@@ -30,6 +30,9 @@ struct RootView: View {
     @State private var screen: RootScreen = .intro
     @State private var resolvedLinkRestaurant: ResolvedUniversalLinkRestaurant?
     @State private var universalLinkError: String?
+#if DEBUG
+    @State private var didStartUITestSignIn = false
+#endif
 
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
@@ -63,6 +66,10 @@ struct RootView: View {
             case .resolutionError:
                 resolutionView(isError: true)
                     .id(RootScreen.resolutionError)
+                    .transition(.opacity)
+            case .restaurantOnboarding:
+                RestaurantConnectionOnboardingView()
+                    .id(RootScreen.restaurantOnboarding)
                     .transition(.opacity)
             case .onboarding:
                 OnboardingWelcomeView {
@@ -103,11 +110,13 @@ struct RootView: View {
         .environment(\.locale, Locale(identifier: AppLanguage(rawValue: storedLanguage)?.localeIdentifier ?? AppLanguage.fr.localeIdentifier))
         .preferredColorScheme(AppAppearance(rawValue: storedAppearance)?.colorScheme)
         .onAppear {
+            maybeSignInUITestUser()
             syncScreen()
             applyPendingNotificationIfReady()
             if screen == .main { biometricLock.lockIfEnabled() }
         }
         .onChange(of: supabase.isAuthenticated) { syncScreen(); applyPendingNotificationIfReady() }
+        .onChange(of: supabase.customer?.id) { syncScreen() }
         .onChange(of: supabase.isOwnerExperience) { syncScreen() }
         .onChange(of: supabase.isTeamExperience) { syncScreen() }
         .onChange(of: supabase.isResolvingExperience) { syncScreen(); applyPendingNotificationIfReady() }
@@ -145,7 +154,7 @@ struct RootView: View {
     }
 
     private func resolvePendingUniversalLinkIfReady() {
-        guard screen == .main, let link = router.pendingUniversalLink else { return }
+        guard (screen == .main || screen == .restaurantOnboarding), let link = router.pendingUniversalLink else { return }
         router.pendingUniversalLink = nil
         Task { await resolveUniversalLink(link) }
     }
@@ -193,10 +202,38 @@ struct RootView: View {
         if supabase.isOwnerExperience && ownerHasRealName && !hasCompletedOwnerSetup {
             UserDefaults.standard.set(true, forKey: ownerSetupKey)
         }
-        let target: RootScreen = supabase.isAuthenticated
-            ? (supabase.isResolvingExperience ? .resolvingSession : (supabase.experienceResolutionError != nil ? .resolutionError : (supabase.isTeamExperience ? .teamMain : (supabase.isOwnerExperience ? ((hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding) : (hasSeenOnboarding ? .main : .onboarding)))))
-            : (screen == .auth ? .auth : .intro)
+        let target: RootScreen
+        if !supabase.isAuthenticated {
+            target = screen == .auth ? .auth : .intro
+        } else if supabase.isResolvingExperience {
+            target = .resolvingSession
+        } else if supabase.experienceResolutionError != nil {
+            target = .resolutionError
+        } else if supabase.isTeamExperience {
+            target = .teamMain
+        } else if supabase.isOwnerExperience {
+            target = (hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding
+        } else if supabase.customer == nil {
+            target = .restaurantOnboarding
+        } else {
+            target = hasSeenOnboarding ? .main : .onboarding
+        }
         transition(to: target)
+    }
+
+    private func maybeSignInUITestUser() {
+#if DEBUG
+        guard !didStartUITestSignIn,
+              ProcessInfo.processInfo.arguments.contains("-minervaUITestAuth") else { return }
+        didStartUITestSignIn = true
+        Task {
+            do {
+                try await supabase.signInWithDevTestAccount()
+            } catch {
+                AppLog.failure("uiTestSignIn", error)
+            }
+        }
+#endif
     }
 
     /// Scope the one-time tour to the authenticated account. A shared
@@ -247,6 +284,91 @@ struct RootView: View {
             }
         }
         .padding(28)
+    }
+}
+
+/// A first-time customer cannot enter the app shell until a restaurant
+/// membership exists. The acquisition model is QR-first, so this required
+/// step opens the existing restaurant scanner and its real "Devenir client"
+/// confirmation; there is intentionally no skip action into empty pages.
+private struct RestaurantConnectionOnboardingView: View {
+    @EnvironmentObject private var supabase: SupabaseManager
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    @State private var showingScanner = false
+
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
+
+    var body: some View {
+        ZStack {
+            MinervaColor.cream.ignoresSafeArea()
+            VStack(spacing: 24) {
+                HStack(spacing: 9) {
+                    Image("LogoMark")
+                        .resizable()
+                        .frame(width: 32, height: 32)
+                        .accessibilityHidden(true)
+                    Text("Minerva Flow")
+                        .font(MinervaFont.display(20, weight: .semibold))
+                        .italic(isFrench)
+                        .foregroundStyle(MinervaColor.ink)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Minerva Flow")
+
+                Spacer(minLength: 24)
+
+                Image(systemName: "qrcode.viewfinder")
+                    .font(.system(size: 58, weight: .light))
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .accessibilityHidden(true)
+
+                VStack(spacing: 9) {
+                    Text(isFrench ? "Reliez votre compte à un restaurant" : "Connect your account to a restaurant")
+                        .font(MinervaFont.display(27, weight: .semibold))
+                        .foregroundStyle(MinervaColor.ink)
+                        .multilineTextAlignment(.center)
+                    Text(isFrench
+                        ? "Scannez le code QR Minerva Flow affiché par le restaurant. Vous pourrez ensuite consulter sa carte, vos points et vos récompenses."
+                        : "Scan the Minerva Flow QR code displayed by the restaurant. Then you can view its card, your points and rewards.")
+                        .font(.mv(size: 14))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    showingScanner = true
+                } label: {
+                    Label(isFrench ? "Scanner le code du restaurant" : "Scan the restaurant code", systemImage: "camera.viewfinder")
+                        .font(.mv(size: 15, weight: .semibold))
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(MinervaColor.emeraldDark)
+
+                Text(isFrench
+                    ? "Demandez le code à l’équipe du restaurant. Vous pourrez changer de restaurant ou en ajouter d’autres plus tard."
+                    : "Ask the restaurant team for its code. You can switch restaurants or add more later.")
+                    .font(.mv(size: 12))
+                    .foregroundStyle(MinervaColor.inkFaint)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button(isFrench ? "Changer de compte" : "Switch account") {
+                    Task { await supabase.signOut() }
+                }
+                .font(.mv(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.emeraldDark)
+
+                Spacer(minLength: 24)
+            }
+            .padding(28)
+            .frame(maxWidth: 480)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .fullScreenCover(isPresented: $showingScanner) {
+            ScanToOrderView(showsCloseButton: true, purpose: .restaurantConnection)
+        }
     }
 }
 

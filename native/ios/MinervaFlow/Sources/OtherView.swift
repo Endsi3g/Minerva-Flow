@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// "Autre": everything in the customer account that is not a daily shortcut,
-/// laid out as dense, labelled groups instead of one long flat list.
+/// "Autre": customer activity and extras that do not belong to the dedicated
+/// account settings group on the Compte page.
 struct OtherView: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
@@ -26,17 +26,13 @@ struct OtherView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                CompteGroup(title: isFrench ? "MON ACTIVITÉ" : "MY ACTIVITY") {
+                CompteGroup(title: isFrench ? "MES ACTIVITÉS" : "MY ACTIVITY") {
                     CompteLink(route: .favorites, icon: "heart.fill", title: isFrench ? "Mes favoris" : "My favourites",
                                subtitle: isFrench ? "Plats et offres, établissement par établissement" : "Dishes and offers, by establishment",
                                trailing: favoritesCount > 0 ? "\(favoritesCount)" : nil, tint: .red)
                     CompteSeparator()
                     CompteLink(route: .orders, icon: "bag.fill", title: isFrench ? "Mes commandes" : "My orders",
-                               subtitle: isFrench ? "Votre historique d'achats" : "Your purchase history")
-                    CompteSeparator()
-                    CompteLink(route: .pointsHistory, icon: "clock.arrow.circlepath", title: isFrench ? "Historique de points" : "Points history",
-                               subtitle: isFrench ? "Points gagnés, dépensés et ajustements" : "Points earned, spent and adjusted",
-                               trailing: supabase.customer.map { "\($0.loyaltyPoints) pts" })
+                               subtitle: isFrench ? "Vos achats récents" : "Your recent purchases")
                 }
 
                 CompteGroup(title: isFrench ? "PROGRAMME" : "PROGRAMME") {
@@ -45,6 +41,13 @@ struct OtherView: View {
                     CompteSeparator()
                     CompteLink(route: .updates, icon: "sparkles", title: isFrench ? "Nouveautés" : "What's new",
                                subtitle: isFrench ? "Ce qui change pour vous" : "What changes for you")
+                }
+
+                CompteGroup(title: isFrench ? "AIDE" : "HELP") {
+                    CompteLink(route: .help, icon: "questionmark.circle.fill", title: isFrench ? "Aide" : "Help",
+                               subtitle: isFrench ? "Contacter l’équipe Minerva Flow" : "Contact the Minerva Flow team")
+                    CompteSeparator()
+                    CompteLink(route: .about, icon: "info.circle.fill", title: isFrench ? "À propos" : "About")
                 }
 
                 CompteGroup(title: isFrench ? "VOTRE AVIS" : "FEEDBACK") {

@@ -1564,7 +1564,14 @@ final class SupabaseManager: ObservableObject {
                 .single()
                 .execute()
                 .value
-            await fetchAllMemberships()
+            if customer == nil {
+                // This may be the first restaurant joined during required
+                // onboarding. Load the newly-created customer row before
+                // RootView decides whether the app shell can open.
+                await loadPortalData()
+            } else {
+                await fetchAllMemberships()
+            }
             return true
         } catch {
             lastError = "Impossible de devenir client pour l'instant. Réessayez."

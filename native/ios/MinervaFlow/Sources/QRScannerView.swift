@@ -97,6 +97,8 @@ struct ScanToOrderView: View {
     /// there's nothing to dismiss to and a "Fermer" button would do nothing
     /// useful sitting above four other tabs.
     var showsCloseButton: Bool = true
+    enum Purpose: Equatable { case order, restaurantConnection }
+    var purpose: Purpose = .order
 
     @State private var cameraAuthorized = false
     @State private var permissionDenied = false
@@ -119,12 +121,12 @@ struct ScanToOrderView: View {
                     .ignoresSafeArea()
 
                     VStack {
-                        Text("Scannez pour découvrir le menu")
+                        Text(purpose == .restaurantConnection ? "Scannez le code du restaurant" : "Scannez pour découvrir le menu")
                             .font(MinervaFont.display(25, weight: .semibold))
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
                             .padding(.top, 30)
-                        Text("Placez le code dans le cadre")
+                        Text(purpose == .restaurantConnection ? "Placez le code QR dans le cadre" : "Placez le code dans le cadre")
                             .font(.mv(size: 14, weight: .medium))
                             .foregroundStyle(.white.opacity(0.8))
                         Spacer(minLength: 24)
@@ -144,7 +146,7 @@ struct ScanToOrderView: View {
                     ProgressView().tint(.white)
                 }
             }
-            .navigationTitle("Scanner un code")
+            .navigationTitle(purpose == .restaurantConnection ? "Relier un restaurant" : "Scanner un code")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
@@ -200,7 +202,9 @@ struct ScanToOrderView: View {
     }
 
     private var instructions: some View {
-        Text("Pointez la caméra vers le code affiché par le restaurant.")
+        Text(purpose == .restaurantConnection
+            ? "Pointez la caméra vers le code Minerva Flow fourni par le restaurant."
+            : "Pointez la caméra vers le code affiché par le restaurant.")
             .font(.mv(size: 13, weight: .medium))
             .foregroundStyle(.white)
             .padding(14)

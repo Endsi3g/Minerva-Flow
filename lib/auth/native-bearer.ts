@@ -96,3 +96,13 @@ export async function resolveNativeUserId(req: Request): Promise<string | null> 
   const verified = await verifyNativeToken(req);
   return verified?.userId ?? null;
 }
+
+/**
+ * Returns the verified caller's token-scoped Supabase client for native
+ * routes that can rely on the caller's existing RLS policies. Keep this
+ * separate from the admin client so customer-owned reads do not depend on
+ * service credentials or bypass row-level security.
+ */
+export async function resolveNativeUserContext(req: Request) {
+  return verifyNativeToken(req);
+}

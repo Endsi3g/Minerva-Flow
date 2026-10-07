@@ -543,7 +543,9 @@ struct OwnerManagementView: View {
                     Button { showAmbassadorProgram = true } label: {
                         Label(isFrench ? "Programme ambassadeur" : "Ambassador program", systemImage: "megaphone.fill")
                     }
-                    NavigationLink(isFrench ? "Tags NFC" : "NFC tags", destination: OwnerNFCView())
+                    if NFCTagReader.isAvailable {
+                        NavigationLink(isFrench ? "Tags NFC" : "NFC tags", destination: OwnerNFCView())
+                    }
                     NavigationLink("Google Business Profile", destination: OwnerGoogleBusinessProfileView())
                 }
                 Section(isFrench ? "Compte" : "Account") {

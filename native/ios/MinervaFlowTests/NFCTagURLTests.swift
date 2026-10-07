@@ -47,4 +47,8 @@ final class NFCTagURLTests: XCTestCase {
         XCTAssertNil(NFCTagURL.touchpointURL(code: "../x"))
         XCTAssertNil(NFCTagURL.touchpointURL(code: ""))
     }
+
+    func testNFCIsDisabledForThisRelease() {
+        XCTAssertFalse(NFCTagReader.isAvailable, "This build intentionally ships without NFC capability.")
+    }
 }
