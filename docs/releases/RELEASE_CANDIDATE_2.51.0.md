@@ -2,6 +2,16 @@
 
 **Statut au 2026-10-06 : correctifs web et CGV déployés et vérifiés en Production (`cb69f92`, déploiement Vercel `dpl_BeAR8cmTi3MFqmEu6w7MnWakCXUj`, `https://minervaflow.app`).** Les routes authentifiées renvoient les 14 adhésions nommées, la fiche restaurant, l’image de marque et un code QR résolu correctement. Le build iOS `1.0.1 (19)` est installé sur l’iPhone 13 et téléversé; son dernier état connu chez Apple était « en traitement ». L’adresse légale complète, sans suite, et le téléphone (514) 451-5232 figurent dans les CGV et le pied de page email. Le broadcast détaillé a été envoyé au segment des 22 consentements explicites le 6 octobre à 21:19 HAE; les métriques de livraison Resend ne sont pas encore disponibles.
 
+### Reprise — 6 octobre 2026, 22:58 HAE
+
+- Le brouillon de fiche App Store bilingue est consigné dans `docs/mobile/APP_STORE_CONNECT_DRAFT_1.0.md`. L’icône 1024 × 1024 est bien incluse dans l’asset catalog. App Store Connect est actuellement déconnecté; le traitement du build 19 n’a pas pu être recontrôlé.
+- 6 tests UI iOS signés-out réussissent sur le simulateur iPhone 17 Pro (connexion, choix de langue et disponibilité de Sign in with Apple/Google). Les parcours propriétaire/client n’ont pas été testés.
+- Les tests web auth/onboarding restent bloqués : le projet Supabase Staging est `INACTIVE` (aucun service actif). La base locale n’a pas pu démarrer, le stockage Docker étant passé en lecture seule quand l’espace disque est tombé sous 200 Mo. Aucun E2E ni écriture n’a touché Production. Une reconnexion Supabase est en attente pour tenter de restaurer le staging.
+- `package.json`/`package-lock.json` sont passés à 2.51.0. Le build web de production, le contrôle TypeScript et la génération des 307 pages statiques réussissent; le commit, push, déploiement puis tag `v2.51.0` restent à faire.
+- La page d’assistance publique et le contact de confidentialité corrigé sont dans l’arbre de travail; leur réponse HTTP en Production reste à vérifier après le déploiement.
+- Les nouvelles entrées de journal propriétaires/clientes ne sont pas publiées : il manque des captures actuelles authentifiées, dont une capture iPad 13 pouces exigée car la cible iOS inclut iPad. Le webhook GitHub n’a pas été relancé et aucun email/push supplémentaire n’a été envoyé.
+- `origin/fix/customer-login-to-portal` et `origin/revert/customer-login-redirect` ne sont pas intégrées : leurs arbres restaurent une ancienne redirection qui a déjà bouclé sur `/login`. La branche revert supprime aussi des captures personnelles; aucune de ces branches n’est fusionnable telle quelle.
+
 Les routes corrigées, l’accès aux données client existantes et la compilation iOS sont vérifiés. Les parcours authentifiés propriétaire/équipe/partage et le nouvel onboarding QR complet n’ont pas été validés de bout en bout sur Preview; le build TestFlight attend le traitement Apple. Conserver le lancement sous conditions jusqu’aux contrôles manuels ci-dessous.
 
 Date de préparation : 2026-10-03 · Branche source : `feat/team-portal-and-native-account-uplift` (fusionnée à `main`)

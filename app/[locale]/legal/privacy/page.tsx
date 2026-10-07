@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           Politique de confidentialité
         </h1>
         <p className="mb-8 text-[13px] font-medium text-mv-ink-faint">
-          Dernière mise à jour : 8 septembre 2026
+          Dernière mise à jour : 6 octobre 2026
         </p>
 
         <div className="space-y-8 text-[14px] leading-relaxed text-mv-ink-soft">
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
               Conformément à la Loi 25 (Loi modernisant des dispositions législatives en matière de protection des renseignements personnels au Québec), vous disposez du droit d&apos;accès, de rectification, de portabilité et de suppression de vos données personnelles.
             </p>
             <p className="rounded-xl border border-mv-border bg-mv-surface p-4 text-[13px]">
-              Pour exercer vos droits ou pour toute question relative à la protection de vos renseignements personnels, contactez notre Responsable de la vie privée à : <strong className="text-mv-green-dark">privacy@minerva-flow.vercel.app</strong> ou via notre page{" "}
+              Pour exercer vos droits ou pour toute question relative à la protection de vos renseignements personnels, contactez notre Responsable de la vie privée à : <strong className="text-mv-green-dark">privacy@minervaflow.app</strong> ou via notre page{" "}
               <Link href="/support" className="text-mv-green-dark underline font-semibold">
                 Aide &amp; Support
               </Link>.
