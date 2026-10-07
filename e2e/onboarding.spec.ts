@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { supabaseAdmin, cleanupTestUser, cleanupOrphanRestaurants, TEST_PASSWORD } from "./fixtures";
 
+test.use({ locale: "fr-CA" });
+
 // Full signup path, unlike the other specs — this is the one place we
 // actually want a brand-new, unconfigured user going through the wizard.
 test.describe("Onboarding", () => {
@@ -12,7 +14,7 @@ test.describe("Onboarding", () => {
     userId = undefined;
   });
 
-  test("signup configures loyalty, creates its QR, and completes the 4-step wizard", async ({ page }) => {
+  test("signup configures loyalty, creates its QR, and completes the 4-step wizard", async ({ page }, testInfo) => {
     test.setTimeout(240_000);
     await page.setViewportSize({ width: 1440, height: 810 });
     const email = `e2e-onboarding-${Date.now()}@example.com`;
@@ -73,9 +75,9 @@ test.describe("Onboarding", () => {
     // Connections are optional; loyalty setup is required before completing.
     await page.getByRole("button", { name: /plus tard/i }).click();
     await expect(page.getByRole("heading", { name: "Préparez les inscriptions fidélité" })).toBeVisible();
-    await page.screenshot({ path: ".verify-artifacts/20260926T0340Z/screenshots/onboarding-loyalty-setup-desktop.png", fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath("onboarding-loyalty-setup-desktop.png"), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({ path: ".verify-artifacts/20260926T0340Z/screenshots/onboarding-loyalty-setup-mobile.png", fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath("onboarding-loyalty-setup-mobile.png"), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 810 });
 
     await page.getByRole("button", { name: "Créer mon lien et mon QR" }).click();
@@ -94,9 +96,9 @@ test.describe("Onboarding", () => {
       .single();
     expect(restaurantError).toBeNull();
     expect(restaurant?.loyalty_points_per_dollar).toBe(1);
-    await page.screenshot({ path: ".verify-artifacts/20260926T0340Z/screenshots/onboarding-loyalty-qr-desktop.png", fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath("onboarding-loyalty-qr-desktop.png"), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({ path: ".verify-artifacts/20260926T0340Z/screenshots/onboarding-loyalty-qr-mobile.png", fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath("onboarding-loyalty-qr-mobile.png"), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 810 });
 
     await page.getByRole("button", { name: /^continuer$/i }).click();

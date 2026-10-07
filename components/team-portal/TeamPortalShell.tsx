@@ -16,15 +16,14 @@ export function TeamPortalShell({
 
   return (
     <div className="min-h-screen bg-mv-cream">
-      <header className="flex h-14 items-center justify-between gap-4 border-b border-mv-border bg-mv-cream-soft px-5">
-        <div className="flex min-w-0 items-center gap-6">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 border-b border-mv-border bg-mv-cream-soft px-5 lg:h-14 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-6">
           <Link href="/equipe" className="flex min-h-11 shrink-0 items-center gap-2">
             <LogoMark size={22} />
             <span className="flex items-center gap-1.5 text-[13.5px] font-semibold text-mv-ink">
-              <ShieldCheck size={13} className="text-mv-green-dark" /> Minerva Flow · {roleLabel}
+              <ShieldCheck size={13} className="hidden text-mv-green-dark sm:block" /> Minerva Flow · {roleLabel}
             </span>
           </Link>
-          <nav aria-label="Espace équipe" className="flex items-center gap-4 overflow-x-auto text-[13px] font-medium text-mv-ink-soft">
+          <nav aria-label="Espace équipe" className="order-3 col-span-2 flex min-w-0 items-center gap-4 overflow-x-auto text-[13px] font-medium text-mv-ink-soft lg:order-2 lg:col-span-1">
             <Link href="/equipe" className="inline-flex min-h-11 items-center whitespace-nowrap hover:text-mv-ink">
               Accueil
             </Link>
@@ -53,8 +52,7 @@ export function TeamPortalShell({
               Mon profil
             </Link>
           </nav>
-        </div>
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="order-2 flex shrink-0 items-center gap-1 lg:order-3 lg:gap-4">
           <TeamPortalReplayIntroButton />
           <TeamPortalSignOutButton />
         </div>

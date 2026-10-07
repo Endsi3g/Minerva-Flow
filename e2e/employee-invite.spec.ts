@@ -9,6 +9,8 @@ import {
   type TestUser,
 } from "./fixtures";
 
+test.use({ locale: "fr-CA" });
+
 test.describe("Employee login access", () => {
   let owner: TestUser;
   let invitedUserId: string | undefined;
@@ -25,6 +27,7 @@ test.describe("Employee login access", () => {
   });
 
   test("inviting an employee links their new account to the employee record", async ({ page }) => {
+    test.setTimeout(120_000);
     const employeeEmail = `e2e-employee-${Date.now()}@example.com`;
     const employeeName = `E2E Employee ${Date.now()}`;
 
@@ -54,7 +57,7 @@ test.describe("Employee login access", () => {
 
     // Redeem in a fresh browser context — the invited employee has no
     // existing session and creates their account from scratch.
-    const invitedContext = await page.context().browser()!.newContext();
+    const invitedContext = await page.context().browser()!.newContext({ locale: "fr-CA" });
     const invitedPage = await invitedContext.newPage();
     await invitedPage.goto(`/invite/${token}`);
     await invitedPage.getByRole("link", { name: /créer un compte/i }).click();

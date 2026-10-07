@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { getPathname } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
+import { LogOut } from "lucide-react";
 
 export function TeamPortalSignOutButton() {
   const locale = useLocale();
@@ -16,10 +17,13 @@ export function TeamPortalSignOutButton() {
   return (
     <button
       type="button"
+      aria-label="Se déconnecter"
+      title="Se déconnecter"
       onClick={handleSignOut}
-      className="text-[12.5px] font-medium text-mv-ink-faint hover:text-mv-ink"
+      className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 text-[12.5px] font-medium text-mv-ink-faint hover:text-mv-ink"
     >
-      Se déconnecter
+      <LogOut size={16} aria-hidden="true" className="lg:hidden" />
+      <span className="hidden lg:inline">Se déconnecter</span>
     </button>
   );
 }

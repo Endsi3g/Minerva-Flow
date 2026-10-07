@@ -2,6 +2,18 @@
 
 **Statut au 2026-10-06 : correctifs web et CGV déployés et vérifiés en Production (`cb69f92`, déploiement Vercel `dpl_BeAR8cmTi3MFqmEu6w7MnWakCXUj`, `https://minervaflow.app`).** Les routes authentifiées renvoient les 14 adhésions nommées, la fiche restaurant, l’image de marque et un code QR résolu correctement. Le build iOS `1.0.1 (19)` est installé sur l’iPhone 13 et téléversé; son dernier état connu chez Apple était « en traitement ». L’adresse légale complète, sans suite, et le téléphone (514) 451-5232 figurent dans les CGV et le pied de page email. Le broadcast détaillé a été envoyé au segment des 22 consentements explicites le 6 octobre à 21:19 HAE; les métriques de livraison Resend ne sont pas encore disponibles.
 
+### Reprise — 7 octobre 2026, 00:00 HAE — correctif 2.51.1
+
+- Supabase MCP est connecté. Staging `lhosxxtvgmedwarwgjhb` est restauré et `ACTIVE_HEALTHY`; ses API Auth et PostgREST répondent. Les variables Supabase de Vercel Preview ont été mises à jour uniquement avec les identifiants Staging. Les variables sensibles restent masquées au téléchargement.
+- Les migrations de schéma manquantes `0133`, `0150`, `0167`–`0170`, `0172`, `0175`–`0179` sont appliquées sur Staging. Le durcissement `0173` est adapté aux seules fonctions présentes, car `search_onboarding_candidates(text)` n’existe pas dans ce projet. Les migrations de données Production `0171`/`0174` ne sont pas rejouées. Le RPC QR n’est pas exécutable par `anon`, mais l’est par `authenticated`.
+- Preview `dpl_DCgqS7hQ9PLcH6ri2TqRyxnhct8w`, code `5db3a04`, est `READY`. Quatre parcours passent : routage client avant l’onboarding (45 s), invitation et liaison employé (57,1 s), connexion propriétaire/équipe et export PNG (19,4 s), onboarding complet et création QR (2,5 min). Les comptes et données de test sont temporaires et isolés sur Staging.
+- Local : connexion propriétaire PASS; routage client et partage PASS (2/2). Les premiers essais des anciens tests invitation/onboarding ont échoué à cause de libellés français recherchés dans une session anglaise; la langue est désormais explicite. La vérification visuelle a trouvé un chevauchement de l’en-tête équipe mobile : corrigé, puis parcours et captures revérifiés avec succès.
+- Version préparée `2.51.1` pour ces correctifs, sans déplacer le tag `v2.51.0`. Le déploiement final, le tag et la publication des deux entrées `docs/releases/CHANGELOG_2.51.1.json` sont en cours. Les captures réelles utilisent des comptes de démonstration et sont dans `public/assets/changelog/v2-51-1-*`.
+- Inventaire App Privacy du build 19 préparé dans `docs/mobile/APP_PRIVACY_DATA_MAP_BUILD_19.md`. La reconnexion Apple via un navigateur contrôlable est demandée; ni le traitement TestFlight ni la fiche Apple n’ont été revalidés. La liaison QR native d’un nouveau compte, les captures iPhone/iPad et les comptes d’examen restent requis.
+- Le courriel déjà envoyé n’est pas renvoyé. Aucun GitHub Release ni webhook de notification n’a été déclenché.
+
+Les sections datées ci-dessous conservent l’historique des contrôles; les blocages Staging qui y figurent sont résolus par cette reprise.
+
 ### Reprise — 6 octobre 2026, 23:28 HAE
 
 - Les branches `origin/fix/customer-login-to-portal` et `origin/revert/customer-login-redirect` sont maintenant dans l’historique de `main` (`9e93c97`, `dd138a1`). Le correctif client a été réconcilié avant le garde d’onboarding; la branche `revert` a été intégrée sans appliquer son arbre, car celui-ci annule les améliorations iOS d’apparence et d’historique déjà présentes sur `main`. Aucune capture `.heic` n’est suivie par Git.

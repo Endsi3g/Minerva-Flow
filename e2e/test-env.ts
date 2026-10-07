@@ -36,7 +36,13 @@ function configureE2eEnvironment() {
     const appHost = new URL(appUrl).hostname.toLowerCase();
     const isLocalApp = appHost === "localhost" || appHost === "127.0.0.1";
     if (!isLocalApp) {
-      throw new Error("E2E browser flows only run against the local app until a verified isolated preview environment is configured.");
+      const verifiedPreviewHost = process.env.E2E_VERIFIED_PREVIEW_HOST?.trim().toLowerCase();
+      if (new URL(appUrl).protocol !== "https:"
+        || !appHost.endsWith(".vercel.app")
+        || verifiedPreviewHost !== appHost
+        || projectRef !== "lhosxxtvgmedwarwgjhb") {
+        throw new Error("Remote E2E requires an exact verified Vercel Preview host and Minerva Flow Staging credentials.");
+      }
     }
   }
 

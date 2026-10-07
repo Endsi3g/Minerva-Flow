@@ -1,0 +1,18 @@
+[
+  {
+    "id": "a1f43d11-d6e3-4fe7-a9d3-41d881a93a74",
+    "audience": "owner",
+    "title": "v2.51.1 — Résultats partageables et accès plus clairs",
+    "category": "amelioration",
+    "description": "- **Partage de résultats sur le web** : les propriétaires et gestionnaires peuvent exporter un visuel PNG avec les indicateurs disponibles de leur restaurant. Vous choisissez les chiffres affichés.\n- **Espace équipe Minerva Flow** : sa navigation est maintenant accessible sur téléphone, avec des actions qui ne se chevauchent plus. Cet espace reste réservé aux comptes autorisés.\n- **Démarrage fidélité** : le parcours d’inscription, de configuration et de création du lien et du QR a été vérifié de bout en bout.\n- **Accès client** : un membre fidélité est dirigé vers son portail, même si son profil n’a pas terminé l’onboarding propriétaire.\n- **Captures réelles, données de démonstration** : [navigation équipe sur téléphone](/assets/changelog/v2-51-1-team-mobile.png) et [QR créé pendant le démarrage](/assets/changelog/v2-51-1-onboarding-mobile.png).",
+    "image_url": "/assets/changelog/v2-51-1-owner-desktop.png"
+  },
+  {
+    "id": "e6abe16d-6a94-4627-8f29-580413afcd89",
+    "audience": "client",
+    "title": "v2.51.1 — Retrouvez votre espace fidélité sur le web",
+    "category": "correctif",
+    "description": "- **Le bon espace après connexion** : votre compte client lié à un restaurant ouvre son portail fidélité au lieu de vous envoyer vers la création d’un restaurant.\n- **Profil incomplet** : vous pouvez retrouver votre portail sans remplir les étapes réservées aux propriétaires.\n- **Vos données restent liées à votre compte** : points, visites et restaurant suivent les autorisations de votre session.\n- **Capture réelle avec un compte de démonstration** : l’illustration montre le portail web sur téléphone. Cette annonce concerne le web; la disponibilité du nouveau build iOS dans TestFlight reste à confirmer.",
+    "image_url": "/assets/changelog/v2-51-1-client-mobile.png"
+  }
+]

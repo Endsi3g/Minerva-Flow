@@ -93,6 +93,8 @@ Apple indique que le nom et le sous-titre sont limités à 30 caractères, le te
 
 ## Privacy declarations — not ready to publish
 
+Inventaire détaillé du build 19 : [App Privacy — données et parcours](APP_PRIVACY_DATA_MAP_BUILD_19.md). Les destinations et usages constatés dans le code sont consignés; la déclaration finale et les réglages fournisseur restent à confirmer.
+
 Apple requires the app and third-party SDK data practices to be represented accurately. The final Publish button attests to accuracy, App Review Guideline compliance, and applicable law. The repository only supplies a starting inventory; it does **not** establish every Apple data type, whether it is linked to identity, retention, or purpose. [Apple’s App Privacy workflow](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy)
 
 Items to reconcile against the exact uploaded build and provider settings before entering labels:
