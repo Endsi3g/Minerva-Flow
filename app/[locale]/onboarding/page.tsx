@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/data/profile";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
+import { getCustomersForUser } from "@/lib/data/customer-portal";
+import { shouldRedirectCustomerToPortal } from "@/lib/auth/customer-entry";
+import { isPlatformAdmin } from "@/lib/data/admin";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { isGooglePlacesConfigured } from "@/lib/google/config";
@@ -27,10 +30,23 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
-  const [profileRow, membership] = await Promise.all([
+  const [profileRow, membership, platformAdmin] = await Promise.all([
     supabase.from("profiles").select("onboarding_completed").eq("id", user.id).maybeSingle(),
     getCurrentMembership(),
+    isPlatformAdmin(),
   ]);
+
+  if (!membership && !platformAdmin) {
+    const customers = await getCustomersForUser(user.id).catch(() => []);
+    if (shouldRedirectCustomerToPortal({
+      isAuthenticated: true,
+      hasRestaurantMembership: false,
+      isPlatformAdmin: platformAdmin,
+      customerRecordCount: customers.length,
+    })) {
+      redirect("/portal");
+    }
+  }
 
   // Redirect to the app only when onboarding is done AND the user actually
   // has an active restaurant — an account whose membership got orphaned
