@@ -1,5 +1,7 @@
 import {
   MINERVA_EMAIL_POSTAL_ADDRESS,
+  MINERVA_EMAIL_PHONE,
+  MINERVA_EMAIL_PHONE_TEL,
   MINERVA_EMAIL_REPLY_TO,
   MINERVA_EMAIL_SITE_URL,
 } from "./identity.ts";
@@ -81,7 +83,7 @@ export function renderMinervaEmail(input: MinervaEmailInput): string {
     ${marketing ? `<p style="margin:0 0 8px">${consentReason}</p>` : ""}
     <p style="margin:0 0 4px"><strong style="color:#565f52">Minerva Flow</strong> · Minerva Technologies Inc.</p>
     <p style="margin:0 0 6px">${MINERVA_EMAIL_POSTAL_ADDRESS}</p>
-    <p style="margin:0"><a href="${MINERVA_EMAIL_SITE_URL}" style="color:#0e5a40;text-decoration:underline">minervaflow.app</a> · <a href="mailto:${MINERVA_EMAIL_REPLY_TO}" style="color:#0e5a40;text-decoration:underline">${MINERVA_EMAIL_REPLY_TO}</a>${
+    <p style="margin:0"><a href="${MINERVA_EMAIL_SITE_URL}" style="color:#0e5a40;text-decoration:underline">minervaflow.app</a> · <a href="mailto:${MINERVA_EMAIL_REPLY_TO}" style="color:#0e5a40;text-decoration:underline">${MINERVA_EMAIL_REPLY_TO}</a> · <a href="${MINERVA_EMAIL_PHONE_TEL}" style="color:#0e5a40;text-decoration:underline;white-space:nowrap">${MINERVA_EMAIL_PHONE}</a>${
       marketing
         ? ` · <a href="${unsubscribeUrl}" style="color:#0e5a40;text-decoration:underline">${language === "en" ? "Unsubscribe" : "Se désabonner"}</a>`
         : ""

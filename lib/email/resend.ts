@@ -3,8 +3,10 @@ import { Resend } from "resend";
 import { ACTIVE_PRODUCT_UPDATES_SEGMENT_ID } from "@/lib/email/product-updates";
 import {
   MINERVA_EMAIL_FROM,
+  MINERVA_EMAIL_PHONE,
   MINERVA_EMAIL_POSTAL_ADDRESS,
   MINERVA_EMAIL_REPLY_TO,
+  MINERVA_EMAIL_SITE_URL,
 } from "@/lib/email/identity";
 import { renderMinervaEmail } from "@/lib/email/brand-shell";
 import { renderCampaignAnnouncementEmail } from "@/lib/email/campaign-template";
@@ -511,7 +513,7 @@ export async function sendChangelogCampaignEmail({
     subject: `Nouveauté sur Minerva Flow : ${title}`,
     previewText: description.slice(0, 120),
     html: campaignEmailHtml({ title, description, category, ctaUrl }),
-    text: `${CAMPAIGN_CATEGORY_LABEL[category]}\n${title}\n\n${description}\n\n${ctaUrl}\n\nVous recevez ce courriel parce que vous avez choisi de recevoir les annonces produit de Minerva Flow.\nSe désabonner : {{{RESEND_UNSUBSCRIBE_URL}}}\nMinerva Flow · Minerva Technologies Inc. · ${MINERVA_EMAIL_POSTAL_ADDRESS}`,
+    text: `${CAMPAIGN_CATEGORY_LABEL[category]}\n${title}\n\n${description}\n\n${ctaUrl}\n\nVous recevez ce courriel parce que vous avez choisi de recevoir les annonces produit de Minerva Flow.\nSe désabonner : {{{RESEND_UNSUBSCRIBE_URL}}}\nMinerva Flow · Minerva Technologies Inc. · ${MINERVA_EMAIL_POSTAL_ADDRESS}\n${MINERVA_EMAIL_SITE_URL} · ${MINERVA_EMAIL_REPLY_TO} · ${MINERVA_EMAIL_PHONE}`,
     send: true,
   });
 

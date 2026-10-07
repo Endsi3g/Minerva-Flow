@@ -1,6 +1,6 @@
 # Minerva Flow 2.51.0 — Portail équipe, Compte client, partage de résultats
 
-**Statut au 2026-10-06 : base 2.51 en Production; correctifs API et iOS prêts localement, en attente du déploiement web.** L’application du schéma Supabase `0179` est confirmée en Production. Le build iOS `1.0.1 (19)` a été installé sur l’iPhone 13 et envoyé à App Store Connect; Apple indique qu’il est en traitement. Il n’est pas encore disponible aux testeurs TestFlight. L’annonce de release attend le déploiement web vérifié et la confirmation des coordonnées des CGV.
+**Statut au 2026-10-06 : correctifs web `a2600d6` déployés et vérifiés en Production.** Les routes authentifiées renvoient les 14 adhésions nommées, la fiche restaurant, l’image de marque et un code QR résolu correctement. Le build iOS `1.0.1 (19)` est installé sur l’iPhone 13 et téléversé; son dernier état connu chez Apple était « en traitement ». L’adresse officielle complète est « 367 rue Lberge, Repentigny (Québec) J6A 4C2, Canada », sans suite, et le téléphone (514) 451-5232. Les coordonnées sont complètes; CGV et pied de page de l’annonce seront déployés avec ce commit. Le broadcast reste en brouillon jusqu’au contrôle final du contenu et du segment de consentement.
 
 Les routes corrigées, l’accès aux données client existantes et la compilation iOS sont vérifiés. Les parcours authentifiés propriétaire/équipe/partage et le nouvel onboarding QR complet n’ont pas été validés de bout en bout sur Preview; le build TestFlight attend le traitement Apple. Conserver le lancement sous conditions jusqu’aux contrôles manuels ci-dessous.
 
@@ -11,18 +11,18 @@ Date de préparation : 2026-10-03 · Branche source : `feat/team-portal-and-nati
 - L'écran iOS de connexion est recentré; « Flow » reste noir, le nom français emploie l'italique de la police d'affichage, le bypass de développement a disparu de l'interface et le consentement marketing commence décoché.
 - L’app impose la liaison à un restaurant par QR uniquement aux comptes sans adhésion. Le compte de démonstration réel se connecte et possède 14 adhésions; ses noms, son historique et l’image de marque sont servis correctement. Un parcours QR de nouvel utilisateur doit encore être testé avec un compte sans adhésion.
 - La migration Supabase `0179_resolve_restaurant_connection_token` est appliquée et inscrite dans l’historique Production. La route de résolution QR utilise le RPC sous RLS.
-- Les CGV commerciales FR/EN sont rédigées avec l’essai de 14 jours, les prix, taxes selon la loi, renouvellement, résiliation à la fin de la période payée et absence de remboursement après débit, sous réserve des droits impératifs et des débits erronés. La page reste locale tant que l’adresse postale exacte (tu confirmes « 367 rue Lberge »; le dépôt dit « Laberge »), la suite et le téléphone ne sont pas confirmés.
-- Build iOS `1.0.1 (19)` compilé, archivé et téléversé; App Store Connect indique « Uploaded package is processing ». Le build Debug 19 est installé et lancé sur l’iPhone 13. Il n’est pas encore téléchargeable dans TestFlight.
-- Build web et TypeScript réussissent; les tests ciblés des routes restaurant et QR réussissent (7/7). Les routes corrigées renvoient 200 avec l’environnement de production. La tournée UI complète et les parcours owner/équipe/partage en Preview restent à faire.
-- Le courriel de contrôle à `kbelceus776@gmail.com` a été livré. Le brouillon Resend détaillé reste `draft`, limité au segment des 22 consentements explicites actifs; aucune annonce de release n’a été envoyée.
+- Les CGV commerciales FR/EN sont rédigées avec l’essai de 14 jours, les prix, taxes selon la loi, renouvellement, résiliation à la fin de la période payée et absence de remboursement après débit, sous réserve des droits impératifs et des débits erronés. L’adresse officielle complète, sans suite, et le téléphone (514) 451-5232 sont confirmés; la page sera publiée avec ce commit.
+- Build iOS `1.0.1 (19)` compilé, archivé et téléversé; le dernier état confirmé par App Store Connect était « Uploaded package is processing ». Le build Debug 19 est installé et lancé sur l’iPhone 13. La disponibilité TestFlight n’a pas été re-vérifiée depuis le téléversement.
+- Build web et TypeScript réussissent; les tests ciblés des routes restaurant et QR réussissent (7/7). En Production authentifiée, `/api/portal/restaurants`, `/api/portal/restaurant`, `/api/portal/restaurant/[id]/branding` et la résolution d’un QR valide répondent tous 200; les 14 adhésions portent un nom. La tournée UI complète et les parcours owner/équipe/partage en Preview restent à faire.
+- Le nouvel email de contrôle à `kbelceus776@gmail.com` a été livré. L’aperçu HTML local mobile et bureau est lisible. Le brouillon Resend détaillé reste `draft`, limité au segment des 22 consentements explicites actifs; aucune annonce de release n’a été envoyée.
 
 ## Contrôles live du 6 octobre 2026
 
 - **Preview** : le déploiement Ready de `fix/team-login-redirect` (PR #176, basé sur `main` `bfcf613`) sert `/equipe/connexion` en HTTP 200 et la page de connexion s’ouvre dans Safari. Les parcours authentifiés owner, équipe et partage ne sont pas validés faute de session de test.
 - **Consentement Resend** : le segment global contient 102 contacts, dont 57 désabonnés; seuls 22 contacts figurent dans le segment actif au consentement explicite et aucun de ces 22 n’est désabonné. Les 45 contacts non désabonnés du segment global ne sont pas tous attestés comme opt-in : ne pas les ajouter à la campagne.
-- **Composer / courriel** : brouillon Resend détaillé, statut `draft`, segment explicite uniquement, expéditeur `Minerva Flow <flow@minervaflow.app>`; domaine vérifié. Le test interne a été livré. ID du brouillon `73a16f1d-617b-46be-b536-98e281593c88`. L’adresse au pied de page doit être harmonisée avant l’envoi.
+- **Composer / courriel** : brouillon Resend détaillé, statut `draft`, segment explicite uniquement, expéditeur `Minerva Flow <flow@minervaflow.app>`; domaine vérifié. Le test interne actualisé est livré. ID du brouillon `73a16f1d-617b-46be-b536-98e281593c88`. Le pied de page reprend l’adresse officielle complète (sans suite), le téléphone, le site et l’adresse de soutien; contrôle final du segment et envoi après déploiement.
 - **iOS** : le garde-fou statique retourne 0 critique, 0 élevé, 1 avertissement manuel. Build `1.0.1 (19)` accepté par le transport et en traitement Apple; app Debug 19 installée et ouverte sur l’iPhone 13. La fiche App Store 1.0 demeure « À finaliser avant soumission » : déclarations App Privacy, captures et identifiants d’examen restent manuels. Aucun achat intégré n’est configuré; les abonnements sont gérés sur le web.
-- **Décision** : les contacts non attestés et désabonnés restent exclus. Envoyer le brouillon seulement après déploiement web vérifié, confirmation des coordonnées de bas de page et contrôle du contenu rendu; l’annonce reste non envoyée.
+- **Décision** : les contacts non attestés et désabonnés restent exclus. L’adresse postale est complète et confirmée; après déploiement et dernière vérification live du brouillon, envoyer uniquement aux contacts explicitement opt-in. L’annonce est encore non envoyée.
 
 ## Contenu
 
@@ -65,7 +65,7 @@ Les captures d'écran du journal sont **à produire** à partir de l'application
 | --- | --- |
 | TypeScript (`npx tsc --noEmit`) | PASS |
 | Tests web (`npx vitest run`, délai de test 60 s) | PASS — 396 tests dans 72 fichiers (avec le délai par défaut, un test Stripe est instable à l'import à froid) |
-| Corrections du 6 octobre | TypeScript PASS; build web PASS; tests de routes ciblés 7/7 PASS; build iOS Debug et archive Release 1.0.1 (19) PASS; migration 0179 appliquée; onboarding QR neuf encore à vérifier |
+| Corrections du 6 octobre | TypeScript PASS; build web PASS; tests de routes ciblés 7/7 PASS; routes authentifiées Production 200; build iOS Debug et archive Release 1.0.1 (19) PASS; migration 0179 appliquée; onboarding QR neuf encore à vérifier |
 | CI GitHub de la PR #167 (typage, lint non bloquant, tests, build) | PASS — deux exécutions |
 | Déploiement de prévisualisation Vercel | PASS — `/equipe/connexion` répond et s’ouvre; parcours authentifiés toujours non vérifiés |
 | Tests natifs ciblés (NFC, Nouveautés) | PASS — 7 tests |

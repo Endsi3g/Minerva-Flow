@@ -18,7 +18,8 @@ describe("renderCampaignAnnouncementEmail", () => {
     expect(html).toContain("font-family:'New York','-apple-system-serif','Playfair Display',Georgia,serif");
     expect(html).toContain("background-color:#167f5b");
     expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
-    expect(html).toContain("367 rue Laberge, Repentigny (Québec) J6A 4C2");
+    expect(html).toContain("367 rue Lberge, Repentigny (Québec) J6A 4C2");
+    expect(html).toContain("(514) 451-5232");
     expect(html).not.toContain("border-radius:16px");
   });
 
