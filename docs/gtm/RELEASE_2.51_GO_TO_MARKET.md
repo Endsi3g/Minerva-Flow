@@ -1,18 +1,18 @@
 # Préparation du lancement Minerva Flow 2.51.0
 
-**État au 6 octobre 2026 : correctifs web déployés en Production (`a2600d6`) et routes authentifiées validées.** Les 14 adhésions de l’utilisateur test renvoient leurs noms; les endpoints de fiche restaurant, branding et QR répondent 200. Le build iOS 1.0.1 (19) a été téléversé à App Store Connect; son dernier état connu était « en traitement ». L’adresse officielle complète est « 367 rue Lberge, Repentigny (Québec) J6A 4C2, Canada », sans suite, avec le téléphone (514) 451-5232; les coordonnées sont prêtes pour publication dans les CGV et l’annonce email.
+**État au 6 octobre 2026 : version web et CGV déployées en Production (`cb69f92`, déploiement Vercel `dpl_BeAR8cmTi3MFqmEu6w7MnWakCXUj`, `https://minervaflow.app`) et routes authentifiées validées.** Les 14 adhésions de l’utilisateur test renvoient leurs noms; les endpoints de fiche restaurant, branding et QR répondent 200. Le build iOS 1.0.1 (19) a été téléversé à App Store Connect; son dernier état connu était « en traitement ». L’adresse officielle complète, sans suite, et le téléphone (514) 451-5232 sont affichés dans les CGV et les emails standardisés. Le broadcast détaillé a été envoyé au segment de consentement explicite; les métriques de livraison restent en attente.
 
-La migration Supabase `0179_resolve_restaurant_connection_token` est appliquée en Production. La clé serveur Vercel a été alignée sur la clé Supabase active; les routes corrigées répondent maintenant 200 en Production authentifiée. Le compte `dev-test@minervaflow.app` a 14 adhésions de restaurant réelles, et l’app charge ses données. Le scénario de liaison QR d’un compte sans adhésion reste à valider de bout en bout. Le build Debug 1.0.1 (19) est installé et lancé sur l’iPhone 13; le dernier état de traitement transmis par App Store Connect était en cours. La disponibilité TestFlight reste à re-vérifier avant toute annonce.
+La migration Supabase `0179_resolve_restaurant_connection_token` est appliquée en Production. La clé serveur Vercel a été alignée sur la clé Supabase active; les routes corrigées répondent maintenant 200 en Production authentifiée. Le compte `dev-test@minervaflow.app` a 14 adhésions de restaurant réelles, et l’app charge ses données. Le scénario de liaison QR d’un compte sans adhésion reste à valider de bout en bout. Le build Debug 1.0.1 (19) est installé et lancé sur l’iPhone 13; le dernier état de traitement transmis par App Store Connect était en cours. La disponibilité TestFlight reste à re-vérifier avant toute annonce iOS.
 
-Le Preview de la branche `fix/team-login-redirect` (PR #176) sert `/equipe/connexion`; les parcours authentifiés owner, équipe et partage restent à vérifier. Dans Resend, le segment global compte 102 contacts, dont 57 désabonnés; 22 contacts sont attestés actifs et inscrits. Le nouvel email de contrôle à `kbelceus776@gmail.com` est livré. Le brouillon détaillé `73a16f1d-617b-46be-b536-98e281593c88` vise toujours le segment explicite uniquement. Son HTML a été aperçu en mobile et bureau; le contenu de Composer TipTap est nul, donc le brouillon reste en HTML pour préserver sa mise en page. La fiche App Store 1.0 reste à finaliser : déclarations App Privacy, captures et identifiants d’examen sont à compléter.
+Le Preview de la branche `fix/team-login-redirect` (PR #176) sert `/equipe/connexion`; les parcours authentifiés owner, équipe et partage restent à vérifier. Le segment Resend explicite comptait 22 contacts actifs sur un total global de 102; 57 désabonnés et 45 contacts non attestés n’ont pas été ciblés. Le courriel de contrôle à `kbelceus776@gmail.com` a été livré. Le broadcast détaillé `73a16f1d-617b-46be-b536-98e281593c88` est confirmé `sent` depuis le 6 octobre 2026 à 21:19 HAE. Son HTML a été vérifié dans les aperçus locaux mobile et bureau; le contenu Composer TipTap était nul, donc le brouillon HTML a été conservé. Les métriques détaillées de livraison Resend ne sont pas encore disponibles. La fiche App Store 1.0 reste à finaliser : déclarations App Privacy, captures et identifiants d’examen.
 
 ## Promesse et périmètre
 
 Après validation, présenter les changements visibles réellement livrés : le portail équipe et ambassadeurs, les sous-pages de réglages, le partage de résultats, ainsi que l'organisation du compte client et du journal par audience. Présenter NFC comme hors périmètre. Ne pas annoncer une fonction iOS comme disponible dans le nouveau build tant qu'un artefact TestFlight à jour n'est pas distribué.
 
-Le lancement s'adresse d'abord aux propriétaires et gestionnaires déjà actifs. Les clients voient les nouveautés client dans leur espace; le flux actuel ne leur envoie pas d'e-mail ni de notification push. La campagne de courriel de release doit utiliser uniquement le segment Resend explicitement inscrit et confirmé à la date de l'envoi. Au contrôle live du 6 octobre, ce segment comptait 22 contacts actifs; le segment global contenait 102 contacts, dont 57 désabonnés. Ne pas remplacer ce segment par la base entière ni par les 45 contacts globalement non désabonnés.
+Le lancement s’adresse d’abord aux propriétaires et gestionnaires déjà actifs. Le broadcast de release a été envoyé le 6 octobre 2026 au segment Resend explicitement inscrit : 22 contacts actifs. Le segment global comptait 102 contacts, dont 57 désabonnés; 45 autres contacts sans consentement attesté ont été exclus. Les clients voient les nouveautés client dans leur espace; ce flux ne déclenche pas d’email ni de notification push.
 
-## Brouillon d'annonce — à utiliser après levée des conditions
+## Texte court pour journal/réseaux — en attente des contrôles et captures
 
 **Objet :** Minerva Flow évolue : partage de résultats et espace équipe
 
@@ -30,12 +30,12 @@ Consultez le journal des nouveautés dans l'application pour voir les détails e
 
 **Bouton :** Voir les nouveautés
 
-Ce texte reste un brouillon : vérifier les parcours, captures et libellés finaux avant envoi. Le courriel doit utiliser le gabarit HTML de campagne déjà présent dans `lib/email/campaign-template.ts`, avec l'identité, l'adresse postale, le lien de désabonnement et l'expéditeur autorisé `Minerva Flow <flow@minervaflow.app>`.
+Ce texte reste un brouillon pour le journal ou les réseaux : vérifier les parcours, captures et libellés finaux avant publication. Le broadcast email de release a déjà été envoyé; sa version détaillée est conservée dans Resend.
 
 ## Canaux
 
 1. **Dans l'application** — publier des entrées séparées pour les propriétaires et les clients, chacune avec une capture réelle. Le flux de publication automatique est à vérifier avant de créer une release GitHub : il peut envoyer des notifications à tous les membres d'un restaurant.
-2. **Courriel** — après le courriel de contrôle interne, envoyer la campagne uniquement au segment actif et explicitement inscrit dans Resend. Ne pas envoyer à l'ensemble des comptes ni reprendre les 102 indicateurs de consentement en bloc.
+2. **Courriel** — [x] envoyé le 6 octobre 2026 à 21:19 HAE au segment actif et explicitement inscrit dans Resend; ne pas adresser la base entière ni reprendre les 102 indicateurs de consentement en bloc.
 3. **iOS/TestFlight** — annoncer une version iOS uniquement après traitement Apple et installation réelle du build testé.
 4. **Acquisition** — présenter les nouveautés dans les démonstrations déjà prévues; attendre les résultats des pilotes avant d'ajouter des chiffres ou témoignages.
 
@@ -50,12 +50,12 @@ Ce texte reste un brouillon : vérifier les parcours, captures et libellés fina
 | NFC | Périmètre | Exclu de 2.51; ne pas le promouvoir |
 | Vérification du cron Google Reviews | Exploitation | À vérifier ou exclure explicitement de la communication |
 | Contrôle visuel iOS clair/sombre sur appareil | Testeur avec appareil | Build 1.0.1 (19) envoyé; attendre le traitement Apple puis vérifier les parcours |
-| Courriel de contrôle interne | Accès expéditeur | À faire avant la campagne |
-| Entrées du journal puis campagne segmentée | Responsable publication | Après les étapes précédentes seulement |
+| Courriel de contrôle interne | Accès expéditeur | Terminé avant la campagne |
+| Entrées du journal par audience | Responsable publication | Captures et parcours manuels encore requis; le courriel de release est envoyé |
 
 ## Mesure après lancement
 
-- Avant l'envoi, enregistrer le nombre de destinataires autorisés, les rebonds et désabonnements du segment Resend.
+- Segment de l’envoi : 22 contacts autorisés; 57 désabonnés et 45 contacts sans consentement attesté exclus. Le statut du broadcast est `sent`; récupérer les statistiques de livraison quand les métriques Resend seront disponibles.
 - Après publication, suivre les vues du journal et les parcours `onboarding_completed`, `restaurant_created` et les événements déjà disponibles dans PostHog.
 - Ajouter des événements dédiés au portail équipe et au partage avant de tirer des conclusions sur leur adoption.
 - À 7 et 30 jours, comparer les actions réelles avec la période précédente; décrire les données observées sans les généraliser à tous les restaurants.
@@ -100,7 +100,7 @@ Conserver le propriétaire du lancement dans l’application et consigner les r�
 
 ## État des blocages — 6 octobre 2026
 
-- Le brouillon Resend détaillé reste non envoyé. Le segment autorisé demeure les 22 contacts explicitement inscrits; 57 contacts de la base globale sont désabonnés et 45 autres n'ont pas de consentement attesté. Le nouvel email de contrôle à `kbelceus776@gmail.com` a été livré après l’aperçu local mobile et bureau.
+- Le broadcast Resend détaillé a été envoyé le 6 octobre 2026 à 21:19 HAE à 22 contacts explicitement inscrits. Les 57 désabonnés et 45 contacts sans consentement attesté sont exclus. Le courriel de contrôle est livré; l’aperçu HTML mobile/bureau a été vérifié localement. Les métriques de livraison ne sont pas encore remontées.
 - La migration `0179_resolve_restaurant_connection_token` est appliquée en Production; l’onboarding QR complet d’un compte sans adhésion reste à vérifier avec un tel compte.
-- Les CGV commerciales FR/EN sont préparées avec les règles confirmées : essai de 14 jours, taxes selon la loi; pas de remboursement après débit, sous réserve des droits impératifs et de la correction des erreurs. L’adresse « 367 rue Lberge, Repentigny (Québec) J6A 4C2, Canada », sans suite, et le téléphone (514) 451-5232 sont confirmés. Le pied de page email reprend ces coordonnées, le site et l’adresse de soutien.
-- Aucun email, entrée de journal, post social ou webhook de publication n'a été déclenché. Envoyer la campagne uniquement après déploiement vérifié et contrôle interne.
+- Les CGV commerciales FR/EN sont déployées : essai de 14 jours, taxes selon la loi; aucun remboursement après débit sous réserve des droits impératifs et des débits erronés. L’adresse « 367 rue Lberge, Repentigny (Québec) J6A 4C2, Canada », sans suite, et le téléphone (514) 451-5232 sont publiés. Le pied de page email reprend les mêmes coordonnées, le site et l’adresse de soutien.
+- Le broadcast email a été envoyé après le déploiement et le courriel de contrôle. Aucune entrée du journal, publication sociale ou relance du webhook de publication n’a été déclenchée; les entrées du journal par audience, leurs captures et les métriques email restent à compléter.
