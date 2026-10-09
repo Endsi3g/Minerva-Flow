@@ -180,5 +180,24 @@
     "releaseNotes": "docs/releases/RELEASE_2.52.0-rc.2.md",
     "announcement": "Email only after validated Production deployment; prereleases still skip announce. Failed campaign reported, not silently accepted.",
     "safariReview": "Developer dashboard DRAFT; setup items incomplete; Android & Web differs from intended Web integration; no connected browser for edits"
+  },
+  "qualityCandidate": {
+    "branch": "fix/release-quality-2.52.0",
+    "baseRelease": "v2.52.0-rc.2",
+    "globalLint": {
+      "errors": 0,
+      "warnings": 0,
+      "ciBlocking": true
+    },
+    "unitTests": {
+      "passed": 592,
+      "failed": 0,
+      "files": 93
+    },
+    "newFocusedTests": 18,
+    "build": "Webpack passed, 308 pages, 4 GiB Node heap",
+    "production": "Not deployed; real merchant and critical journey validation remain required",
+    "browserDiagnosis": "Chrome installed/running, native host valid, required browser extension missing in active profile",
+    "externalCloverWrites": 0
   }
 }

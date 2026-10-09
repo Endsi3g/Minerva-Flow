@@ -101,7 +101,7 @@ export function AppBreadcrumb() {
                     {displayLabel}
                   </BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink render={<Link href={href as any} />} className="font-normal text-mv-ink-soft hover:text-mv-ink transition-colors">
+                  <BreadcrumbLink render={<Link href={href} />} className="font-normal text-mv-ink-soft hover:text-mv-ink transition-colors">
                     {displayLabel}
                   </BreadcrumbLink>
                 )}

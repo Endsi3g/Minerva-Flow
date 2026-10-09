@@ -1,13 +1,6 @@
 import { Resend } from "resend";
 import {
   renderLifecycleEmail,
-  renderWelcomeEmail,
-  renderActivationEmail,
-  renderFeatureHighlightEmail,
-  renderSupportCheckinEmail,
-  renderCaseStudyEmail,
-  renderConversionEmail,
-  renderReactivationEmail,
   renderWeeklyReportEmail,
   renderSpecialOfferEmail,
   renderLoyaltyRetentionEmail,

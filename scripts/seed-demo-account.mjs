@@ -805,7 +805,7 @@ async function seedFinancialTransactions(restaurantId, programs) {
     { description: "Facture Hydro-Québec", amount: randInt(280, 520), direction: "out", category: "Utilities", source_account: "Desjardins — Compte pro", program_id: null },
   ];
 
-  const rows = templates.map((t, i) => ({
+  const rows = templates.map((t) => ({
     restaurant_id: restaurantId,
     date: toDateStr(addDays(TODAY, -randInt(0, 28))),
     description: t.description,

@@ -8,19 +8,17 @@ import { Badge } from "@/components/ui/Badge";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/minerva/FormField";
 import { useApp } from "@/lib/app-context";
-import { GOOGLE_FEATURE_LABELS, GOOGLE_SCOPES, type GoogleFeature } from "@/lib/google/config";
+import { GOOGLE_SCOPES, type GoogleFeature } from "@/lib/google/config";
 import { GoogleConnectModal } from "@/components/minerva/GoogleConnectModal";
 import {
   getGoogleWorkspaceStatusAction,
   saveGa4PropertyIdAction,
 } from "@/app/[locale]/(app)/settings/google-workspace-actions";
 import type { GoogleConnection } from "@/lib/data/google-connections";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  Google,
   GoogleMonochrome,
-  GoogleWorkspace,
   Gmail,
   GoogleSheets,
   GoogleDrive,
@@ -28,7 +26,6 @@ import {
   GoogleAnalytics,
   GoogleAds,
 } from "@/components/ui/BrandIcons";
-import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 
 const FEATURES: GoogleFeature[] = ["gmail", "sheets", "drive", "calendar", "analytics"];
@@ -56,22 +53,34 @@ export function GoogleWorkspaceCard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [ga4Input, setGa4Input] = useState("");
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     if (!restaurantId) return;
     const data = await getGoogleWorkspaceStatusAction(restaurantId);
     setStatus(data);
     setGa4Input(data.connection?.ga4PropertyId ?? "");
-  }
+  }, [restaurantId]);
 
   useEffect(() => {
-    refresh();
+    if (!restaurantId) return;
+    let active = true;
+    void getGoogleWorkspaceStatusAction(restaurantId).then((data) => {
+      if (!active) return;
+      setStatus(data);
+      setGa4Input(data.connection?.ga4PropertyId ?? "");
+    });
+    return () => { active = false; };
   }, [restaurantId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("google_connected")) {
       toast.success(t("googleConnectedSuccessfully"));
-      refresh();
+      if (restaurantId) {
+        void getGoogleWorkspaceStatusAction(restaurantId).then((data) => {
+          setStatus(data);
+          setGa4Input(data.connection?.ga4PropertyId ?? "");
+        });
+      }
       window.history.replaceState({}, "", window.location.pathname);
     } else if (params.get("google_error")) {
       toast.error(t("theGoogleConnectionFailed"));

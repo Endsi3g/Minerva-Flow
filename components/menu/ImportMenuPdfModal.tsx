@@ -40,7 +40,7 @@ export function ImportMenuPdfModal({
       byCategory.get(key)!.push(item);
     }
     return Array.from(byCategory.entries());
-  }, [scan.items]);
+  }, [scan.items, t]);
 
   const includedCount = scan.items.filter((i) => i.include).length;
 

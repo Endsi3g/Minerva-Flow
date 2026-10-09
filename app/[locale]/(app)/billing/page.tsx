@@ -98,7 +98,7 @@ export default function BillingPage() {
     if (status?.subscription) {
       listInvoicesAction().then(setInvoices);
     }
-  }, [status?.subscription?.stripeCustomerId]);
+  }, [status?.subscription]);
 
   async function handleSelectPlan(planId: string, interval: BillingInterval) {
     if (planId === "marque_blanche") {

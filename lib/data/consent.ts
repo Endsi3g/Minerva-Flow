@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhoneNumber } from "@/lib/phone";
 import { recordLifecycleEvent } from "@/lib/data/lifecycle-events";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ConsentType = "service" | "marketing";
 export type ConsentStatus = "opt_in" | "opt_out";
@@ -54,7 +55,7 @@ export type RecordConsentParams = {
  */
 export async function recordConsentAudit(
   params: RecordConsentParams,
-  customClient?: any
+  customClient?: SupabaseClient
 ): Promise<CustomerConsentRecord | null> {
   const client = customClient ?? (await createClient());
 
@@ -108,7 +109,7 @@ export async function recordCustomerOptIn(
     ipAddress?: string | null;
     userAgent?: string | null;
   },
-  customClient?: any
+  customClient?: SupabaseClient
 ): Promise<void> {
   const client = customClient ?? (await createClient());
 
@@ -184,7 +185,7 @@ export async function recordCustomerOptOut(
     reason?: string;
     ipAddress?: string | null;
   },
-  customClient?: any
+  customClient?: SupabaseClient
 ): Promise<boolean> {
   const client = customClient ?? createAdminClient();
 

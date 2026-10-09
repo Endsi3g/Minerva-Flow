@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import type { LucideIcon } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -27,8 +28,6 @@ import {
   ClipboardList,
   Zap,
   Settings,
-  CornerDownLeft,
-  ArrowUpDown,
   Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -77,7 +76,13 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
   const router = useRouter();
   const { role, sidebarPermissions } = useApp();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [result, setResult] = useState<{ key: string; items: SearchResult[] } | null>(null);
+  const [previousOpen, setPreviousOpen] = useState(open);
+  if (previousOpen !== open) {
+    setPreviousOpen(open);
+    if (!open) { setQuery(""); setResult(null); }
+  }
+  const requestKey = `${restaurantId}:${query}`;
   const [isPending, startTransition] = useTransition();
 
   const suggestedItems = navItemsForRole(role, sidebarPermissions);
@@ -95,24 +100,18 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
   }, [enableGlobalShortcut, open, onOpenChange]);
 
   useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setResults([]);
-      return;
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (query.trim() === "") {
-      setResults([]);
-      return;
-    }
-
+    if (!open || !query.trim()) return;
+    let active = true;
     startTransition(async () => {
-      const data = await searchEverythingAction(restaurantId, query);
-      setResults(data);
+      try {
+        const data = await searchEverythingAction(restaurantId, query);
+        if (active) setResult({ key: requestKey, items: data });
+      } catch {
+        if (active) setResult({ key: requestKey, items: [] });
+      }
     });
-  }, [query, restaurantId]);
+    return () => { active = false; };
+  }, [open, query, restaurantId, requestKey]);
 
   function handleSelect(href: string) {
     onOpenChange(false);
@@ -120,7 +119,8 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
     router.refresh();
   }
 
-  const grouped = results.reduce<Record<SearchResult["type"], SearchResult[]>>(
+  const visibleResults = open && query.trim() && result?.key === requestKey ? result.items : [];
+  const grouped = visibleResults.reduce<Record<SearchResult["type"], SearchResult[]>>(
     (acc, curr) => {
       if (!acc[curr.type]) {
         acc[curr.type] = [];
@@ -145,7 +145,7 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
     order: t("searchTypeOrder"),
   };
 
-  const typeIcons: Record<SearchResult["type"], any> = {
+  const typeIcons: Record<SearchResult["type"], LucideIcon> = {
     action: Zap,
     setting: Settings,
     navigation: Navigation,
@@ -186,7 +186,7 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
           )}
         </div>
         <CommandList className="max-h-[380px] overflow-y-auto px-1.5 py-2">
-          {query && results.length === 0 && !isPending && (
+          {query && visibleResults.length === 0 && !isPending && (
             <CommandEmpty className="py-8 text-center text-[13px] text-mv-ink-faint">
               {t("searchNoResults", { query })}
             </CommandEmpty>

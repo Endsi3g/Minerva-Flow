@@ -39,7 +39,7 @@ export function DirectOrderingWidgetGenerator({
   const [copiedIframe, setCopiedIframe] = useState(false);
   const [copiedButton, setCopiedButton] = useState(false);
   const [tableNumber, setTableNumber] = useState("1");
-  const [widgetHeight, setWidgetHeight] = useState("700");
+  const [widgetHeight] = useState("700");
   const [orderMode, setOrderMode] = useState<OrderMode>("clickcollect");
   const [monthlySales, setMonthlySales] = useState("8000");
 

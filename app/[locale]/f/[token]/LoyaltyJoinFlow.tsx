@@ -8,7 +8,7 @@ import { Card } from "@/components/minerva/PageCard";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Gift, Mail, Heart, ShieldCheck } from "lucide-react";
+import { Gift, Mail, Heart } from "lucide-react";
 import { joinLoyaltyProgramAction, recordFormStartedAction } from "./actions";
 import type { PublicLoyaltyLanding } from "@/lib/data/loyalty-shares";
 
@@ -26,7 +26,6 @@ export function LoyaltyJoinFlow({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [birthday, setBirthday] = useState("");
-  const [serviceConsent, setServiceConsent] = useState(true);
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [formStartedTracked, setFormStartedTracked] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "email-pending" | "error">("idle");

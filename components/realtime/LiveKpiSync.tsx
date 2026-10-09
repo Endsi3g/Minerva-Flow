@@ -10,7 +10,7 @@ import { useLiveKpiSubscription } from "@/lib/realtime/RealtimeProvider";
  * Mount once per page (e.g. Overview, Finance) that renders KPIs derived from
  * these tables. Renders nothing.
  */
-export function LiveKpiSync({ restaurantId: _restaurantId }: { restaurantId?: string }) {
+export function LiveKpiSync({}: { restaurantId?: string }) {
   useLiveKpiSubscription();
   return null;
 }

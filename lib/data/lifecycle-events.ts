@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { capturePostHogServerEvent } from "@/lib/posthog-server";
 
 export type LifecycleEventType =
@@ -141,7 +142,7 @@ export type RecordLifecycleEventParams = {
  */
 export async function recordLifecycleEvent(
   params: RecordLifecycleEventParams,
-  customClient?: any
+  customClient?: SupabaseClient
 ): Promise<LifecycleEventRecord | null> {
   try {
     const client = customClient ?? createAdminClient();

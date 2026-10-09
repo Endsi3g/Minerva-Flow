@@ -16,7 +16,24 @@ const LEGACY_CHANNELS: { id: TeamChannel; name: string }[] = [
 ];
 
 /* ── helpers ── */
-function dbRowToMessage(row: any): TeamChatMessage {
+function dbRowToMessage(row: {
+  id: string;
+  restaurant_id: string;
+  channel: string;
+  author_id: string;
+  author_name: string;
+  author_role: string | null;
+  author_avatar_url: string | null;
+  content: string;
+  is_ai_response: boolean | null;
+  is_pinned: boolean | null;
+  deleted: boolean | null;
+  reply_to: unknown;
+  reactions: TeamChatMessage["reactions"];
+  attachments: TeamChatMessage["attachments"];
+  audio_url: string | null;
+  created_at: string;
+}): TeamChatMessage {
   return {
     id: row.id,
     restaurantId: row.restaurant_id,
@@ -29,12 +46,31 @@ function dbRowToMessage(row: any): TeamChatMessage {
     isAiResponse: row.is_ai_response ?? false,
     isPinned: row.is_pinned ?? false,
     deleted: row.deleted ?? false,
-    replyTo: row.reply_to ?? undefined,
+    replyTo: parseReplyTo(row.reply_to),
     reactions: row.reactions ?? undefined,
     attachments: row.attachments ?? undefined,
     audioPath: row.audio_url ?? undefined,
     createdAt: row.created_at,
   };
+}
+
+function parseReplyTo(value: unknown): TeamChatMessage["replyTo"] {
+  let candidate = value;
+  if (typeof candidate === "string") {
+    try {
+      candidate = JSON.parse(candidate) as unknown;
+    } catch {
+      return undefined;
+    }
+  }
+  if (typeof candidate !== "object" || candidate === null || Array.isArray(candidate)) {
+    return undefined;
+  }
+  const reply = candidate as Record<string, unknown>;
+  if (typeof reply.id !== "string" || typeof reply.authorName !== "string" || typeof reply.content !== "string") {
+    return undefined;
+  }
+  return { id: reply.id, authorName: reply.authorName, content: reply.content };
 }
 
 /** Deterministic id for a 1-to-1 DM — same value regardless of who starts it.
@@ -374,7 +410,7 @@ export async function getChannelMembers(
     .select("member_id")
     .eq("restaurant_id", restaurantId)
     .eq("channel", channel);
-  return (data ?? []).map((r: any) => r.member_id);
+  return (data ?? []).map((row) => row.member_id);
 }
 
 export async function setChannelMembers(

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import {
-  Zap,
   Play,
   Check,
   UtensilsCrossed,
@@ -12,8 +11,6 @@ import {
   CheckSquare,
   FileSpreadsheet,
   FolderSearch,
-  Sparkles,
-  ArrowRight,
 } from "lucide-react";
 import { FLOW_AI_SKILLS, FlowAiSkill } from "@/lib/ai/skills";
 import { FlowAiHeaderNav } from "@/components/chat/FlowAiHeaderNav";

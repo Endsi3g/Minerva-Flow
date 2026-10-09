@@ -538,7 +538,6 @@ const QC_SUPPLIERS = [
 
 function transactionTemplates(dense, categories, programIds, accounts) {
   const findProgram = (name) => programIds.find((p) => p.name === name)?.id ?? null;
-  const catId = (name) => categories.find((c) => c.name === name)?.id ?? null;
 
   const base = [
     {

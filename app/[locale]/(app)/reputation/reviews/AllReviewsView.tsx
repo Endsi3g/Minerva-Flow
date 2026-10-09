@@ -22,7 +22,6 @@ import {
   Tag,
   CheckCircle2,
   Clock,
-  ImageIcon,
 } from "lucide-react";
 
 type UnifiedReview = {
@@ -116,7 +115,7 @@ export function AllReviewsView({
 
     // Sort newest first
     return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [privateReviews, googleReviews, itemReviews]);
+  }, [privateReviews, googleReviews, itemReviews, t]);
 
   const filtered = useMemo(() => {
     return unifiedReviews.filter((r) => {

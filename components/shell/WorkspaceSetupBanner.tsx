@@ -1,10 +1,10 @@
 "use client";
 
 import { useCurrentRestaurant } from "@/lib/app-context";
+import { useLocalStorageBoolean } from "@/hooks/use-local-storage-state";
 import { X, Store } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
 
 const DEFAULT_NAME = "Mon restaurant";
 const DISMISS_KEY_PREFIX = "mv-workspace-banner-dismissed:";
@@ -20,17 +20,12 @@ const DISMISS_KEY_PREFIX = "mv-workspace-banner-dismissed:";
 export function WorkspaceSetupBanner() {
   const t = useTranslations("shell");
   const restaurant = useCurrentRestaurant();
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    if (!restaurant) return;
-    setDismissed(sessionStorage.getItem(DISMISS_KEY_PREFIX + restaurant.id) === "1");
-  }, [restaurant?.id]);
+  const dismissKey = restaurant ? DISMISS_KEY_PREFIX + restaurant.id : DISMISS_KEY_PREFIX + "pending";
+  const [dismissed, setDismissed] = useLocalStorageBoolean(dismissKey, true, "1", "session");
 
   if (!restaurant || restaurant.name !== DEFAULT_NAME || dismissed) return null;
 
   function handleDismiss() {
-    if (restaurant) sessionStorage.setItem(DISMISS_KEY_PREFIX + restaurant.id, "1");
     setDismissed(true);
   }
 

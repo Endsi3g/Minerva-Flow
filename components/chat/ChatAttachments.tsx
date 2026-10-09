@@ -2,8 +2,7 @@
 
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
-import { FileText, Loader2, Paperclip } from "lucide-react";
+import { FileText } from "lucide-react";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {

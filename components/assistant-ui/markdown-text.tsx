@@ -6,10 +6,11 @@ import type { ComponentPropsWithoutRef } from "react";
 import { FlowAiActionCard, type FlowAiActionPayload } from "@/components/chat/FlowAiActionBar";
 import { useApp } from "@/lib/app-context";
 
-function FlowAiActionCardInline({ type, payload }: { type: string | null; payload: any }) {
+function FlowAiActionCardInline({ type, payload }: { type: FlowAiActionPayload["type"] | null; payload: unknown }) {
   const { restaurantId } = useApp();
   if (!restaurantId || !type) return null;
-  return <FlowAiActionCard restaurantId={restaurantId} payload={{ type: type as any, ...payload }} />;
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
+  return <FlowAiActionCard restaurantId={restaurantId} payload={{ ...payload, type } as FlowAiActionPayload} />;
 }
 
 export function MarkdownText() {
@@ -91,7 +92,7 @@ export function MarkdownText() {
 
           if (className?.includes("minerva-action:")) {
             const match = className.match(/minerva-action:(menu|campaign|task|canvas)/);
-            const type = match ? match[1] : null;
+            const type = match ? match[1] as FlowAiActionPayload["type"] : null;
             try {
               const raw = String(children).trim();
               const parsed = JSON.parse(raw);

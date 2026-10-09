@@ -2,13 +2,12 @@
 
 import { intlLocale } from "@/lib/format-locale";
 import { Card } from "@/components/minerva/PageCard";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { ChevronLeft, Trash2, Edit2, Share2, Clock, Check, BarChart2, Table as TableIcon, FileSpreadsheet, Loader2, TrendingUp, TrendingDown } from "lucide-react";
+import { ChevronLeft, Trash2, Edit2, Clock, BarChart2, Table as TableIcon, TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
@@ -30,6 +29,22 @@ import {
 } from "recharts";
 
 type TrendPoint = { date: string; value: number };
+type ReportMetric = { label: string; unit: "currency" | "percent" | "count"; value: number; momDelta: number; reportSlug?: string };
+type ReportChart = {
+  title: string;
+  seriesA: { label: string; points: TrendPoint[] };
+  seriesB: { label: string; points: TrendPoint[] };
+};
+export type DynamicReportData = {
+  text?: string;
+  columns?: string[];
+  rows?: (string | number)[][];
+  charts?: ReportChart[];
+  metrics?: ReportMetric[];
+  points?: { label: string; value: number }[];
+  summary?: string[];
+  prediction?: { label: string; points: TrendPoint[]; method: "trend" };
+};
 
 const unitFormat: Record<string, (v: number) => string> = {
   currency: formatCurrency,
@@ -47,7 +62,7 @@ export function DynamicReportView({
   reportId: string;
   initialTitle: string;
   type: string;
-  data: any;
+  data: DynamicReportData;
   createdAt: string;
 }) {
   const t = useTranslations("dynamicReport");
@@ -60,7 +75,6 @@ export function DynamicReportView({
   const [editVal, setEditVal] = useState(initialTitle);
   const [tab, setTab] = useState<"visual" | "data">("visual");
   const [sheetsEnabled, setSheetsEnabled] = useState(false);
-  const [exporting, setExporting] = useState(false);
 
   const [isPending, startTransition] = useTransition();
 
@@ -110,8 +124,6 @@ export function DynamicReportView({
     toast.error(t("exportComingSoon"));
   }
 
-  const wide = type === "comparison";
-
   return (
     <div className="mx-auto w-full max-w-7xl pb-10">
       {/* Header breadcrumbs & actions */}
@@ -147,15 +159,11 @@ export function DynamicReportView({
           )}
 
           {sheetsEnabled && (
-            <Button size="sm" variant="secondary" onClick={handleExport} disabled={exporting}>
-              {exporting ? (
-                <Loader2 size={13} className="animate-spin mr-1.5" />
-              ) : (
-                <div
-                  className="h-3.5 w-3.5 mr-1.5 flex items-center justify-center fill-current"
-                  dangerouslySetInnerHTML={{ __html: googleBrand.svg }}
-                />
-              )}
+            <Button size="sm" variant="secondary" onClick={handleExport}>
+              <div
+                className="h-3.5 w-3.5 mr-1.5 flex items-center justify-center fill-current"
+                dangerouslySetInnerHTML={{ __html: googleBrand.svg }}
+              />
               {t("export")}
             </Button>
           )}
@@ -215,7 +223,7 @@ export function DynamicReportView({
   );
 }
 
-function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
+function DynamicArtifactBody({ type, data }: { type: string; data: DynamicReportData }) {
   const t = useTranslations("dynamicReport");
   if (type === "summary") {
     return (
@@ -231,7 +239,7 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
         <table className="w-full text-[13.5px]">
           <thead>
             <tr className="border-b border-mv-border/80 bg-mv-cream-soft text-left font-semibold text-mv-ink-faint">
-              {data.columns.map((col: string) => (
+              {(data.columns ?? []).map((col) => (
                 <th key={col} className="px-4 py-3">
                   {col}
                 </th>
@@ -239,9 +247,9 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
             </tr>
           </thead>
           <tbody>
-            {data.rows.map((row: any[], i: number) => (
+            {(data.rows ?? []).map((row, i) => (
               <tr key={i} className="border-b border-mv-border-soft last:border-0 hover:bg-mv-cream-soft/40 transition-colors">
-                {row.map((cell: any, j: number) => (
+                {row.map((cell, j) => (
                   <td key={j} className="px-4 py-3 text-mv-ink font-medium">
                     {cell}
                   </td>
@@ -258,7 +266,7 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {data.charts.map((chart: any) => (
+          {(data.charts ?? []).map((chart) => (
             <Card key={chart.title} className="p-5">
               <p className="mb-3 text-[13.5px] font-semibold text-mv-ink">{chart.title}</p>
               <DualLineChart seriesA={chart.seriesA} seriesB={chart.seriesB} />
@@ -266,13 +274,13 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
           ))}
         </div>
 
-        {data.metrics.length > 0 && (
+        {(data.metrics?.length ?? 0) > 0 && (
           <Card className="p-5">
             <p className="mb-3.5 text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
               {t("keyMetrics")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.metrics.map((m: any) => (
+              {(data.metrics ?? []).map((m) => (
                 <div key={m.label} className="border border-mv-border-soft rounded-xl p-4 bg-mv-cream-soft/20 flex flex-col justify-between">
                   <span className="text-[12px] text-mv-ink-soft font-medium">{m.label}</span>
                   <div className="mt-2 flex items-baseline justify-between">
@@ -304,13 +312,13 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
           </Card>
         )}
 
-        {data.summary.length > 0 && (
+        {(data.summary?.length ?? 0) > 0 && (
           <Card className="p-5">
             <p className="mb-3 text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
               {t("analysisSynthesis")}
             </p>
             <ul className="space-y-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
-              {data.summary.map((line: string, i: number) => (
+              {(data.summary ?? []).map((line, i) => (
                 <li key={i} className="flex gap-2">
                   <span className="text-mv-green font-bold">•</span> {line}
                 </li>
@@ -325,8 +333,8 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
   // single series chart
   return (
     <Card className="p-6">
-      <ResponsiveContainer width="100%" height={Math.max(160, data.points.length * 36)}>
-        <BarChart data={data.points} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={Math.max(160, (data.points ?? []).length * 36)}>
+        <BarChart data={data.points ?? []} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
           <XAxis type="number" hide />
           <YAxis
             type="category"
@@ -442,7 +450,7 @@ function MiniLineChart({ data, color = "var(--mv-green)" }: { data: TrendPoint[]
   );
 }
 
-function DynamicArtifactRawData({ type, data }: { type: string; data: any }) {
+function DynamicArtifactRawData({ type, data }: { type: string; data: DynamicReportData }) {
   const t = useTranslations("dynamicReport");
   if (type === "chart") {
     return (
@@ -455,7 +463,7 @@ function DynamicArtifactRawData({ type, data }: { type: string; data: any }) {
             </tr>
           </thead>
           <tbody>
-            {data.points.map((p: any, i: number) => (
+            {(data.points ?? []).map((p, i) => (
               <tr key={i} className="border-b border-mv-border-soft last:border-0">
                 <td className="px-3 py-2 text-mv-ink font-medium">{p.label}</td>
                 <td className="px-3 py-2 text-right text-mv-ink font-semibold">{p.value}</td>
@@ -479,7 +487,7 @@ function DynamicArtifactRawData({ type, data }: { type: string; data: any }) {
             </tr>
           </thead>
           <tbody>
-            {data.metrics.map((m: any, i: number) => (
+            {(data.metrics ?? []).map((m, i) => (
               <tr key={i} className="border-b border-mv-border-soft last:border-0">
                 <td className="px-3 py-2 text-mv-ink font-medium">{m.label}</td>
                 <td className="px-3 py-2 text-right text-mv-ink font-semibold">

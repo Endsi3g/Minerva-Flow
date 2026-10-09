@@ -41,9 +41,6 @@ import {
   Clock,
   Trash2,
   DollarSign,
-  TrendingUp,
-  Percent,
-  Sparkles,
   AlertTriangle,
   Pencil,
   ExternalLink,
@@ -217,12 +214,23 @@ function EmployeeScheduleModal({
   const [linking, setLinking] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [lastModalIdentity, setLastModalIdentity] = useState({ open, employeeId: employee.id });
+
+  if (lastModalIdentity.open !== open || lastModalIdentity.employeeId !== employee.id) {
+    setLastModalIdentity({ open, employeeId: employee.id });
+    if (open) {
+      setShifts(null);
+      setLink(null);
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
-    setShifts(null);
-    setLink(null);
-    getEmployeeUpcomingShiftsAction(employee.id).then(setShifts);
+    let active = true;
+    getEmployeeUpcomingShiftsAction(employee.id).then((next) => {
+      if (active) setShifts(next);
+    }).catch(() => { if (active) setShifts([]); });
+    return () => { active = false; };
   }, [open, employee.id]);
 
   async function handleSendEmail() {
@@ -731,7 +739,7 @@ export function HoraireView({
                 onClick={todayMonth}
                 className="rounded-lg border border-mv-border px-2 py-0.5 sm:px-2.5 sm:py-1 text-[12px] sm:text-[12px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft hover:text-mv-ink transition-colors"
               >
-                Aujourd'hui
+                Aujourd&apos;hui
               </button>
             </div>
 

@@ -40,7 +40,7 @@ export async function recordMenuView(restaurantId: string): Promise<void> {
           views_count: 1,
         });
     }
-  } catch (err) {
+  } catch {
     // Graceful degradation — menu views recording must never break menu rendering
   }
 }

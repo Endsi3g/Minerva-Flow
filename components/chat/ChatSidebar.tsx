@@ -6,7 +6,6 @@ import React, { useEffect, useTransition, useState } from "react";
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useChatPresence } from "@/hooks/use-chat-presence";
-import { Avatar } from "@/components/minerva/PersonAvatar";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import { createConversationAction } from "@/app/[locale]/(chat)/assistant/actions";
@@ -22,14 +21,11 @@ import {
   Plus,
   Share2,
   MessageSquare,
-  FolderOpen,
   Search,
-  Sparkles,
   History,
   Pin,
   PinOff,
   ChevronDown,
-  UserCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -72,7 +68,7 @@ export function ChatSidebar({
   const isMobile = useIsMobile();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const members = useChatPresence(restaurantId, authUser);
+  useChatPresence(restaurantId, authUser);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState(currentAgentId ?? "general");
 
@@ -81,9 +77,11 @@ export function ChatSidebar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile]);
 
-  useEffect(() => {
+  const [previousAgentId, setPreviousAgentId] = useState(currentAgentId);
+  if (previousAgentId !== currentAgentId) {
+    setPreviousAgentId(currentAgentId);
     if (currentAgentId) setSelectedAgentId(currentAgentId);
-  }, [currentAgentId]);
+  }
 
   function handleNewConversation() {
     startTransition(async () => {
@@ -238,7 +236,6 @@ export function ChatSidebar({
             <div className="px-3 pt-3 shrink-0">
               <FlowAiDossiersDrawer
                 conversationId={activeConversationId}
-                restaurantId={restaurantId}
                 initialActiveDossiers={currentActiveDossiers}
                 onDossiersChange={onDossiersChange}
               />

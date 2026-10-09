@@ -1,7 +1,7 @@
 import { getInventoryItems } from "@/lib/data/inventory";
 import { getSuppliers } from "@/lib/data/suppliers";
 import { createPurchaseOrder } from "@/lib/data/purchase-orders";
-import type { InventoryItem, Supplier, PurchaseOrder } from "@/lib/types";
+import type {  Supplier, PurchaseOrder } from "@/lib/types";
 
 export type SuggestedReorderItem = {
   inventoryItemId: string;

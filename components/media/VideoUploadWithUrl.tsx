@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { Dropzone, DropzoneContent, DropzoneEmptyState } from "@/components/ui/dropzone";
 import { createClient } from "@/lib/supabase/client";
@@ -31,14 +31,15 @@ export function VideoUploadWithUrl({
 }) {
   const effectivePropUrl = value !== undefined ? value : currentUrl;
   const [videoUrl, setVideoUrl] = useState<string>(effectivePropUrl ?? "");
+  const [previousPropUrl, setPreviousPropUrl] = useState(effectivePropUrl);
   const [mode, setMode] = useState<"upload" | "url">("upload");
   const [urlInput, setUrlInput] = useState(effectivePropUrl ?? "");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const notifyChange = (url: string | null) => {
+  const notifyChange = useCallback((url: string | null) => {
     onVideoChanged?.(url);
     onChange?.(url);
-  };
+  }, [onVideoChanged, onChange]);
 
   const path = `${restaurantId}/videos/${scopeId}`;
   const upload = useSupabaseUpload({
@@ -50,23 +51,26 @@ export function VideoUploadWithUrl({
   });
   const uploadedRef = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
+  if (previousPropUrl !== effectivePropUrl) {
+    setPreviousPropUrl(effectivePropUrl);
     if (effectivePropUrl !== undefined) {
       setVideoUrl(effectivePropUrl ?? "");
       setUrlInput(effectivePropUrl ?? "");
     }
-  }, [effectivePropUrl]);
+  }
 
   // Handle upload auto-start
+  const { files: uploadedFiles, successes, loading, onUpload, setFiles } = upload;
+
   useEffect(() => {
-    const pending = upload.files.filter((f) => f.errors.length === 0 && !upload.successes.includes(f.name));
-    if (pending.length > 0 && !upload.loading) upload.onUpload();
-  }, [upload.files, upload.loading, upload.onUpload, upload.successes]);
+    const pending = uploadedFiles.filter((f) => f.errors.length === 0 && !successes.includes(f.name));
+    if (pending.length > 0 && !loading) onUpload();
+  }, [uploadedFiles, loading, onUpload, successes]);
 
   // Handle upload completion
   useEffect(() => {
-    const newlyUploaded = upload.files.filter(
-      (f) => upload.successes.includes(f.name) && !uploadedRef.current.has(f.name)
+    const newlyUploaded = uploadedFiles.filter(
+      (f) => successes.includes(f.name) && !uploadedRef.current.has(f.name)
     );
     if (newlyUploaded.length === 0) return;
 
@@ -82,7 +86,7 @@ export function VideoUploadWithUrl({
       setUrlInput(publicUrl);
       notifyChange(publicUrl);
     }
-  }, [upload.successes, upload.files, path, bucket]);
+  }, [successes, uploadedFiles, path, bucket, notifyChange]);
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +100,7 @@ export function VideoUploadWithUrl({
   const handleRemove = () => {
     setVideoUrl("");
     setUrlInput("");
-    upload.setFiles([]);
+    setFiles([]);
     notifyChange(null);
   };
 

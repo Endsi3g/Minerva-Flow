@@ -21,11 +21,8 @@ import {
   SearchFilterBar,
   ProgressBar,
   ProgressRing,
-  Skeleton,
   SkeletonStatCard,
   SkeletonCard,
-  SkeletonTable,
-  SkeletonText,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -47,7 +44,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui";
-import { colors, typography, shadows, radii } from "@/lib/design-system";
+import { colors } from "@/lib/design-system";
 import {
   Copy,
   Check,
@@ -60,9 +57,6 @@ import {
   Package,
   Plus,
   Download,
-  AlertTriangle,
-  Info,
-  CheckCircle2,
   AlertCircle,
   Eye,
   Sliders,
@@ -73,13 +67,9 @@ import {
   MousePointerClick,
   FileText,
   ShieldAlert,
-  Loader2,
-  Search,
-  Filter,
 } from "lucide-react";
 
 export function DesignSystemView() {
-  const [activeTab, setActiveTab] = useState("overview");
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   // Playground state
@@ -186,7 +176,7 @@ export function DesignSystemView() {
       />
 
       {/* Navigation Principale du Showcase */}
-      <Tabs defaultValue="overview" onValueChange={setActiveTab}>
+      <Tabs defaultValue="overview">
         <div className="overflow-x-auto pb-2 no-scrollbar">
           <TabsList variant="line" className="border-b border-mv-border w-full justify-start gap-6">
             <TabsTrigger value="overview" className="gap-2 pb-3">
@@ -328,7 +318,7 @@ export function DesignSystemView() {
                   font-sans / UI Body — 14px (Plus Jakarta Sans)
                 </p>
                 <p className="text-[14px] leading-relaxed text-mv-ink-soft max-w-2xl">
-                  Minerva Flow automatise l'ingestion de vos tickets de caisse, analyse le coût des matières premières en temps réel et projette vos flux de trésorerie avec une précision chirurgicale.
+                  Minerva Flow automatise l&apos;ingestion de vos tickets de caisse, analyse le coût des matières premières en temps réel et projette vos flux de trésorerie avec une précision chirurgicale.
                 </p>
               </div>
 
@@ -361,7 +351,7 @@ export function DesignSystemView() {
             <CardHeader>
               <CardTitle>Boutons & Actions (`Button`)</CardTitle>
               <CardDescription>
-                Toutes les variantes du composant d'action avec support des icônes et de l'état de chargement.
+                Toutes les variantes du composant d&apos;action avec support des icônes et de l&apos;état de chargement.
               </CardDescription>
               <CardAction>
                 <Button
@@ -551,7 +541,7 @@ export function DesignSystemView() {
               </CardHeader>
               <CardContent>
                 <p className="text-mv-ink-soft">
-                  Survolez ou cliquez sur cette carte pour ressentir le micro-mouvement et l'accentuation de bordure.
+                  Survolez ou cliquez sur cette carte pour ressentir le micro-mouvement et l&apos;accentuation de bordure.
                 </p>
               </CardContent>
               <CardFooter className="justify-between">
@@ -696,7 +686,7 @@ export function DesignSystemView() {
                     </TableRow>
                     <TableRow className="hover:bg-mv-green-tint/40 cursor-pointer">
                       <TableCell className="font-mono text-xs font-semibold">#FAC-2026-082</TableCell>
-                      <TableCell className="font-medium text-mv-ink">Domaine de la Côte d'Or</TableCell>
+                      <TableCell className="font-medium text-mv-ink">Domaine de la Côte d&apos;Or</TableCell>
                       <TableCell><Badge tone="neutral">Boissons</Badge></TableCell>
                       <TableCell><Badge tone="amber" dot>En attente</Badge></TableCell>
                       <TableCell className="text-right font-mono font-semibold">890,00 €</TableCell>
@@ -735,7 +725,7 @@ export function DesignSystemView() {
             </AlertBanner>
 
             <AlertBanner tone="error" title="Échec de Connexion Terminal Bancaire">
-              Le terminal TPE n°2 n'a pas pu communiquer avec Stripe Connect. Vérifiez l'adresse IP.
+              Le terminal TPE n°2 n&apos;a pas pu communiquer avec Stripe Connect. Vérifiez l&apos;adresse IP.
             </AlertBanner>
           </div>
 
@@ -744,7 +734,7 @@ export function DesignSystemView() {
             <CardHeader>
               <CardTitle>Barres de Progression (`ProgressBar` & `ProgressRing`)</CardTitle>
               <CardDescription>
-                Indicateurs graphiques d'atteinte d'objectifs de vente ou de remplissage.
+                Indicateurs graphiques d&apos;atteinte d&apos;objectifs de vente ou de remplissage.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -815,7 +805,7 @@ export function DesignSystemView() {
               <CardHeader>
                 <CardTitle>État Sans Données (`EmptyState`)</CardTitle>
                 <CardDescription>
-                  Présentation valorisante pour guider l'utilisateur lors du premier usage.
+                  Présentation valorisante pour guider l&apos;utilisateur lors du premier usage.
                 </CardDescription>
               </CardHeader>
               <CardContent>

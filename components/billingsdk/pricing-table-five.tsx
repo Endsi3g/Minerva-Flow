@@ -2,7 +2,6 @@
 
 import { useState, useId } from "react";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Check, Sparkles, Building2, TrendingUp, ShieldCheck } from "lucide-react";

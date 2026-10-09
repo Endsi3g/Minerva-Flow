@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, FileText, Table as TableIcon, TrendingUp, ArrowUpRight } from "lucide-react";
+import { FileText, Table as TableIcon, TrendingUp, ArrowUpRight } from "lucide-react";
 import type { ChatArtifact } from "@/lib/types";
 
 export function ToolArtifactCard({

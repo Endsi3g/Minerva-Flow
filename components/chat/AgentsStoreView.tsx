@@ -139,7 +139,7 @@ export function AgentsStoreView({
   const [agentAvatar, setAgentAvatar] = useState("👨‍🍳");
   const [agentDescription, setAgentDescription] = useState("");
   const [agentPrompt, setAgentPrompt] = useState("");
-  const [agentTone, setAgentTone] = useState("expert_chaleureux");
+  const [agentTone] = useState("expert_chaleureux");
 
   async function handleLogout() {
     const supabase = createClient();

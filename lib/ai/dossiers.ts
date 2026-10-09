@@ -5,14 +5,11 @@
 
 import { getMenuItems } from "@/lib/data/menu";
 import { getServiceDays } from "@/lib/data/service-days";
-import { getFinancialTransactions, getConnections } from "@/lib/data/finance";
+import { getConnections } from "@/lib/data/finance";
 import { getCustomers } from "@/lib/data/customers";
 import { getEmployees } from "@/lib/data/employees";
-import { getAlertRules } from "@/lib/data/alerts";
-import { getInventoryItems } from "@/lib/data/inventory";
 import { classifyMenuItems, getMarginDriftItems, quadrantLabel } from "@/lib/menu-engineering";
 import { getInactiveCustomers } from "@/lib/engine/retention";
-import { computeAlerts } from "@/lib/engine/alerts";
 import { formatCurrency, formatDate, isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 
@@ -55,9 +52,8 @@ ${drifts.length > 0 ? `⚠️ Plats en dérive de marge (> 35% de Food Cost) : $
   if (dossiersToRun.includes("finance")) {
     try {
       const historyFrom = isoDaysAgo(DEFAULT_HISTORY_WINDOW_DAYS);
-      const [days, transactions, connections] = await Promise.all([
+      const [days, connections] = await Promise.all([
         getServiceDays(restaurantId, { from: historyFrom }),
-        getFinancialTransactions(restaurantId, { from: historyFrom }),
         getConnections(restaurantId),
       ]);
 

@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { Card } from "@/components/minerva/PageCard";
 import { Input, Field } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useState } from "react";
-import { Globe, Sparkles, CheckCircle2, ArrowUpRight } from "lucide-react";
+import { Globe, CheckCircle2, ArrowUpRight } from "lucide-react";
 import { getRestaurantFaviconUrl, extractDomain } from "@/lib/utils/favicon";
 import { toast } from "sonner";
 
@@ -30,9 +31,12 @@ export function RestaurantWebsiteFaviconCard({
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-mv-cream-soft border border-mv-border text-mv-green-dark shrink-0">
             {faviconUrl ? (
-              <img
+              <Image
                 src={faviconUrl}
                 alt={`Favicon de ${restaurantName}`}
+                width={28}
+                height={28}
+                unoptimized
                 className="h-7 w-7 object-contain rounded"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = "none";
@@ -80,9 +84,12 @@ export function RestaurantWebsiteFaviconCard({
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5">
             <div className="flex items-center gap-3">
               {faviconUrl && (
-                <img
+                <Image
                   src={faviconUrl}
                   alt={domain}
+                  width={32}
+                  height={32}
+                  unoptimized
                   className="h-8 w-8 rounded-lg bg-mv-surface p-1 border border-mv-border-soft object-contain shrink-0"
                 />
               )}

@@ -8,6 +8,7 @@ import {
 import { Bell, BellOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { usePushBrowserSupport } from "@/hooks/use-browser-capabilities";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -19,36 +20,35 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 type PushState = "unsupported" | "not_configured" | "denied" | "subscribed" | "available";
 
 export function PushNotificationToggle({ restaurantId }: { restaurantId: string | null }) {
-  const [state, setState] = useState<PushState>("available");
+  const pushSupported = usePushBrowserSupport();
+  const [configuredState, setConfiguredState] = useState<PushState>("available");
+  const state: PushState = pushSupported ? configuredState : "unsupported";
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setState("unsupported");
-      return;
-    }
+    if (!pushSupported) return;
 
     isPushConfiguredAction().then(async (configured) => {
       if (!configured) {
-        setState("not_configured");
+        setConfiguredState("not_configured");
         return;
       }
       if (Notification.permission === "denied") {
-        setState("denied");
+        setConfiguredState("denied");
         return;
       }
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      setState(subscription ? "subscribed" : "available");
+      setConfiguredState(subscription ? "subscribed" : "available");
     });
-  }, []);
+  }, [pushSupported]);
 
   async function handleSubscribe() {
     setBusy(true);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setState(permission === "denied" ? "denied" : "available");
+        setConfiguredState(permission === "denied" ? "denied" : "available");
         return;
       }
 
@@ -65,7 +65,7 @@ export function PushNotificationToggle({ restaurantId }: { restaurantId: string 
       if (!subscription) {
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         if (!vapidKey) {
-          setState("not_configured");
+          setConfiguredState("not_configured");
           return;
         }
         const subscribeOptions = {
@@ -85,7 +85,7 @@ export function PushNotificationToggle({ restaurantId }: { restaurantId: string 
       }
 
       await subscribeToPushAction(restaurantId, subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } });
-      setState("subscribed");
+      setConfiguredState("subscribed");
     } catch {
       toast.error("L'activation des notifications a échoué. Réessayez.");
     } finally {
@@ -102,14 +102,14 @@ export function PushNotificationToggle({ restaurantId }: { restaurantId: string 
         await unsubscribeFromPushAction(subscription.endpoint);
         await subscription.unsubscribe();
       }
-      setState("available");
+      setConfiguredState("available");
     } catch {
       toast.error("La désactivation a échoué. Réessayez.");
       // Re-derive the real state instead of assuming — a failed unsubscribe
       // can leave the browser subscription intact even if the server call succeeded.
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      setState(subscription ? "subscribed" : "available");
+      setConfiguredState(subscription ? "subscribed" : "available");
     } finally {
       setBusy(false);
     }

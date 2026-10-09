@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sparkles, Check, Send, X, MessageSquareHeart } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import type { PlatformAnnouncement } from "@/lib/types";
+import { useClientHydrated, useLocalStorageBoolean, useLocalStorageState } from "@/hooks/use-local-storage-state";
 
 export function AnnouncementCard({
   announcement,
@@ -14,33 +15,31 @@ export function AnnouncementCard({
   customerId: string;
 }) {
   const t = useTranslations("announcements");
-  const [dismissed, setDismissed] = useState(true); // default true until localstorage is checked
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useLocalStorageBoolean(`announcement_dismissed_${announcement.id}`, true, "true");
+  const [selectedOption, setSelectedOption] = useLocalStorageState<string | null>(
+    `announcement_voted_${announcement.id}`,
+    null,
+    (raw) => raw,
+    (value) => value
+  );
   const [feedbackText, setFeedbackText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const isHydrated = useClientHydrated();
+  const [capturedSavedVote, setCapturedSavedVote] = useState(false);
 
-  useEffect(() => {
-    const isDismissed = localStorage.getItem(`announcement_dismissed_${announcement.id}`);
-    const savedVote = localStorage.getItem(`announcement_voted_${announcement.id}`);
-    if (!isDismissed) {
-      setDismissed(false);
-    }
-    if (savedVote) {
-      setSelectedOption(savedVote);
-      setFeedbackSent(true);
-    }
-  }, [announcement.id]);
+  if (isHydrated && !capturedSavedVote) {
+    setCapturedSavedVote(true);
+    if (selectedOption) setFeedbackSent(true);
+  }
 
   function handleDismiss() {
-    localStorage.setItem(`announcement_dismissed_${announcement.id}`, "true");
     setDismissed(true);
   }
 
   async function handleVote(option: string) {
     if (selectedOption) return;
     setSelectedOption(option);
-    localStorage.setItem(`announcement_voted_${announcement.id}`, option);
 
     try {
       await fetch("/api/portal/announcements/vote", {

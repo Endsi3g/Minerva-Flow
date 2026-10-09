@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useLocalStorageBoolean } from "@/hooks/use-local-storage-state";
 
 export type BarListRow = { label: string; value: string; fraction: number };
 
@@ -24,16 +24,11 @@ export function BarListCard({
   dismissKey: string;
   position?: string;
 }) {
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    setDismissed(localStorage.getItem(dismissKey) === "1");
-  }, [dismissKey]);
+  const [dismissed, setDismissed] = useLocalStorageBoolean(dismissKey, true);
 
   if (dismissed || rows.length === 0) return null;
 
   function handleDismiss() {
-    localStorage.setItem(dismissKey, "1");
     setDismissed(true);
   }
 

@@ -12,7 +12,6 @@ import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
-  getSuppliersAction,
   createSupplierAction,
   deleteSupplierAction,
   getPurchaseOrdersAction,
@@ -29,7 +28,7 @@ import type { PurchaseOrder, PurchaseOrderStatus, Supplier, InventoryItem } from
 import type { SuggestedReorderGroup } from "@/lib/engine/reorder";
 import type { PurchaseOrderItemInput } from "@/lib/data/purchase-orders";
 import { Package, Plus, Trash2, Truck, Sparkles, CheckCircle2 } from "lucide-react";
-import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useState, useMemo, type FormEvent } from "react";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/notify-error";
 
@@ -477,15 +476,20 @@ function SuggestedReordersModal({
 }) {
   const locale = useLocale();
   const t = useTranslations("suppliersView");
-  const [localSuggestions, setLocalSuggestions] = useState(suggestions);
+  const [suggestionState, setSuggestionState] = useState({ source: suggestions, value: suggestions });
   const [isCreating, setIsCreating] = useState(false);
 
-  useEffect(() => {
-    setLocalSuggestions(suggestions);
-  }, [suggestions]);
+  if (suggestionState.source !== suggestions) {
+    setSuggestionState({ source: suggestions, value: suggestions });
+  }
+  const localSuggestions = suggestionState.value;
+
+  function updateLocalSuggestions(update: (current: SuggestedReorderGroup[]) => SuggestedReorderGroup[]) {
+    setSuggestionState((current) => ({ ...current, value: update(current.value) }));
+  }
 
   function handleQuantityChange(supplierIndex: number, itemIndex: number, newQty: number) {
-    setLocalSuggestions((prev) =>
+    updateLocalSuggestions((prev) =>
       prev.map((group, sIdx) => {
         if (sIdx !== supplierIndex) return group;
         const updatedItems = group.items.map((it, iIdx) => {

@@ -6,7 +6,6 @@ import { AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 import { reportClientError } from "@/lib/alerts/client-reporter";
-import Link from "next/link";
 
 /**
  * Backstop for the (app) route group — catches errors thrown while

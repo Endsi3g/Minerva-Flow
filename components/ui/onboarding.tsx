@@ -16,6 +16,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "motion/react";
+import type { HTMLMotionProps } from "motion/react";
 
 const stepIndicatorVariants = cva("flex items-center justify-center gap-2", {
   variants: {
@@ -246,7 +247,7 @@ function OnboardingRoot({
           className
         )}
         data-slot="onboarding-root"
-        {...(props as any)}
+        {...props}
       >
         {children}
       </div>
@@ -258,7 +259,7 @@ function OnboardingRoot({
 // Step
 // ============================================================================
 
-export interface OnboardingStepProps extends React.ComponentPropsWithoutRef<"div"> {
+export interface OnboardingStepProps extends Omit<HTMLMotionProps<"div">, "ref"> {
   /** Step index (1-based) — content renders when currentStep matches */
   step: number;
 }
@@ -283,7 +284,7 @@ function OnboardingStep({ step, children, className, ...props }: OnboardingStepP
           className={cn(className)}
           data-slot="onboarding-step"
           data-state="active"
-          {...(props as any)}
+          {...props}
         >
           {children}
         </motion.div>
@@ -296,8 +297,10 @@ function OnboardingStep({ step, children, className, ...props }: OnboardingStepP
 // StepIndicator (connected)
 // ============================================================================
 
-export interface OnboardingStepIndicatorProps
-  extends Omit<React.ComponentProps<typeof StepIndicator>, "currentStep" | "totalSteps"> {}
+export type OnboardingStepIndicatorProps = Omit<
+  React.ComponentProps<typeof StepIndicator>,
+  "currentStep" | "totalSteps"
+>;
 
 function OnboardingStepIndicator(props: OnboardingStepIndicatorProps) {
   const { currentStep, totalSteps } = useOnboarding();

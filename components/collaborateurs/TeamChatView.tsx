@@ -11,6 +11,7 @@ import {
   useEffect,
 } from "react";
 import Image from "next/image";
+import type { LucideIcon } from "lucide-react";
 import {
   sendTeamMessageAction,
   deleteTeamMessageAction,
@@ -63,7 +64,7 @@ import { toast } from "sonner";
 
 /* ─────────────────────────── constants ──────────────────────────── */
 
-const CHANNELS: { id: TeamChannel; label: string; icon: any; description: string }[] = [
+const CHANNELS: { id: TeamChannel; label: string; icon: LucideIcon; description: string }[] = [
   { id: "general",  label: "général",   icon: MessageSquare, description: "Échanges d'équipe & annonces" },
   { id: "cuisine",  label: "cuisine",   icon: Utensils,      description: "Coordination & recettes" },
   { id: "service",  label: "service",   icon: Users,         description: "Salle, réservations & VIP" },
@@ -196,7 +197,7 @@ function MessageRow({
       editRef.current.focus();
       editRef.current.setSelectionRange(editContent.length, editContent.length);
     }
-  }, [editing]);
+  }, [editing, editContent.length]);
 
   const time = new Date(msg.createdAt).toLocaleTimeString(intlLocale(locale), {
     hour: "2-digit",
@@ -1084,8 +1085,7 @@ export function TeamChatView({
     (m) => m.id !== currentUserId && !dmChannels.some((c) => c.otherMemberId === m.id)
   );
 
-  const isOnline = (id: string) =>
-    Array.isArray(onlineIds) ? onlineIds.includes(id) : (onlineIds as any)?.has?.(id) ?? false;
+  const isOnline = (id: string) => onlineIds.has(id);
 
   async function handleCreateChannel() {
     if (creatingChannel) return;

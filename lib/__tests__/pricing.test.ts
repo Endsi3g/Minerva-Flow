@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PLANS, isSelfServeTier, ANNUAL_DISCOUNT_RATE } from "@/lib/billing/plans";
-import { PLAN_NAMES, PLAN_AI_QUOTAS } from "@/lib/ai/quotas";
+import { PLAN_NAMES } from "@/lib/ai/quotas";
 
 describe("Pricing Catalog & Product Positioning", () => {
   it("should configure Profit Core correctly at 150 $ / month", () => {

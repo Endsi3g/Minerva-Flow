@@ -1,7 +1,6 @@
 "use client";
 
 
-import { intlLocale } from "@/lib/format-locale";
 import { useLocale } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";

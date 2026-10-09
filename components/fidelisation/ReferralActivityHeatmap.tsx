@@ -98,7 +98,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
       totalConversions: conversionsSum,
       maxActivityDay: bestDay,
     };
-  }, [activity]);
+  }, [activity, t]);
 
   // Determine color scale thresholds dynamically
   const maxMetricValue = useMemo(() => {
