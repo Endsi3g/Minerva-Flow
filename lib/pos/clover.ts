@@ -1,4 +1,6 @@
-import { cloverAuthBaseUrl, cloverApiBaseUrl } from "./config";
+import { cloverApiBaseUrl, cloverEnvironment } from "./config";
+import { parseCloverOrderReference } from "./clover-order-contract";
+import { CloverOrderApi } from "./clover-order-api";
 import { localDayRangeUtc } from "./shared";
 import { getPosTokens, updatePosConnectionStatus } from "@/lib/data/pos-connections";
 
@@ -16,8 +18,8 @@ export type CloverDailySales = {
 
 /**
  * Exchanges the OAuth authorization code for Clover access tokens.
- * Clover v2 OAuth accepts a POST request with JSON payload { client_id, client_secret, code }.
- * Falls back to GET query parameters if POST returns non-OK (legacy Clover endpoint compatibility).
+ * Clover v2 exchanges codes on the API host, not the authorization website.
+ * Codes are single-use: never retry an uncertain exchange or expose secrets in a URL.
  */
 export async function exchangeCloverCode(
   code: string,
@@ -26,12 +28,14 @@ export async function exchangeCloverCode(
   const clientId = process.env.CLOVER_APP_ID;
   const clientSecret = process.env.CLOVER_APP_SECRET;
 
-  if (!clientId || !clientSecret) return null;
+  if (!clientId || !clientSecret || !code.trim()) return null;
 
   try {
-    // Try standard POST to /oauth/v2/token
-    let res = await fetch(`${cloverAuthBaseUrl()}/oauth/v2/token`, {
+    const res = await fetch(`${cloverApiBaseUrl()}/oauth/v2/token`, {
       method: "POST",
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(15_000),
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         client_id: clientId,
@@ -41,42 +45,27 @@ export async function exchangeCloverCode(
       }),
     });
 
-    // Fallback to legacy GET /oauth/token if POST /oauth/v2/token fails
-    if (!res.ok) {
-      const fallbackUrl = new URL(`${cloverAuthBaseUrl()}/oauth/token`);
-      fallbackUrl.searchParams.set("client_id", clientId);
-      fallbackUrl.searchParams.set("client_secret", clientSecret);
-      fallbackUrl.searchParams.set("code", code);
-      res = await fetch(fallbackUrl.toString(), {
-        headers: { Accept: "application/json" },
-      });
-    }
-
     if (!res.ok) return null;
 
-    const data = (await res.json()) as {
-      access_token?: string;
-      refresh_token?: string;
-      access_token_expiration?: number;
-      expires_in?: number;
-    };
+    const data: unknown = await res.json();
+    if (!data || typeof data !== "object") return null;
+    const value = data as Record<string, unknown>;
+    if (typeof value.access_token !== "string" || !value.access_token.trim()) return null;
+    if (value.refresh_token !== undefined && (typeof value.refresh_token !== "string" || !value.refresh_token.trim())) return null;
 
-    if (!data.access_token) return null;
-
-    let expiresAt: string | undefined;
-    if (data.access_token_expiration) {
-      expiresAt = new Date(data.access_token_expiration * 1000).toISOString();
-    } else if (data.expires_in) {
-      expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString();
-    }
+    const expiresMillis = typeof value.access_token_expiration === "number"
+      ? value.access_token_expiration * 1000
+      : typeof value.expires_in === "number" ? Date.now() + value.expires_in * 1000 : NaN;
+    if (!Number.isFinite(expiresMillis) || expiresMillis <= Date.now() || expiresMillis > 8.64e15) return null;
 
     return {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-      expiresAt,
+      accessToken: value.access_token,
+      refreshToken: value.refresh_token as string | undefined,
+      expiresAt: new Date(expiresMillis).toISOString(),
     };
-  } catch (err) {
-    console.error("Failed to exchange Clover OAuth code:", err);
+  } catch {
+    // Do not log request/response objects containing authorization codes or tokens.
+    console.warn("clover_oauth_exchange_failed");
     return null;
   }
 }
@@ -90,16 +79,14 @@ export async function getValidCloverAccessToken(
   const tokens = await getPosTokens(restaurantId, "clover");
   if (!tokens) return null;
 
-  const expiresAt = tokens.expiresAt ? new Date(tokens.expiresAt).getTime() : 0;
-  const isExpired = expiresAt > 0 && expiresAt <= Date.now();
-
-  if (isExpired && !tokens.refreshToken) {
+  const expiresAt = tokens.expiresAt ? new Date(tokens.expiresAt).getTime() : null;
+  if (expiresAt !== null && (!Number.isFinite(expiresAt) || expiresAt <= Date.now())) {
     await updatePosConnectionStatus(restaurantId, "clover", "erreur");
     return null;
   }
 
-  // Clover access tokens for merchant apps are generally long-lived,
-  // but if expired with a refresh token present, we would refresh here.
+  // Rotating refresh tokens need durable coordination before refresh can be
+  // implemented. Until then, require reconnect rather than use an expired token.
   return {
     accessToken: tokens.accessToken,
     merchantId: tokens.externalAccountId ?? null,
@@ -113,10 +100,14 @@ interface CloverLineItem {
   name?: string;
   price?: number;
   unitQty?: number;
+  item?: { id?: string };
 }
 
 interface CloverOrderItem {
   id?: string;
+  title?: string;
+  note?: string;
+  employee?: { id?: string };
   total?: number;
   state?: string;
   paymentState?: string;
@@ -138,7 +129,8 @@ export async function fetchCloverDailyTickets(
   accessToken: string,
   merchantId: string,
   dateStr: string,
-  timeZone: string
+  timeZone: string,
+  includeEmployeeAttribution = false,
 ): Promise<PosTicket[]> {
   if (!merchantId) return [];
 
@@ -147,6 +139,8 @@ export async function fetchCloverDailyTickets(
   const endMillis = new Date(endAt).getTime();
 
   const tickets: PosTicket[] = [];
+  const employees = new Map<string, string | null>();
+  const employeeApi = includeEmployeeAttribution ? new CloverOrderApi(accessToken, merchantId) : null;
   let offset = 0;
   const limit = 200;
   let hasMore = true;
@@ -168,7 +162,7 @@ export async function fetchCloverDailyTickets(
 
     if (!res.ok) {
       console.warn(`Clover orders fetch returned ${res.status} for merchant ${merchantId}`);
-      break;
+      throw new Error("clover_sales_read_failed");
     }
 
     const data = (await res.json()) as CloverOrdersResponse;
@@ -189,14 +183,21 @@ export async function fetchCloverDailyTickets(
         const qty = li.unitQty ? Math.max(1, Math.round(li.unitQty / 1000)) : 1;
         const price = typeof li.price === "number" ? li.price / 100 : 0;
         return {
-          externalItemId: li.id || `clover-item-${order.id}-${idx}`,
+          externalItemId: li.item?.id || li.id || `clover-item-${order.id}-${idx}`,
           name: li.name || "Article",
           quantity: qty,
           unitPrice: Math.round(price * 100) / 100,
         };
       });
 
+      const employeeId = order.employee?.id;
+      if (employeeApi && employeeId && !employees.has(employeeId)) {
+        employees.set(employeeId, await employeeApi.employeeName(employeeId));
+      }
+      const minervaOrderId = parseCloverOrderReference(order.title, order.note);
       tickets.push({
+        clover: { merchantId, environment: cloverEnvironment(), ...(minervaOrderId ? { minervaOrderId } : {}) },
+        ...(employeeApi && employeeId ? { posEmployeeId: employeeId, posEmployeeName: employees.get(employeeId) ?? undefined } : {}),
         externalOrderId: order.id,
         closedAt: order.createdTime ? new Date(order.createdTime).toISOString() : new Date().toISOString(),
         subtotal: Math.round((orderTotal / 100) * 100) / 100,
@@ -241,7 +242,13 @@ export async function validateAndFetchCloverMerchant(
   apiToken: string
 ): Promise<{ valid: boolean; merchantName?: string; error?: string }> {
   try {
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(merchantId) || !apiToken.trim()) {
+      return { valid: false, error: "Identifiants Clover invalides." };
+    }
     const res = await fetch(`${cloverApiBaseUrl()}/v3/merchants/${encodeURIComponent(merchantId)}`, {
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(15_000),
       headers: {
         Authorization: `Bearer ${apiToken.trim()}`,
         Accept: "application/json",
@@ -254,10 +261,11 @@ export async function validateAndFetchCloverMerchant(
       return { valid: false, error: `Erreur Clover (${res.status}).` };
     }
 
-    const data = (await res.json()) as { name?: string };
+    const data = (await res.json()) as { id?: string; name?: string } | null;
+    if (!data || data.id !== merchantId) return { valid: false, error: "Le marchand Clover ne correspond pas à la connexion." };
     return { valid: true, merchantName: data.name };
-  } catch (err) {
-    console.error("Clover merchant validation failed:", err);
+  } catch {
+    console.warn("clover_merchant_validation_failed");
     return { valid: false, error: "Impossible de joindre le serveur Clover." };
   }
 }

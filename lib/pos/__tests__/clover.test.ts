@@ -46,7 +46,7 @@ describe("Clover POS Configuration & API Client", () => {
     it("resolves production endpoints when environment is production", () => {
       process.env.CLOVER_ENVIRONMENT = "production";
       expect(cloverEnvironment()).toBe("production");
-      expect(cloverAuthBaseUrl()).toBe("https://clover.com");
+      expect(cloverAuthBaseUrl()).toBe("https://www.clover.com");
       expect(cloverApiBaseUrl()).toBe("https://api.clover.com");
     });
   });

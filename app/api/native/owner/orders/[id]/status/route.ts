@@ -30,6 +30,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     || (body.status === "annulee" ? "Un imprévu empêche le restaurant de préparer cette commande." : null);
   const { error } = await admin.from("orders").update({
     status: body.status,
+    ...(body.status === "confirmee" ? { clover_acceptance_user_id: userId } : {}),
     ...(body.status === "annulee" ? { cancellation_reason: cancellationReason } : {}),
   }).eq("restaurant_id", body.restaurantId).eq("id", id);
   if (error) return NextResponse.json({ ok: false }, { status: 500 });

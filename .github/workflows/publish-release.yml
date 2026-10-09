@@ -11,6 +11,9 @@ on:
 
 jobs:
   announce:
+    # Release candidates are source snapshots, not validated product updates.
+    # Publishing them must not call Production or notify restaurant members.
+    if: ${{ github.event.release.prerelease == false && github.event.release.draft == false }}
     runs-on: ubuntu-latest
     steps:
       - name: Notify app of new release

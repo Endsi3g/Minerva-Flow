@@ -1,5 +1,49 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
+## Préversion de livraison — 2.52.0-rc.1
+
+- Périmètre confirmé par Kael : **lot Clover et handoff seulement**. Branche `release/clover-2.52.0-rc.1`, base `main` au commit `3f92fd3`. Les autres travaux web et natifs restent dans l’espace de travail original, hors de cette préversion.
+- Version du package et changelog : `2.52.0-rc.1`; tag `v2.52.0-rc.1`. Le tag identifie exactement le commit candidat; aucune promotion vers Production n’est autorisée par ce statut de préversion.
+- Le workflow `publish-release.yml` exclut désormais les préversions avant tout appel à l’API d’annonce Production. Pas de publication de nouveautés dans l’app ni de campagne utilisateurs pour ce candidat.
+- Pour reprendre : lire le contrat et les cinq étapes Clover ci-dessous, autoriser un marchand Sandbox, achever les paiements et fiches clients, puis fournir les preuves des parcours réels. **NOT READY pour Production et les stores.**
+- Les résultats 605 tests et 77 tests ciblés plus bas décrivent l’arbre de travail complet avant isolation. Les contrôles du candidat isolé sont consignés dans [les notes de préversion](docs/releases/RELEASE_2.52.0-rc.1.md).
+
+## Reprise prioritaire — 2026-10-09 : terminer Clover, commandes, paiement et clients
+
+**État de référence actuel : NOT READY.** Les statuts historiques « prêt en production » plus bas ne certifient pas cette intégration. Aucun paiement Clover n’est implémenté ou activé. Aucun nouveau déploiement Preview/Production ni email d’annonce n’a été effectué pour ces travaux. Préserver les nombreuses modifications existantes du dépôt.
+
+### Contrat confirmé par Kael
+
+- Application Clover publique pour les restaurateurs Minerva Flow; configuration de la fiche en premier, saisie manuelle dans Safari.
+- Export d’une commande après acceptation par un propriétaire ou gestionnaire actif du restaurant. Les commandes refusées avant acceptation ne sont pas exportées. Les accès clients restent séparés de la gestion.
+- Paiement en ligne demandé : préautorisation à la commande, **capture après acceptation**. Refus avant capture : libérer la préautorisation; refus après capture : remboursement intégral automatique. Le paiement à la réception reste le seul mode actuellement configuré.
+- Conserver les identifiants, articles, formats, notes et montants serveur; association durable et unique restaurant/marchand/environnement/commande/paiement. Pas de double débit, commande, crédit de fidélité ou comptage de ventes.
+- Attribution aux employés Clover en lecture seulement; synchronisation automatique des annulations à valider, sans supprimer une commande payée pour prétendre la rembourser.
+- Justifications Customers Read/Write préparées. La création/mise à jour des fiches clients liées aux commandes est un chantier restant; aucune carte enregistrée pour des achats futurs n’est impliquée.
+
+### Déjà réalisé avant cette reprise
+
+- Queue `clover_order_exports`, intentions d’envoi persistées, leases/CAS, mappings de produits/formats/modificateurs, comparaison des montants/taxes, recherche d’une transmission incertaine et exclusion des exports lors de l’import de ventes.
+- Configuration web propriétaire, états de transmission et attribution employés. Export/annulation bloqués par les drapeaux de validation réelle; aucun planificateur du nouveau worker n’est enregistré.
+- Migrations `0181` et `0182` appliquées et consignées **en Staging seulement**; 0 restaurant activé, 0 job, 0 fixture restante au dernier contrôle. L’essai initial de rollback a conservé le DDL à cause d’un COMMIT intermédiaire : incident découvert, documenté et corrigé; ne pas prétendre que tout le DDL avait été annulé.
+- Dernière vérification de ce lot : 537 tests unitaires / 94 fichiers, TypeScript, ESLint ciblé et build passent. Ce résultat ne prouve aucun paiement, écran Clover ou nouveau déploiement réel.
+
+### Plan d’implémentation et critères de fin
+
+1. **Connexion existante — premier lot terminé localement, non déployé.** Hôte API `/oauth/v2/token` corrigé et autorisation Production sur `www.clover.com`; repli GET avec secret supprimé; appels bornés, sans cache ni suivi de redirection; réponses et expirations validées; jetons expirés refusés même avec refresh token présent. Le callback lie l’état signé au compte initiateur, au restaurant, au fournisseur et à l’environnement, revalide les droits actifs avant stockage et confirme l’identifiant marchand. Les échecs Vault/DB empêchent un faux succès, y compris dans la connexion manuelle. Le stockage des deux secrets et de la ligne reste non atomique : prévoir transaction/gestion des secrets orphelins avant la rotation des jetons.
+2. **Provision et renouvellement — restant.** Kael n’a pas encore le marchand connecté et termine d’abord l’application Clover. Autoriser un marchand Sandbox avec Ecommerce, configurer les vrais secrets serveur, terminer le renouvellement des jetons avec coordination durable entre processus, rotation et gestion d’une réponse perdue. Pas de refresh concurrent non protégé ni retour d’un jeton expiré.
+3. **Paiement — restant, dépend de 2.** Valider d’abord un seul identifiant de commande Clover pour le parcours demandé : `/v1/charges` avec `capture=false` crée une commande; le schéma documenté de `/v1/orders/{orderId}/pay` n’expose pas `capture`. Ne pas créer une seconde commande atomique après la préautorisation. Implémenter tokenisation Clover hébergée, montant serveur, références et intentions financières persistées, capture après acceptation, libération/remboursement au refus, état incertain et rapprochement avant reprise. Le worker actuel refuse les paiements en ligne : adapter ce contrat après validation du flux réel, sans contourner le garde existant.
+4. **Customers Read/Write — restant.** Définir l’association durable restaurant/marchand/environnement/client Minerva/client Clover; créer ou mettre à jour seulement les coordonnées nécessaires d’une commande acceptée, éviter les fiches en double et les écritures aveugles après réponse perdue. Séparer le consentement promotionnel. Write customers n’est pas requis pour la seule préautorisation/capture; ne pas justifier de cartes enregistrées ou d’import global par ce chantier.
+5. **Validation et livraison — restant.** Tests Sandbox acceptation/refus/capture/remboursement, expiration, concurrence, double clic et réponse réseau perdue; une seule commande et un seul règlement dans Orders/Register; import sans double fidélité/CA. Vérifier les parcours web/iOS/Android puis les audits de conformité avant sortie native. Déployer Preview, vérifier les preuves, et promouvoir seulement après les contrôles requis. Enregistrer le planificateur et renouveler les autorisations marchands si les permissions ont changé.
+
+### Blocages et preuves
+
+- À 15:34 UTC le 9 octobre : **0 connexion Clover en Staging et Production**, connexion Composio absente. Contrôles en lecture seule; aucun secret Vault récupéré. Le skill Vercel Marketplace impose l’autorisation réelle du marchand avant l’implémentation du nouveau paiement; aucun checkout factice ne doit remplacer cette étape.
+- Permissions demandées : Read/Write payments + Online payments pour la capture; Read customers selon les endpoints de paiement/remboursement; Write customers seulement pour la synchronisation effective des fiches. Justifications françaises/anglaises : [champs Clover à saisir](docs/engineering/CLOVER_CHAMPS_A_SAISIR.md).
+- [État du paiement](docs/releases/CLOVER_PAYMENT_READINESS_2026-10-09.md), [validation de l’export](docs/releases/CLOVER_ORDER_EXPORT_VALIDATION_2026-10-09.md), [configuration sans secrets](docs/engineering/clover-production-setup.json).
+- Vérification locale du premier lot de connexion à 15:49 UTC : **77/77 tests ciblés**, **605/605 tests unitaires dans 98 fichiers**, TypeScript et ESLint des 11 fichiers concernés passent. [Rapport de ce lot](docs/releases/CLOVER_OAUTH_FOUNDATION_2026-10-09.md). Build et parcours réels non relancés pour ce lot; le précédent build ne prouve pas ces nouveaux changements. Aucun appel financier ni nouvelle migration distante.
+- Preuves privées : `.verify-artifacts/20261009T153400Z-clover-payment/` et `.verify-artifacts/20261008T204459Z/`. Ne jamais recopier de secrets, jetons, coordonnées clients ou identifiants d’examen dans ce handoff.
+
 > **Base historique** : 2.36.0 — clôture de sprint du 15 septembre 2026.
 > **État produit actualisé** : 26 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
 
@@ -410,7 +454,7 @@ npm run test lib/__tests__/campaigns-and-casl-consent.test.ts
 | **Identification en Caisse** | **Opérationnel (100 %)** | Téléphone tolérant, code 6 chiffres RPC, modal caissier |
 | **Tâches Planifiées (Crons)** | **Opérationnel (100 %)** | 12 workflows GitHub Actions (`schedule`) avec jeton `CRON_SECRET` |
 | **Square POS** | **Prêt en Production** (Validation Sandbox) | OAuth avec scopes d'écriture élargis (`ITEMS_WRITE`, `INVENTORY_WRITE`), synchro bidirectionnelle catalogue + inventaire |
-| **Clover POS** | **Prêt en Production** (Validation Sandbox) | Connexion par Merchant ID + Token API direct et flux OAuth, synchro catalogue |
+| **Clover POS** | **NOT READY — mise à jour du 9 octobre 2026** | Code de synchronisation et d’export local; aucun marchand relié, aucun paiement validé. Voir la reprise prioritaire en tête de ce document. |
 | **Toast POS** | **Prêt en Production** | Intégration Partner Connect / Machine-to-Machine, tests unitaires validés (9/9) |
 | **Lightspeed Restaurant** | Code OAuth prêt | En attente d'un compte sandbox partenaire Lightspeed |
 | **Pass Apple Wallet** | Scannable par QR / code | Génération de fichier `.pkpass` natif planifiée post-MVP |

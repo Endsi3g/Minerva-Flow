@@ -2,6 +2,18 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [2.52.0-rc.1] — Clover : commandes et sécurisation OAuth · 2026-10-09
+
+Préversion de code, réservée à la validation. Le paiement Clover et la synchronisation des fiches clients ne sont pas encore implémentés; aucun marchand Clover n’est relié au dernier contrôle. Cette préversion n’active pas la production et ne déclenche pas l’annonce utilisateurs.
+
+- Export après acceptation propriétaire : file durable, association restaurant/marchand/environnement, conservation des formats et notes, validation du catalogue et des montants, reprise des réponses incertaines sans création aveugle d’une nouvelle commande.
+- Configuration réservée aux propriétaires et gestionnaires actifs, attribution des employés référencés et suivi de transmission dans les commandes. Export et annulation restent désactivés avant validation sur un marchand Sandbox.
+- Les exports déjà liés sont reconnus lors de l’import Clover afin d’éviter une seconde commande, un double crédit de fidélité ou un double comptage des ventes.
+- Échange OAuth sur l’hôte API, suppression du repli GET avec secret dans l’URL, contrôle du compte initiateur, du restaurant, de l’environnement et de l’identifiant marchand; refus des jetons expirés et signalement des échecs Vault/DB.
+- Les brouillons et prix non confirmés sont exclus des exports du catalogue; les écritures déclenchées dans l’app exigent des droits de gestion sur le même restaurant.
+- Migrations `0181` et `0182` présentes, déjà appliquées en Staging seulement. Aucun planificateur du nouvel export n’est activé.
+- Justifications des permissions et contrat restant à implémenter documentés dans [HANDOFF.md](HANDOFF.md). Les préversions sont exclues du workflow d’annonce de release.
+
 ## [2.50.0] — Recommandations explicables et qualité des données · 2026-09-29
 
 - Flow AI classe les conseils par menu, marge, stock, fidélité, opérations, finances ou campagnes. Une recommandation ne modifie aucune donnée sans validation du propriétaire.

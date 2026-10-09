@@ -1005,7 +1005,8 @@ export function CommandesView({
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <SourceBadge source={o.source} />
                           <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
-                          <DeliveryMeta order={o} />
+                          <CloverOrderMeta order={o} />
+                      <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
@@ -1074,7 +1075,8 @@ export function CommandesView({
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <SourceBadge source={o.source} />
                           <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
-                          <DeliveryMeta order={o} />
+                          <CloverOrderMeta order={o} />
+                      <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
@@ -1157,7 +1159,8 @@ export function CommandesView({
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <SourceBadge source={o.source} />
                           <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
-                          <DeliveryMeta order={o} />
+                          <CloverOrderMeta order={o} />
+                      <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
@@ -1240,7 +1243,8 @@ export function CommandesView({
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <SourceBadge source={o.source} />
                           <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
-                          <DeliveryMeta order={o} />
+                          <CloverOrderMeta order={o} />
+                      <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
@@ -1318,7 +1322,8 @@ export function CommandesView({
                       <div className="mt-0.5 flex items-center gap-1">
                         <SourceBadge source={o.source} />
                         <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
-                        <DeliveryMeta order={o} />
+                        <CloverOrderMeta order={o} />
+                      <DeliveryMeta order={o} />
                         {orderIntervals.has(o.id) && (
                           <span className="text-[12px] font-mono text-mv-ink-faint">+{orderIntervals.get(o.id)}m</span>
                         )}
@@ -1357,6 +1362,7 @@ export function CommandesView({
                     <div className="flex items-center gap-1.5">
                       <SourceBadge source={o.source} />
                       <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
+                      <CloverOrderMeta order={o} />
                       <DeliveryMeta order={o} />
                       {orderIntervals.has(o.id) && (
                         <span className="text-[12px] font-mono text-mv-ink-faint" title={t("delayComparedWithThe")}>
@@ -1431,4 +1437,16 @@ export function CommandesView({
       )}
     </div>
   );
+}
+
+function CloverOrderMeta({ order }: { order: Order }) {
+  const english = useLocale().startsWith("en");
+  const labels: Record<string, string> = english
+    ? { queued: "Awaiting transmission", verify: "Transmission to verify", exported: "Transmitted · payment to verify", blocked: "Transmission blocked", cancel_pending: "Cancellation pending", cancel_verify: "Cancellation to verify", cancelled: "Cancelled" }
+    : { queued: "En attente de transmission", verify: "Transmission à vérifier", exported: "Transmise · paiement à vérifier", blocked: "Transmission bloquée", cancel_pending: "Annulation à transmettre", cancel_verify: "Annulation à vérifier", cancelled: "Annulée" };
+  if (!order.cloverExportStatus && !order.cloverEmployeeName) return null;
+  return <div className="text-[12px] text-mv-ink-soft" aria-live="polite">
+    {order.cloverExportStatus && <p>Clover · {labels[order.cloverExportStatus] ?? (english ? "To verify" : "À vérifier")}</p>}
+    {order.cloverEmployeeName && <p>{english ? "Handled by" : "Traité par"} · {order.cloverEmployeeName}</p>}
+  </div>;
 }

@@ -102,7 +102,7 @@ export function cloverEnvironment(): "sandbox" | "production" {
 
 export function cloverAuthBaseUrl(): string {
   return cloverEnvironment() === "production"
-    ? "https://clover.com"
+    ? "https://www.clover.com"
     : "https://sandbox.dev.clover.com";
 }
 
@@ -143,5 +143,4 @@ export function toastApiBaseUrl(): string {
     ? "https://api.toasttab.com"
     : "https://toast-api-server-sandbox.eng.toasttab.com";
 }
-
 

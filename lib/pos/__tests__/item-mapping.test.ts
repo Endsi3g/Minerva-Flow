@@ -1,6 +1,11 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+// This suite isolates ingestion. Merchant/export reconciliation has its own
+// fail-closed coverage in clover-import-dedup.test.ts.
+vi.mock("@/lib/pos/clover-import-dedup", () => ({
+  excludeCloverExportedTickets: async (_restaurantId: string, tickets: unknown[]) => tickets,
+}));
 
 import {
   normalizeItemName,
