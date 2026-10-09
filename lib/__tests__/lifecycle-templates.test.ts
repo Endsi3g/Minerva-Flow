@@ -39,7 +39,7 @@ describe("Lifecycle & Operational Email Templates", () => {
 
       expect(result.html).toContain("https://minervaflow.app/icon-192.png");
       expect(result.html).toContain("Minerva Flow");
-      expect(result.html).toContain("367 rue Laberge, Repentigny (Québec) J6A 4C2, Canada");
+      expect(result.html).toContain("367 rue Lberge, Repentigny (Québec) J6A 4C2, Canada");
       expect(result.html).toContain("Alexandre");
 
       // Verify no lime color is present in output

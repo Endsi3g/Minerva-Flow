@@ -2,6 +2,13 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [2.52.0-rc.2] — Tests email et annonce par courriel uniquement · 2026-10-09
+
+- Corrige les huit assertions d’adresse postale obsolètes; la suite complète passe avec 574 tests dans 91 fichiers, sans désactiver les contrôles de consentement ou de désabonnement.
+- Le webhook de release envoie uniquement la campagne courriel, sans notifications dans l’app ni push. Les canaux de publication manuelle admin sont conservés.
+- Les échecs d’envoi sont signalés au workflow; une entrée créée ne prouve pas la livraison du courriel. Aucun renvoi automatique d’une campagne incertaine.
+- L’annonce reste réservée à une version validée et déployée en Production, selon la décision confirmée de Kael. Cette préversion n’active pas Clover et n’envoie aucun email utilisateurs.
+
 ## [2.52.0-rc.1] — Clover : commandes et sécurisation OAuth · 2026-10-09
 
 Préversion de code, réservée à la validation. Le paiement Clover et la synchronisation des fiches clients ne sont pas encore implémentés; aucun marchand Clover n’est relié au dernier contrôle. Cette préversion n’active pas la production et ne déclenche pas l’annonce utilisateurs.

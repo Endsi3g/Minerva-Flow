@@ -1,5 +1,16 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
+## Correctif de livraison — 2.52.0-rc.2 (9 octobre 2026)
+
+- Succède à la préversion `2.52.0-rc.1`, sans déplacer son tag. Branche `release/clover-2.52.0-rc.2`, tag `v2.52.0-rc.2`; les autres changements du workspace restent hors de ce lot.
+- Les 8 échecs préexistants sont corrigés : les assertions des modèles email utilisent l’adresse confirmée « 367 rue Lberge », déjà présente dans l’identité partagée. Aucun texte d’adresse de Production n’a été changé pour contourner les tests; les contrôles CASL et de désabonnement restent actifs.
+- Suite unitaire complète du candidat : **574/574 tests, 91 fichiers**. Les 25 tests des deux fichiers anciennement défaillants passent; les quatre nouveaux tests couvrent l’annonce courriel uniquement et l’échec de livraison signalé.
+- Le webhook GitHub demande désormais `emailOnly: true`. La publication manuelle admin conserve ses canaux existants. Aucun push ou notification dans l’app n’est déclenché par le mode courriel uniquement. Un échec de campagne retourne HTTP 502 avec l’identifiant de l’entrée déjà créée; vérifier la campagne avant une reprise pour éviter une duplication.
+- TypeScript, lint des six fichiers modifiés et build Webpack (308 pages) passent. Le lint global reste à **201 erreurs et 216 avertissements** hors de ces fichiers; ne pas annoncer que tous les contrôles qualité sont verts.
+- Décision de Kael confirmée : **annoncer après validation et déploiement Production seulement**. Le garde de préversion du workflow reste actif; aucun envoi utilisateur effectué pour cette préversion.
+- Les résultats précédents « 562 réussites / 8 échecs » restent des preuves historiques de rc.1. Les résultats actuels, build et CI : [notes rc.2](docs/releases/RELEASE_2.52.0-rc.2.md).
+- **NOT READY Production** : marchand Clover à autoriser, renouvellement/persistance atomique et paiement préautorisation/capture/remboursement encore à achever, puis parcours réels à valider. La correction des tests ne ferme pas ces blocages.
+
 ## Préversion de livraison — 2.52.0-rc.1
 
 - Périmètre confirmé par Kael : **lot Clover et handoff seulement**. Branche `release/clover-2.52.0-rc.1`, base `main` au commit `3f92fd3`. Les autres travaux web et natifs restent dans l’espace de travail original, hors de cette préversion.

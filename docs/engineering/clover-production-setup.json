@@ -154,22 +154,31 @@
     "report": "docs/releases/CLOVER_OAUTH_FOUNDATION_2026-10-09.md"
   },
   "sourceRelease": {
-    "version": "2.52.0-rc.1",
-    "tag": "v2.52.0-rc.1",
-    "branch": "release/clover-2.52.0-rc.1",
+    "version": "2.52.0-rc.2",
+    "tag": "v2.52.0-rc.2",
+    "branch": "release/clover-2.52.0-rc.2",
     "status": "Prerelease source candidate; not a Production or store deployment",
     "isolatedVerification": {
       "cloverTestsPassed": 150,
       "cloverTestFiles": 10,
-      "fullUnitTestsPassed": 562,
-      "fullUnitTestsFailed": 8,
+      "fullUnitTestsPassed": 574,
+      "fullUnitTestsFailed": 0,
       "fullUnitTestFiles": 91,
-      "baselineFailures": "Same eight postal-address email assertions fail on unchanged base 3f92fd3",
+      "baselineFailures": "Resolved: eight stale postal-address assertions aligned with the already-confirmed Lberge address; no production template change",
       "typescript": "passed",
       "eslintSelectedSourceFiles": "passed — 32 files",
-      "build": "passed — Webpack exit 0, 308 pages; 4 GiB Node heap retry after initial memory SIGABRT"
+      "build": "passed — Webpack exit 0, 308 pages, 4 GiB Node heap",
+      "eslintChangedFiles": "passed — six changed TypeScript files",
+      "eslintGlobal": {
+        "status": "failed",
+        "errors": 201,
+        "warnings": 216,
+        "changedFiles": "zero diagnostics"
+      }
     },
     "announcementWorkflow": "Prereleases and drafts skip announce job",
-    "releaseNotes": "docs/releases/RELEASE_2.52.0-rc.1.md"
+    "releaseNotes": "docs/releases/RELEASE_2.52.0-rc.2.md",
+    "announcement": "Email only after validated Production deployment; prereleases still skip announce. Failed campaign reported, not silently accepted.",
+    "safariReview": "Developer dashboard DRAFT; setup items incomplete; Android & Web differs from intended Web integration; no connected browser for edits"
   }
 }

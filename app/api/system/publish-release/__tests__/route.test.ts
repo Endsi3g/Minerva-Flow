@@ -19,7 +19,7 @@ describe("POST /api/system/publish-release", () => {
     vi.clearAllMocks();
     process.env.RELEASE_WEBHOOK_SECRET = "release-secret-for-tests";
     mocks.createChangelogEntryAsSystem.mockResolvedValue({ id: "entry-1", title: "v2.48.0" });
-    mocks.announceChangelogEntry.mockResolvedValue(undefined);
+    mocks.announceChangelogEntry.mockResolvedValue({ ok: true });
   });
 
   function request(body: unknown, authorization = "Bearer release-secret-for-tests") {
@@ -65,6 +65,26 @@ describe("POST /api/system/publish-release", () => {
       imageUrl,
     });
     expect(mocks.announceChangelogEntry).toHaveBeenCalledOnce();
+    expect(mocks.announceChangelogEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "entry-1" }),
+      { emailOnly: true },
+    );
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/changelog");
+  });
+
+  it("reports an unconfirmed email without retrying or hiding the created entry", async () => {
+    mocks.announceChangelogEntry.mockResolvedValue({ ok: false, reason: "provider_not_configured" });
+    const response = await POST(request({
+      title: "v2.48.0",
+      body: "Correctif appliqué et validé.",
+      imageUrl: "https://github.com/minerva-flow/flow/releases/download/v2.48.0/changelog.webp",
+    }));
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      error: "Entrée créée, mais l'envoi du courriel n'est pas confirmé; vérifier la campagne avant toute reprise",
+      id: "entry-1",
+    });
+    expect(mocks.createChangelogEntryAsSystem).toHaveBeenCalledTimes(1);
+    expect(mocks.announceChangelogEntry).toHaveBeenCalledTimes(1);
   });
 });
