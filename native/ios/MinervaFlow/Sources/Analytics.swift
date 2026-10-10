@@ -43,7 +43,7 @@ enum Analytics {
         let forceAnalytics = ProcessInfo.processInfo.arguments.contains("-minervaAnalyticsDebug")
         if !forceAnalytics, ProcessInfo.processInfo.arguments.contains("-minervaUITestAuth") || ProcessInfo.processInfo.arguments.contains("-minervaUITestStaging") { return }
         #endif
-        let config = PostHogConfig(apiKey: Config.posthogToken, host: Config.posthogHost)
+        let config = PostHogConfig(projectToken: Config.posthogToken, host: Config.posthogHost)
         #if DEBUG
         config.debug = ProcessInfo.processInfo.arguments.contains("-minervaAnalyticsDebug")
         config.flushAt = 1
@@ -91,11 +91,27 @@ enum Analytics {
     }
 
     /// Failures keep only the operation name and the error's type, never its text.
+    /// Sent as `$exception` so they appear in PostHog Error Tracking. Crashes stay
+    /// with Sentry: two crash handlers on the same process can conflict.
     static func captureError(_ operation: String, _ error: Error) {
         guard started else { return }
-        PostHogSDK.shared.capture("app_error", properties: [
+        let type = String(describing: Swift.type(of: error))
+        PostHogSDK.shared.capture("$exception", properties: [
+            "$exception_list": [["type": type, "value": operation, "mechanism": ["handled": true, "type": "generic"]]],
             "operation": operation,
-            "error_type": String(describing: type(of: error)),
         ])
+    }
+
+    // MARK: - Feature flags
+
+    /// Gradual rollouts. Flags are created in PostHog; this only reads them.
+    static func isFeatureEnabled(_ key: String) -> Bool {
+        guard started else { return false }
+        return PostHogSDK.shared.isFeatureEnabled(key)
+    }
+
+    static func reloadFeatureFlags() {
+        guard started else { return }
+        PostHogSDK.shared.reloadFeatureFlags()
     }
 }

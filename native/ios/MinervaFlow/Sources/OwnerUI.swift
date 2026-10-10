@@ -19,7 +19,7 @@ enum OwnerTone {
         case .good: return MinervaColor.emeraldDark
         case .warn: return Color(red: 0.70, green: 0.42, blue: 0.0)
         case .bad: return Color(red: 0.72, green: 0.20, blue: 0.16)
-        case .info: return Color(red: 0.12, green: 0.38, blue: 0.62)
+        case .info: return MinervaColor.emerald
         case .neutral: return MinervaColor.inkSoft
         }
     }
