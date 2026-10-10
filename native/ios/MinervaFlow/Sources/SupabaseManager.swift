@@ -74,9 +74,9 @@ final class SupabaseManager: ObservableObject {
     @Published var historyError: String?
     @Published var myOrders: [CustomerOrder] = []
     @Published var isLoadingOrders = false
+    @Published var ordersLoadFailed = false
     @Published var isLoadingData = false
     @Published var isLoadingMenu = false
-    @Published private(set) var isUsingDemoMenuFallback = false
     @Published var isLoadingReferrals = false
     /// Surfaced by any screen after a failed network/RPC call — cleared the
     /// next time that screen's action is retried. Centralized here rather
@@ -98,6 +98,9 @@ final class SupabaseManager: ObservableObject {
     /// Native owner/manager mode is resolved from the authenticated user's
     /// restaurant membership, never from a client-side flag.
     @Published var isOwnerExperience = false
+    @Published var isManagingRestaurant = false
+    @Published var isLoadingOwnerOperations = false
+    @Published var requestedOwnerAccess = false
     /// Mirrors the web /equipe gate (lib/data/team-portal.ts): a distinct
     /// account type from owner/customer, checked first in loadPortalData so
     /// a team/ambassador account never falls into restaurant resolution.
@@ -137,39 +140,94 @@ final class SupabaseManager: ObservableObject {
         Task { await observeAuthState() }
     }
 
+    private var experienceLoadTask: Task<Void, Never>?
+
+    private func isCurrentSession(_ userID: UUID) -> Bool {
+        !Task.isCancelled && isAuthenticated && authUserID == userID && client.auth.currentUser?.id == userID
+    }
+
+    private func clearAccountData() {
+        isLoadingOwnerOperations = false
+        isManagingRestaurant = false
+        isOwnerExperience = false
+        isTeamExperience = false
+        isTeamMember = false
+        customer = nil
+        allCustomers = []; allMemberships = []; allTransactions = []; allRedemptions = []
+        transactions = []; rewards = []; redemptions = []; offers = []; announcements = []
+        birthdayOffer = nil; myOrders = []; menuItems = []; referralPrograms = []
+        appBonusAwards = []; hasClaimedAppBonusThisSession = false
+        customerMealSuggestions = []; customerServiceQuotes = []
+        restaurantName = nil; restaurantCity = nil; restaurantPhone = nil
+        restaurantGoogleMapsUrl = nil; restaurantGooglePlaceId = nil
+        pairingCode = nil; pairingCodeExpiresAt = nil
+        ownerRestaurants = []; selectedOwnerRestaurantId = nil; ownerBranding = nil
+        ownerMetrics = NativeOwnerMetrics(); ownerOrders = []; ownerMenuItems = []
+        ownerOffers = []; ownerRewards = []; ownerCustomers = []; ownerEmployees = []
+        ownerInventoryItems = []; ownerTransactions = []; ownerReviews = []; ownerMealSuggestions = []
+        teamMetrics = nil; teamGoals = nil; academyPages = []; memberDirectory = []; memberDirectoryUserId = nil
+        lastError = nil
+        activateTenantBranding(nil)
+    }
+
     private func observeAuthState() async {
         for await state in client.auth.authStateChanges {
+            AppLog.diagnostic("auth event \(state.event) session=\(state.session != nil) host=\(Config.supabaseURL.host ?? "none")")
             if state.event == .signedIn || state.event == .initialSession {
-                isAuthenticated = state.session != nil
-                authUserID = state.session?.user.id
-                if state.session != nil {
-                    isResolvingExperience = true
-                    experienceResolutionError = nil
+                // A late initial-session event must not overwrite a newer login.
+                guard let session = state.session else {
+                    if client.auth.currentUser == nil {
+                        experienceLoadTask?.cancel()
+                        clearAccountData()
+                        authUserID = nil; isAuthenticated = false; isResolvingExperience = false
+                    }
+                    continue
+                }
+                guard client.auth.currentUser?.id == session.user.id else {
+                    if state.event == .signedIn && client.auth.currentUser == nil {
+                        lastError = "La session sécurisée n’a pas pu être enregistrée. Réessayez de vous connecter."
+                    }
+                    continue
+                }
+                experienceLoadTask?.cancel()
+                if authUserID != session.user.id { clearAccountData() }
+                isResolvingExperience = true
+                experienceResolutionError = nil
+                authUserID = session.user.id
+                isAuthenticated = true
+                let userID = session.user.id
+                // Keep consuming auth events while requests are in flight.
+                // Sign-out/account changes cancel obsolete loads immediately.
+                experienceLoadTask = Task { @MainActor [weak self] in
+                    guard let self else { return }
                     let watchdog = Task { @MainActor [weak self] in
                         try? await Task.sleep(nanoseconds: 15_000_000_000)
-                        guard !Task.isCancelled, let self else { return }
+                        guard let self, self.isCurrentSession(userID), !Task.isCancelled else { return }
                         self.isResolvingExperience = false
                         self.experienceResolutionError = "La préparation de votre espace prend trop de temps. Vérifiez votre connexion, puis réessayez."
                     }
-                    await loadPortalData()
-                    await configureRealtimeSubscriptions()
-                    await registerStoredPushToken()
+                    await self.loadPortalData()
                     watchdog.cancel()
-                    isResolvingExperience = false
+                    guard self.isCurrentSession(userID) else { return }
+                    self.experienceResolutionError = nil
+                    self.isResolvingExperience = false
+                    Analytics.identify(userID: userID, role: self.isTeamExperience ? "team" : (self.isOwnerExperience ? "owner" : "client"))
+                    // Realtime/push setup does not block opening the workspace.
+                    await self.configureRealtimeSubscriptions()
+                    guard self.isCurrentSession(userID) else { return }
+                    await self.registerStoredPushToken()
                 }
             } else if state.event == .signedOut {
-                isAuthenticated = false
-                authUserID = nil
-                isResolvingExperience = false
-                experienceResolutionError = nil
-                customer = nil
+                // Ignore a delayed sign-out if Auth already holds a new session.
+                guard client.auth.currentUser == nil else { continue }
+                experienceLoadTask?.cancel()
+                clearAccountData()
+                requestedOwnerAccess = false
+                isAuthenticated = false; authUserID = nil
+                isResolvingExperience = false; experienceResolutionError = nil
                 realtimeStatus = "idle"
+                Analytics.reset()
                 await stopRealtimeSubscriptions()
-                activeTenantBranding = nil
-                UserDefaults.standard.removeObject(forKey: "activeTenantPrimaryColor")
-                UserDefaults.standard.removeObject(forKey: "activeTenantSecondaryColor")
-                UserDefaults.standard.removeObject(forKey: "activeTenantAccentColor")
-                transactions = []
             }
         }
     }
@@ -192,13 +250,14 @@ final class SupabaseManager: ObservableObject {
     /// Step 2: verifies the 6-digit code from that email. On success,
     /// authStateChanges fires .signedIn and loadPortalData() runs.
     func verifyCode(email: String, code: String) async throws {
-        // signInWithOTP(email:) with no explicit type always requests a
-        // "magiclink"-type OTP server-side — verifying with any other
-        // EmailOTPType case fails even with the correct code.
-        try await client.auth.verifyOTP(email: email, token: code, type: .magiclink)
+        // Email verification accepts both signup and returning-user OTPs.
+        try await client.auth.verifyOTP(email: email, token: code, type: .email)
     }
 
     func signOut() async {
+        DeepLinkRouter.shared.pendingReorderCart = nil
+        DeepLinkRouter.shared.pendingReorderRestaurantId = nil
+        DeepLinkRouter.shared.pendingReorderCustomerId = nil
         if let userID = authUserID, let token = UserDefaults.standard.string(forKey: "minervaAPNsDeviceToken") {
             _ = try? await client.from("device_push_tokens").delete()
                 .eq("user_id", value: userID)
@@ -222,11 +281,11 @@ final class SupabaseManager: ObservableObject {
             await stopRealtimeSubscriptions()
             return
         }
-        let restaurantIDs = isOwnerExperience
+        let restaurantIDs = isManagingRestaurant
             ? ownerRestaurants.map(\.id).sorted()
             : [customer?.restaurantId].compactMap { $0 }
         guard !restaurantIDs.isEmpty else { return }
-        let tenantKey = "\(userID.uuidString):\(restaurantIDs.joined(separator: ",")):owner=\(isOwnerExperience)"
+        let tenantKey = "\(userID.uuidString):\(restaurantIDs.joined(separator: ",")):owner=\(isManagingRestaurant)"
         guard force || tenantKey != realtimeTenantKey else { return }
 
         await stopRealtimeSubscriptions()
@@ -258,7 +317,7 @@ final class SupabaseManager: ObservableObject {
 
         // Customer-owned events have finer row filters. These are additive
         // and remain constrained by each table's own RLS policy.
-        if !isOwnerExperience, let customerID = customer?.id {
+        if !isManagingRestaurant, let customerID = customer?.id {
             for table in ["loyalty_transactions", "reward_redemptions"] {
                 realtimeSubscriptions.append(channel.onPostgresChange(InsertAction.self, schema: "public", table: table, filter: .eq("customer_id", value: customerID)) { [weak self] _ in
                     Task { @MainActor [weak self] in self?.scheduleRealtimeRefresh() }
@@ -411,7 +470,9 @@ final class SupabaseManager: ObservableObject {
     /// through RLS like any other login, just skipping the email round-trip
     /// while OTP delivery is being debugged separately.
     func signInWithDevTestAccount() async throws {
+        guard !Config.devTestEmail.isEmpty, !Config.devTestPassword.isEmpty else { throw URLError(.userAuthenticationRequired) }
         try await client.auth.signIn(email: Config.devTestEmail, password: Config.devTestPassword)
+        AppLog.diagnostic("UI test login completed")
     }
     #endif
 
@@ -505,6 +566,7 @@ final class SupabaseManager: ObservableObject {
         request.httpMethod = "POST"
         request.httpBody = body
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let restaurantId = customer?.restaurantId { request.setValue(restaurantId, forHTTPHeaderField: "x-restaurant-id") }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -558,25 +620,41 @@ final class SupabaseManager: ObservableObject {
             async let ambassador: [NativeFlowAmbassadorFlag] = client.from("flow_ambassadors").select("id").eq("user_id", value: userId.uuidString).eq("status", value: "active").execute().value
             let isTeam = try await profile.first?.isTeamMember ?? false
             let isAmbassador = try await !ambassador.isEmpty
+            guard isCurrentSession(userId) else { return }
             isTeamMember = isTeam
             isTeamExperience = isTeam || isAmbassador
         } catch {
+            guard isCurrentSession(userId) else { return }
             isTeamExperience = false
             AppLog.failure("loadTeamPortalContext", error)
         }
     }
 
     func loadPortalData() async {
+        guard let userID = authUserID, isCurrentSession(userID) else { return }
         isLoadingData = true
         birthdayOffer = nil
         defer { isLoadingData = false }
         do {
             await loadTeamPortalContext()
+            guard isCurrentSession(userID) else { return }
             if isTeamExperience {
                 return
             }
-            await loadOwnerContext()
-            if isOwnerExperience {
+            await loadOwnerContext(includeOperations: isManagingRestaurant || requestedOwnerAccess)
+            guard isCurrentSession(userID) else { return }
+            if requestedOwnerAccess {
+                isManagingRestaurant = isOwnerExperience
+                requestedOwnerAccess = false
+                if !isOwnerExperience { lastError = "Ce compte n’a pas d’accès propriétaire actif." }
+            } else if isOwnerExperience && !prefersCustomerWorkspace(userID) {
+                // An account with an active owner/manager role opens its
+                // restaurant workspace by default. The customer space stays one
+                // tap away (Compte › Espace client) and is remembered per account.
+                isManagingRestaurant = true
+            }
+            if !isOwnerExperience { isManagingRestaurant = false }
+            if isManagingRestaurant && isOwnerExperience {
                 return
             }
             // A customer can now belong to more than one restaurant (the
@@ -590,18 +668,25 @@ final class SupabaseManager: ObservableObject {
             let customers: [Customer] = try await client
                 .from("customers")
                 .select()
+                .eq("user_id", value: authUserID?.uuidString ?? "00000000-0000-0000-0000-000000000000")
                 .order("created_at", ascending: true)
                 .execute()
                 .value
+            AppLog.diagnostic("customer query rows=\(customers.count) sessionMatches=\(client.auth.currentUser?.id == authUserID)")
+            guard isCurrentSession(userID) else { return }
             allCustomers = customers
-            guard let mine = customers.first else {
+            let selectedId = authUserID.flatMap { UserDefaults.standard.string(forKey: "activeCustomerRestaurant:\($0.uuidString)") }
+            guard let mine = customers.first(where: { $0.restaurantId == selectedId }) ?? customers.first else {
                 customer = nil
                 activateTenantBranding(nil)
                 return
             }
             customer = mine
+            if let userId = authUserID { UserDefaults.standard.set(mine.restaurantId, forKey: "activeCustomerRestaurant:\(userId.uuidString)") }
             await fetchTenantBranding(for: mine.restaurantId)
+            guard isCurrentSession(userID) else { return }
             await claimAppInstallBonusIfNeeded()
+            guard isCurrentSession(userID) else { return }
 
             async let txsFetch: [LoyaltyTransaction] = client
                 .from("loyalty_transactions")
@@ -648,6 +733,7 @@ final class SupabaseManager: ObservableObject {
             let (txs, rewardsResult, offersResult, redemptionsResult, announcementsResult) = try await (
                 txsFetch, rewardsFetch, offersFetch, redemptionsFetch, announcementsFetch
             )
+            guard isCurrentSession(userID), customer?.id == mine.id else { return }
             transactions = txs
             rewards = rewardsResult
             let liveOffers = offersResult.filter { $0.isLive }
@@ -657,9 +743,11 @@ final class SupabaseManager: ObservableObject {
             announcements = announcementsResult
             lastError = nil
             await fetchRestaurantInfo()
+            guard isCurrentSession(userID), customer?.id == mine.id else { return }
             saveWidgetSnapshot(for: mine)
             await fetchAllMemberships()
         } catch {
+            guard isCurrentSession(userID) else { return }
             // Loading is best-effort here: a transient network blip shouldn't
             // wipe out whatever the last successful load already put on
             // screen (pull-to-refresh keeps showing stale-but-real data
@@ -671,7 +759,7 @@ final class SupabaseManager: ObservableObject {
     }
 
     func retryExperienceResolution() async {
-        guard isAuthenticated else { return }
+        guard let userId = authUserID, isCurrentSession(userId) else { return }
         isResolvingExperience = true
         experienceResolutionError = nil
         let watchdog = Task { @MainActor [weak self] in
@@ -682,6 +770,8 @@ final class SupabaseManager: ObservableObject {
         }
         await loadPortalData()
         watchdog.cancel()
+        guard isCurrentSession(userId) else { return }
+        experienceResolutionError = nil
         isResolvingExperience = false
     }
 
@@ -703,7 +793,8 @@ final class SupabaseManager: ObservableObject {
     /// Loads only the owner surface needed by the native shell. RLS policies
     /// on `restaurant_members` and `workspace_brand_settings` remain the
     /// authority; this query does not trust role data supplied by the app.
-    private func loadOwnerContext() async {
+    private func loadOwnerContext(includeOperations: Bool = false) async {
+        guard let userId = authUserID, isCurrentSession(userId) else { return }
         struct Membership: Decodable {
             let role: String
             let restaurantId: String
@@ -711,15 +802,27 @@ final class SupabaseManager: ObservableObject {
             enum CodingKeys: String, CodingKey { case role, restaurantId = "restaurant_id", restaurant = "restaurants" }
         }
         do {
+            guard let userId = authUserID else {
+                isOwnerExperience = false
+                isManagingRestaurant = false
+                selectedOwnerRestaurantId = nil
+                ownerRestaurants = []
+                return
+            }
             let memberships: [Membership] = try await client
                 .from("restaurant_members")
                 .select("role, restaurant_id, restaurants(id, name, city, workspace_id)")
+                .eq("user_id", value: userId.uuidString)
                 .eq("status", value: "active")
                 .execute()
                 .value
+            guard isCurrentSession(userId) else { return }
+            AppLog.diagnostic("own memberships=\(memberships.count)")
             let privileged = memberships.filter { $0.role == "owner" || $0.role == "manager" }
             guard let first = privileged.first else {
                 isOwnerExperience = false
+                isManagingRestaurant = false
+                selectedOwnerRestaurantId = nil
                 ownerRestaurants = []
                 ownerBranding = nil
                 ownerMetrics = NativeOwnerMetrics()
@@ -728,17 +831,24 @@ final class SupabaseManager: ObservableObject {
             isOwnerExperience = true
             ownerRestaurants = privileged.compactMap(\.restaurant)
             if selectedOwnerRestaurantId == nil || !ownerRestaurants.contains(where: { $0.id == selectedOwnerRestaurantId }) {
-                selectedOwnerRestaurantId = first.restaurantId
+                let remembered = UserDefaults.standard.string(forKey: "selectedOwnerRestaurant.\(userId.uuidString)")
+                selectedOwnerRestaurantId = ownerRestaurants.first(where: { $0.id == remembered })?.id ?? first.restaurantId
             }
-            await loadOwnerMetrics()
-            await loadOwnerOrders()
-            await loadOwnerOperations(for: selectedOwnerRestaurantId ?? first.restaurantId)
-            await fetchOwnerMealSuggestions(for: selectedOwnerRestaurantId ?? first.restaurantId)
-            await loadSelectedOwnerBranding()
+            if includeOperations {
+                async let metrics: Void = loadOwnerMetrics()
+                async let orders: Void = loadOwnerOrders()
+                async let operations: Void = loadOwnerOperations(for: selectedOwnerRestaurantId ?? first.restaurantId)
+                async let ideas: Void = fetchOwnerMealSuggestions(for: selectedOwnerRestaurantId ?? first.restaurantId)
+                async let branding: Void = loadSelectedOwnerBranding()
+                _ = await (metrics, orders, operations, ideas, branding)
+            }
         } catch {
+            guard isCurrentSession(userId) else { return }
             // A customer session can legitimately receive no membership rows;
             // only surface errors for a session that looked privileged.
             isOwnerExperience = false
+            isManagingRestaurant = false
+            selectedOwnerRestaurantId = nil
             ownerRestaurants = []
             ownerBranding = nil
             ownerMetrics = NativeOwnerMetrics()
@@ -746,11 +856,43 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    func openOwnerWorkspace() async {
+        guard let userId = authUserID, isCurrentSession(userId) else { return }
+        // Resolve the active role first. OwnerMainTabView loads operations
+        // after entering; slow metrics must not leave this button inert.
+        await loadOwnerContext(includeOperations: false)
+        guard isCurrentSession(userId) else { return }
+        guard isOwnerExperience else {
+            lastError = "Ce compte n’a pas d’accès propriétaire actif."
+            return
+        }
+        UserDefaults.standard.removeObject(forKey: workspacePreferenceKey(userId))
+        isManagingRestaurant = true
+        await configureRealtimeSubscriptions()
+    }
+
+    private func workspacePreferenceKey(_ userID: UUID) -> String { "preferredWorkspace.\(userID.uuidString)" }
+
+    private func prefersCustomerWorkspace(_ userID: UUID) -> Bool {
+        UserDefaults.standard.string(forKey: workspacePreferenceKey(userID)) == "customer"
+    }
+
+    func openCustomerWorkspace() async {
+        if let userID = authUserID { UserDefaults.standard.set("customer", forKey: workspacePreferenceKey(userID)) }
+        isManagingRestaurant = false
+        requestedOwnerAccess = false
+        await loadPortalData()
+        await configureRealtimeSubscriptions()
+    }
+
     private func loadOwnerMetrics() async {
+        guard let userId = authUserID else { return }
         let startOfMonth = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
         let iso = ISO8601DateFormatter().string(from: startOfMonth)
         var metrics = NativeOwnerMetrics()
-        for restaurant in ownerRestaurants {
+        let selectedId = selectedOwnerRestaurantId
+        // Figures follow the location picker: one location at a time.
+        for restaurant in ownerRestaurants where selectedId == nil || restaurant.id == selectedId {
             do {
                 struct ServiceDay: Decodable { let revenue: Double }
                 let days: [ServiceDay] = try await client.from("service_days").select("revenue").eq("restaurant_id", value: restaurant.id).gte("date", value: String(iso.prefix(10))).execute().value
@@ -762,18 +904,22 @@ final class SupabaseManager: ObservableObject {
                 AppLog.failure("loadOwnerMetrics", error)
             }
         }
+        guard isCurrentSession(userId), selectedOwnerRestaurantId == selectedId else { return }
         ownerMetrics = metrics
     }
 
     private func loadOwnerOrders() async {
+        guard let userId = authUserID else { return }
+        let selectedId = selectedOwnerRestaurantId
         var result: [NativeOwnerOrder] = []
         let restaurants = ownerRestaurants.filter { selectedOwnerRestaurantId == nil || $0.id == selectedOwnerRestaurantId }
         for restaurant in restaurants {
             do {
-                let rows: [NativeOwnerOrder] = try await client.from("orders").select("id, restaurant_id, status, guest_name, total, created_at, requested_ready_at, order_kind").eq("restaurant_id", value: restaurant.id).order("created_at", ascending: false).limit(50).execute().value
+                let rows: [NativeOwnerOrder] = try await client.from("orders").select("id, restaurant_id, status, guest_name, total, created_at, requested_ready_at, estimated_ready_at, order_kind").eq("restaurant_id", value: restaurant.id).order("created_at", ascending: false).limit(50).execute().value
                 result.append(contentsOf: rows)
             } catch { AppLog.failure("loadOwnerOrders", error) }
         }
+        guard isCurrentSession(userId), selectedOwnerRestaurantId == selectedId else { return }
         ownerOrders = result.sorted { $0.createdAt > $1.createdAt }
     }
 
@@ -782,6 +928,7 @@ final class SupabaseManager: ObservableObject {
     /// for the mutation methods below; no service-role credential is ever
     /// embedded in the iOS application.
     private func loadOwnerOperations(for restaurantId: String) async {
+        guard let userId = authUserID else { return }
         do {
             async let menus: [NativeMenuItem] = client.from("menu_items").select().eq("restaurant_id", value: restaurantId).order("name", ascending: true).execute().value
             async let offers: [Offer] = client.from("offers").select().eq("restaurant_id", value: restaurantId).order("created_at", ascending: false).execute().value
@@ -792,6 +939,7 @@ final class SupabaseManager: ObservableObject {
             async let transactions: [NativeOwnerFinancialTransaction] = client.from("financial_transactions").select("id, date, description, amount, direction, category").eq("restaurant_id", value: restaurantId).order("date", ascending: false).limit(50).execute().value
             async let reviews: [NativeOwnerRestaurantReview] = client.from("restaurant_reviews").select("id, rating, comment, owner_response, created_at").eq("restaurant_id", value: restaurantId).order("created_at", ascending: false).limit(50).execute().value
             let result = try await (menus, offers, rewards, customers, employees, inventory, transactions, reviews)
+            guard isCurrentSession(userId), selectedOwnerRestaurantId == restaurantId else { return }
             ownerMenuItems = result.0
             ownerOffers = result.1
             ownerRewards = result.2
@@ -812,6 +960,8 @@ final class SupabaseManager: ObservableObject {
     func selectOwnerRestaurant(_ restaurantId: String) async {
         guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return }
         selectedOwnerRestaurantId = restaurantId
+        if let userId = authUserID { UserDefaults.standard.set(restaurantId, forKey: "selectedOwnerRestaurant.\(userId.uuidString)") }
+        await loadOwnerMetrics()
         await loadSelectedOwnerBranding()
         await loadOwnerOrders()
         await loadOwnerOperations(for: restaurantId)
@@ -819,6 +969,8 @@ final class SupabaseManager: ObservableObject {
     }
 
     private func loadSelectedOwnerBranding() async {
+        guard let userId = authUserID else { return }
+        let restaurantId = selectedOwnerRestaurantId
         guard let workspaceId = selectedOwnerRestaurant?.workspaceId else { return }
         struct Branding: Decodable {
             let brandName: String
@@ -831,19 +983,22 @@ final class SupabaseManager: ObservableObject {
             }
         }
         do {
-            ownerBranding = try await client
+            let branding: NativeOwnerBranding = try await client
                 .from("workspace_brand_settings")
                 .select("brand_name, logo_url, primary_color, secondary_color, accent_color")
                 .eq("workspace_id", value: workspaceId)
                 .single()
                 .execute()
                 .value
+            guard isCurrentSession(userId), selectedOwnerRestaurantId == restaurantId else { return }
+            ownerBranding = branding
             if let ownerBranding {
                 UserDefaults.standard.set(ownerBranding.primaryColor, forKey: "activeTenantPrimaryColor")
                 UserDefaults.standard.set(ownerBranding.secondaryColor, forKey: "activeTenantSecondaryColor")
                 UserDefaults.standard.set(ownerBranding.accentColor, forKey: "activeTenantAccentColor")
             }
         } catch {
+            guard isCurrentSession(userId), selectedOwnerRestaurantId == restaurantId else { return }
             ownerBranding = nil
             AppLog.failure("loadSelectedOwnerBranding", error)
         }
@@ -869,11 +1024,15 @@ final class SupabaseManager: ObservableObject {
     }
 
     func refreshOwnerOperations() async {
-        guard let restaurantId = selectedOwnerRestaurantId else { return }
-        await loadOwnerMetrics()
-        await loadOwnerOrders()
-        await loadOwnerOperations(for: restaurantId)
-        await fetchOwnerMealSuggestions(for: restaurantId)
+        guard let restaurantId = selectedOwnerRestaurantId, !isLoadingOwnerOperations else { return }
+        isLoadingOwnerOperations = true
+        defer { isLoadingOwnerOperations = false }
+        async let metrics: Void = loadOwnerMetrics()
+        async let orders: Void = loadOwnerOrders()
+        async let operations: Void = loadOwnerOperations(for: restaurantId)
+        async let ideas: Void = fetchOwnerMealSuggestions(for: restaurantId)
+        async let branding: Void = loadSelectedOwnerBranding()
+        _ = await (metrics, orders, operations, ideas, branding)
     }
 
     /// Search an owner's current restaurant by a customer's phone number.
@@ -1193,6 +1352,7 @@ final class SupabaseManager: ObservableObject {
                 body: body
             )
             await refreshOwnerOperations()
+            Analytics.capture("owner_order_status_changed", ["status": status])
             return true
         } catch { AppLog.failure("updateOwnerOrderStatus", error); return false }
     }
@@ -1217,6 +1377,24 @@ final class SupabaseManager: ObservableObject {
             AppLog.failure("notifyOwnerOrder", error)
             return false
         }
+    }
+
+    func updateOwnerOrderETA(_ orderId: String, restaurantId: String, minutesFromNow: Int?) async -> Bool {
+        guard ownerRestaurants.contains(where: { $0.id == restaurantId }),
+              minutesFromNow == nil || (1...720).contains(minutesFromNow!) else { return false }
+        struct Body: Encodable { let restaurantId: String; let minutesFromNow: Int? }
+        struct Response: Decodable { let ok: Bool }
+        do {
+            let body = try JSONEncoder().encode(Body(restaurantId: restaurantId, minutesFromNow: minutesFromNow))
+            let data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/native/owner/orders/\(orderId)/eta"),
+                method: "POST",
+                body: body
+            )
+            let response = try JSONDecoder().decode(Response.self, from: data)
+            if response.ok { await refreshOwnerOperations() }
+            return response.ok
+        } catch { AppLog.failure("updateOwnerOrderETA", error); return false }
     }
 
     func updateOwnerReviewResponse(_ reviewId: String, response: String) async -> Bool {
@@ -1253,6 +1431,84 @@ final class SupabaseManager: ObservableObject {
             await refreshOwnerOperations()
             return true
         } catch { AppLog.failure("updateOwnerInventoryItem", error); return false }
+    }
+
+    /// Adds an inventory line to the selected location. Same RLS-scoped write
+    /// as the web inventory page; no service credential is involved.
+    func createOwnerInventoryItem(name: String, category: String?, unit: String, quantity: Double, parLevel: Double?, unitCost: Double) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId,
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              quantity >= 0, (parLevel ?? 0) >= 0, unitCost >= 0 else { return false }
+        struct Row: Encodable {
+            let restaurantId: String; let name: String; let category: String?; let unit: String
+            let quantityOnHand: Double; let parLevel: Double?; let unitCost: Double
+            enum CodingKeys: String, CodingKey {
+                case name, category, unit
+                case restaurantId = "restaurant_id", quantityOnHand = "quantity_on_hand", parLevel = "par_level", unitCost = "unit_cost"
+            }
+        }
+        let cleanedUnit = unit.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanedCategory = category?.trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            try await client.from("inventory_items").insert(Row(
+                restaurantId: restaurantId,
+                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                category: (cleanedCategory?.isEmpty ?? true) ? nil : cleanedCategory,
+                unit: cleanedUnit.isEmpty ? "unité" : cleanedUnit,
+                quantityOnHand: quantity, parLevel: parLevel, unitCost: unitCost
+            )).execute()
+            await refreshOwnerOperations()
+            Analytics.capture("owner_inventory_item_created")
+            return true
+        } catch { AppLog.failure("createOwnerInventoryItem", error); return false }
+    }
+
+    /// Adds a menu item. Without confirmed allergen information it is saved as
+    /// a hidden draft, the same safety rule the edit sheet applies.
+    func createOwnerMenuItem(name: String, category: String?, price: Double, description: String?, allergens: [String], allergensConfirmed: Bool, active: Bool) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId,
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              price.isFinite, price >= 0 else { return false }
+        let publishable = active && allergensConfirmed && price > 0
+        struct Row: Encodable {
+            let restaurantId: String; let name: String; let category: String?; let price: Double
+            let description: String?; let active: Bool; let isDraft: Bool
+            let allergens: [String]; let allergensConfirmed: Bool
+            enum CodingKeys: String, CodingKey {
+                case name, category, price, description, active, allergens
+                case restaurantId = "restaurant_id", isDraft = "is_draft", allergensConfirmed = "allergens_confirmed"
+            }
+        }
+        let cleanedCategory = category?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanedDescription = description?.trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            try await client.from("menu_items").insert(Row(
+                restaurantId: restaurantId,
+                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                category: (cleanedCategory?.isEmpty ?? true) ? nil : cleanedCategory,
+                price: price,
+                description: (cleanedDescription?.isEmpty ?? true) ? nil : cleanedDescription,
+                active: publishable, isDraft: !publishable,
+                allergens: allergens, allergensConfirmed: allergensConfirmed
+            )).execute()
+            await refreshOwnerOperations()
+            Analytics.capture("owner_menu_item_created", ["published": publishable])
+            return true
+        } catch { AppLog.failure("createOwnerMenuItem", error); return false }
+    }
+
+    /// Lines, contact and payment details for one order, read with the
+    /// owner's own session (member RLS on `orders` and `order_items`).
+    func fetchOwnerOrderDetail(_ orderId: String) async -> NativeOwnerOrderDetail? {
+        guard let restaurantId = selectedOwnerRestaurantId else { return nil }
+        do {
+            let detail: NativeOwnerOrderDetail = try await client.from("orders")
+                .select("guest_phone, notes, payment_status, fulfillment_mode, subtotal, tax_amount, tip_amount, total, delivery_address, order_items(id, item_name, unit_price, quantity, notes)")
+                .eq("restaurant_id", value: restaurantId)
+                .eq("id", value: orderId)
+                .single().execute().value
+            return detail
+        } catch { AppLog.failure("fetchOwnerOrderDetail", error); return nil }
     }
 
     /// Writes the home-screen widget's entire data diet to the shared App
@@ -1310,6 +1566,22 @@ final class SupabaseManager: ObservableObject {
         } catch {
             lastError = "La mise à jour de votre nom a échoué. Réessayez."
             AppLog.failure("updateName", error)
+            return false
+        }
+    }
+
+    /// Complete the verified customer's identity without changing restaurant roles.
+    func completeCustomerFirstName(_ name: String) async -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let userID = authUserID, let customer, !trimmed.isEmpty, trimmed.count <= 80,
+              trimmed.lowercased() != customer.email?.lowercased() else { return false }
+        do {
+            struct ProfilePatch: Encodable { let full_name: String }
+            try await client.from("profiles").update(ProfilePatch(full_name: trimmed))
+                .eq("id", value: userID.uuidString).execute()
+            return await updateName(trimmed)
+        } catch {
+            AppLog.failure("completeCustomerFirstName", error)
             return false
         }
     }
@@ -1564,14 +1836,10 @@ final class SupabaseManager: ObservableObject {
                 .single()
                 .execute()
                 .value
-            if customer == nil {
-                // This may be the first restaurant joined during required
-                // onboarding. Load the newly-created customer row before
-                // RootView decides whether the app shell can open.
-                await loadPortalData()
-            } else {
-                await fetchAllMemberships()
-            }
+            if let userId = authUserID { UserDefaults.standard.set(restaurantId, forKey: "activeCustomerRestaurant:\(userId.uuidString)") }
+            menuItems = []
+            myOrders = []
+            await loadPortalData()
             return true
         } catch {
             lastError = "Impossible de devenir client pour l'instant. Réessayez."
@@ -1599,6 +1867,7 @@ final class SupabaseManager: ObservableObject {
         var request = URLRequest(url: url, timeoutInterval: 15)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let restaurantId = customer?.restaurantId { request.setValue(restaurantId, forHTTPHeaderField: "x-restaurant-id") }
         if let body {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1680,6 +1949,7 @@ final class SupabaseManager: ObservableObject {
         var request = URLRequest(url: Config.apiBaseURL.appending(path: "/api/owner/account"), timeoutInterval: 20)
         request.httpMethod = "DELETE"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let restaurantId = customer?.restaurantId { request.setValue(restaurantId, forHTTPHeaderField: "x-restaurant-id") }
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse else { return "La suppression a échoué. Réessayez." }
@@ -1724,6 +1994,7 @@ final class SupabaseManager: ObservableObject {
     /// their defaults) in place rather than surfacing an error banner for
     /// what's a secondary, non-blocking piece of the Home/Profile screens.
     func fetchRestaurantInfo() async {
+        guard let userId = authUserID, let customerId = customer?.id else { return }
         struct RestaurantInfoResponse: Decodable {
             let name: String
             let city: String?
@@ -1738,6 +2009,7 @@ final class SupabaseManager: ObservableObject {
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant"))
             let decoded = try JSONDecoder().decode(RestaurantInfoResponse.self, from: data)
+            guard isCurrentSession(userId), customer?.id == customerId else { return }
             restaurantName = decoded.name
             restaurantCity = decoded.city
             if let identifier = decoded.timezone, let timezone = TimeZone(identifier: identifier) {
@@ -1762,11 +2034,12 @@ final class SupabaseManager: ObservableObject {
     func loadMyOrders() async {
         guard let customerId = customer?.id, let restaurantId = customer?.restaurantId else { return }
         isLoadingOrders = true
+        ordersLoadFailed = false
         defer { isLoadingOrders = false }
         do {
             let orders: [CustomerOrder] = try await client
                 .from("orders")
-                .select("id, status, total, created_at, order_items(id, item_name, unit_price, quantity)")
+                .select("id, status, total, created_at, estimated_ready_at, cancellation_reason, order_items(id, menu_item_id, item_name, unit_price, quantity)")
                 .eq("customer_id", value: customerId)
                 .eq("restaurant_id", value: restaurantId)
                 .order("created_at", ascending: false)
@@ -1776,6 +2049,7 @@ final class SupabaseManager: ObservableObject {
             myOrders = orders
         } catch {
             AppLog.failure("loadMyOrders", error)
+            ordersLoadFailed = true
             lastError = "Impossible de charger vos commandes. Réessayez."
         }
     }
@@ -1861,7 +2135,7 @@ final class SupabaseManager: ObservableObject {
             let url = Config.apiBaseURL.appending(path: "/api/portal/menu")
                 .appending(queryItems: [URLQueryItem(name: "restaurantId", value: restaurantId)])
             let data = try await authorizedRequest(url)
-            return try JSONDecoder().decode(MenuResponse.self, from: data).items.filter(\.active)
+            return try JSONDecoder().decode(MenuResponse.self, from: data).items.filter { $0.active && $0.isDraft != true && $0.isOrderable != false }
         } catch {
             AppLog.failure("fetchMenuItems(forRestaurant:)", error)
             return nil
@@ -1979,11 +2253,10 @@ final class SupabaseManager: ObservableObject {
     func fetchMenu() async {
         isLoadingMenu = true
         defer { isLoadingMenu = false }
-        isUsingDemoMenuFallback = false
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/menu"))
             let decoded = try JSONDecoder().decode(MenuResponse.self, from: data)
-            menuItems = decoded.items.filter(\.active)
+            menuItems = decoded.items.filter { $0.active && $0.isDraft != true && $0.isOrderable != false }
             taxRate = decoded.taxRate
             acceptsTips = decoded.acceptsTips
             onlinePaymentEnabled = decoded.onlinePaymentEnabled
@@ -1993,29 +2266,13 @@ final class SupabaseManager: ObservableObject {
             deliveryEnabled = decoded.deliveryEnabled
             lastError = nil
         } catch let error as URLError where error.code == .notConnectedToInternet {
-            applyDemoMenuFallback(message: "Connexion indisponible : le menu démo reste accessible hors ligne.")
+            lastError = "Connexion indisponible. Vérifiez votre réseau et réessayez."
         } catch {
-            applyDemoMenuFallback(message: "Le menu en ligne n’a pas pu être chargé. Le menu démo est affiché pour continuer le test.")
+            lastError = "Le menu n’a pas pu être chargé. Réessayez."
             AppLog.failure("fetchMenu", error)
         }
     }
 
-    private func applyDemoMenuFallback(message: String) {
-        guard menuItems.isEmpty else {
-            lastError = message
-            return
-        }
-        menuItems = NativeMenuItem.demoCatalog
-        taxRate = 0.14975
-        acceptsTips = true
-        onlinePaymentEnabled = false
-        canPayAtReceipt = true
-        canPayOnline = false
-        pickupEnabled = true
-        deliveryEnabled = false
-        isUsingDemoMenuFallback = true
-        lastError = message
-    }
 
     /// Downloads the signed pass for the selected loyalty relationship. The
     /// request carries the current Supabase bearer token, so the server can
@@ -2032,6 +2289,7 @@ final class SupabaseManager: ObservableObject {
         guard let url = components?.url else { return .failure }
         var request = URLRequest(url: url, timeoutInterval: 20)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let restaurantId = customer?.restaurantId { request.setValue(restaurantId, forHTTPHeaderField: "x-restaurant-id") }
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse else { return .failure }
@@ -2216,9 +2474,9 @@ final class SupabaseManager: ObservableObject {
     /// Supabase client calls elsewhere get automatic Date decoding, via the
     /// SDK's own internal decoder), so this is parsed by hand rather than
     /// declared as `Date?` on OrderResponse directly.
-    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?, requestedReadyAt: Date? = nil, payOnline: Bool = false, delivery: DeliveryOrderInfo? = nil, idempotencyKey: String) async -> OrderResult {
+    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?, requestedReadyAt: Date? = nil, payOnline: Bool = false, delivery: DeliveryOrderInfo? = nil, idempotencyKey: String, customerNote: String? = nil) async -> OrderResult {
         struct CartLine: Encodable { let menuItemId: String; let quantity: Int; let priceOptionId: String? }
-        struct OrderBody: Encodable { let cart: [CartLine]?; let tipAmount: Double?; let paymentMethod: String?; let payOnline: Bool?; let delivery: DeliveryOrderInfo?; let requestedReadyAtLocal: String?; let idempotencyKey: String; let resumeOnly: Bool? }
+        struct OrderBody: Encodable { let cart: [CartLine]?; let tipAmount: Double?; let paymentMethod: String?; let payOnline: Bool?; let delivery: DeliveryOrderInfo?; let requestedReadyAtLocal: String?; let idempotencyKey: String; let resumeOnly: Bool?; let customerNote: String? }
         struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String?; let paymentConfirmed: Bool? }
 
         let lines = cart.sorted(by: { $0.key < $1.key }).compactMap { key, qty -> CartLine? in
@@ -2241,7 +2499,8 @@ final class SupabaseManager: ObservableObject {
                 delivery: delivery,
                 requestedReadyAtLocal: requestedReadyAt.map(dateFormatter.string(from:)),
                 idempotencyKey: idempotencyKey,
-                resumeOnly: nil
+                resumeOnly: nil,
+                customerNote: customerNote
             ))
             let data = try await authorizedRequest(
                 Config.apiBaseURL.appending(path: "/api/portal/orders"),
@@ -2367,10 +2626,12 @@ final class SupabaseManager: ObservableObject {
     }
 
     func fetchTenantBranding(for restaurantId: String) async {
+        guard let userId = authUserID else { return }
         struct BrandingResponse: Decodable { let branding: NativeTenantBranding }
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant/\(restaurantId)/branding"))
             let response = try JSONDecoder().decode(BrandingResponse.self, from: data)
+            guard isCurrentSession(userId), customer?.restaurantId == restaurantId else { return }
             activateTenantBranding(response.branding)
         } catch {
             AppLog.failure("fetchTenantBranding", error)

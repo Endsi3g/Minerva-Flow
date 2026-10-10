@@ -1581,7 +1581,7 @@
     "minervaFlowHome": "Minerva Flow, home",
     "backToTheMenu": "Back to the menu",
     "yourRewardsAreWaiting": "Your rewards are waiting for you in the app.",
-    "yourPointsRewardsAnd": "Your points, rewards and orders are in the app: that is where you claim them. The menu can still be viewed on the web.",
+    "yourPointsRewardsAnd": "Browse the menu, order and find your rewards in your customer space, on the web or in the app.",
     "installTheAppAnd": "Install the app and claim my rewards",
     "createMyAccount": "Create my account",
     "onIphoneOrIpad": "On iPhone or iPad, TestFlight installs the test version. Access to the latest build depends on Apple processing it. Android: the web menu works without downloading anything.",
@@ -1592,10 +1592,11 @@
     "2InstallTestflightFrom": "2. Install TestFlight from the App Store if asked.",
     "3GoBackTo": "3. Go back to the Minerva Flow link and tap “Accept”, then “Install”.",
     "4OpenMinervaFlow": "4. Open Minerva Flow from your home screen.",
-    "1ChooseCreateMy": "1. Choose “Create my account” and enter your name, your email and a password.",
+    "1ChooseCreateMy": "1. Verify your email with the code you receive, then enter your first name. If you are already signed in, open your customer space.",
     "2YourAccountWill": "2. Your account will be linked to this restaurant.",
     "3FindYourBalance": "3. Find your balance, rewards and visits in the customer area.",
     "getStarted": "Get started",
+    "openMyCustomerSpace": "Open my customer space",
     "findTheMenuAnd": "Find the menu and loyalty",
     "1BrowseTheDishes": "1. Browse the dishes on offer and those shown in the catalog.",
     "2OrderFromThe": "2. Order from the menu; payment is made at the restaurant if online payment is not enabled.",
@@ -2814,7 +2815,15 @@
     "tellUsWhy": "Tell us why. It helps us improve Minerva Flow.",
     "workspaceEyebrow": "Workspace",
     "billingTitle": "Billing & AI quotas",
-    "offerEyebrow": "Offer"
+    "offerEyebrow": "Offer",
+    "customOfferEyebrow": "Your offer",
+    "customOfferTitle": "Pricing based on your results",
+    "customOfferBody": "Minerva Flow has no fixed plan. Your pricing is set with you based on your restaurant, your average basket and the extra revenue loyalty brings you, measured together.",
+    "customOfferPoint1": "Free during integration and setup",
+    "customOfferPoint2": "Nothing to pay until a result is measured",
+    "customOfferPoint3": "A share of the measured extra revenue, agreed with you",
+    "customOfferCta": "Talk about my offer",
+    "customOfferPlanLabel": "Custom offer"
   },
   "integrationsView": {
     "registerSettings": "Register settings",
@@ -3292,12 +3301,18 @@
   },
   "joinFlow": {
     "checkYourEmail": "Check your email",
+    "enterYourCode": "Enter the 6-digit code sent to {email} to access your loyalty account.",
+    "emailCode": "Email verification code",
+    "verifyCode": "Verify code",
+    "verifyingCode": "Verifying…",
+    "resendCode": "Resend code",
     "loyaltyProgram": "Loyalty program",
     "somethingWentWrong": "Something went wrong.",
     "sending": "Sending…",
-    "resendMySignIn": "Resend my sign-in link",
+    "resendMySignIn": "Resend my code",
     "joinTheProgram": "Join the program",
-    "yourSignUpIs": "Your sign-up is saved. The sign-in email could not be sent right now."
+    "yourSignUpIs": "Your sign-up is saved. The sign-in email could not be sent right now.",
+    "retryCodeDelivery": "Try again in a few minutes to receive a new code at {email}."
   },
   "sharedReport": {
     "thisLinkHasExpired": "This link has expired.",
@@ -3372,11 +3387,12 @@
     "addToGoogleWallet": "Add to Google Wallet"
   },
   "installPrompt": {
-    "installTheAppOn": "Install the app on your phone",
+    "installTheAppOn": "Install Minerva Flow to unlock more features",
     "share": "Share",
     "addToHomeScreen": "Add to Home Screen",
-    "toFindTheMenu": "to find the menu and your points in one tap.",
-    "findTheMenuAnd": "Find the menu and your loyalty points in one tap, and get new offers."
+    "toFindTheMenu": "to open the menu, track orders and keep your rewards close at hand.",
+    "findTheMenuAnd": "Open the menu, track orders, keep your rewards and get new offers.",
+    "installFromBrowserMenu": "In your browser menu, choose “Install app” or “Add to Home screen.”"
   },
   "settingsNav": {
     "settingsSections": "Settings sections",

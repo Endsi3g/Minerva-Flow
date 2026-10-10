@@ -31,14 +31,14 @@ export function PlanTierLockedState({
       icon={Lock}
       variant="card"
       size={size}
-      title={`${featureName} — disponible avec ${TIER_LABEL[minimumTier]}`}
+      title={`${featureName} — offre ${TIER_LABEL[minimumTier]}`}
       description={
         description ??
-        `Cette fonctionnalité fait partie du forfait ${TIER_LABEL[minimumTier]} et n'est pas incluse dans votre forfait actuel.`
+        `Cette fonctionnalité fait partie de l'offre ${TIER_LABEL[minimumTier]}. Contactez-nous pour l'activer dans votre établissement.`
       }
       action={
         <Button size="sm" nativeButton={false} render={<Link href="/billing" />}>
-          Voir les forfaits
+          Discuter de mon offre
         </Button>
       }
     />

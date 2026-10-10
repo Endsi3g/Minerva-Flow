@@ -30,7 +30,7 @@ const copy = {
       {
         title: "2. Prix et taxes",
         paragraphs: [
-          "Les prix sont en dollars canadiens (CAD), avant taxes. À titre de référence, le catalogue actuel indique Essentiel à 150 $ par mois ou 1 350 $ par année, et Croissance à 290 $ par mois ou 2 610 $ par année. Le forfait Marque blanche est offert à partir de 590 $ par mois sur devis. Le prix et la périodicité applicables à votre commande sont ceux affichés à la dernière étape de souscription ou inscrits dans votre devis accepté.",
+          "Les prix sont en dollars canadiens (CAD), avant taxes. Aucun tarif n’est publié : le prix de votre établissement, sa périodicité et, le cas échéant, la part des revenus additionnels mesurés qui s’applique sont convenus avec vous par écrit dans votre offre ou votre devis accepté.",
           "Les taxes applicables sont ajoutées au montant dû et calculées conformément aux lois applicables. Le total et les taxes sont présentés avant la confirmation du paiement. Si le prix d’un forfait change, le nouveau prix s’applique à un renouvellement futur après avis préalable; vous pouvez résilier avant sa prise d’effet.",
         ],
       },
@@ -100,7 +100,7 @@ const copy = {
       {
         title: "2. Prices and taxes",
         paragraphs: [
-          "Prices are in Canadian dollars (CAD), before taxes. The current catalogue lists Essentiel at $150 per month or $1,350 per year, and Croissance at $290 per month or $2,610 per year. Marque blanche starts at $590 per month by quote. The price and billing interval for your order are those shown at the final subscription step or stated in your accepted quote.",
+          "Prices are in Canadian dollars (CAD), before taxes. No pricing is published: the price for your restaurant, its billing interval and, where applicable, the share of measured additional revenue that applies are agreed with you in writing in your accepted offer or quote.",
           "Applicable taxes are added and calculated as required by law. The total and taxes are shown before payment is confirmed. If a plan price changes, the new price applies to a future renewal after prior notice; you may cancel before it takes effect.",
         ],
       },
@@ -196,7 +196,7 @@ export default async function TermsPage({
         <Link href="/" className="mb-8 flex items-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[17px] font-bold text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            <span className="italic text-mv-ink">Minerva Flow</span>
           </span>
         </Link>
 

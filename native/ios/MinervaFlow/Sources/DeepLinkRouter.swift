@@ -1,11 +1,15 @@
 import Foundation
 
 enum AppTab: Int {
-    case home, order, scan, rewards, cards, profile
+    case home, order, scan, rewards, cards, profile, orders
 }
 
 /// Pushed destinations inside the Compte tab. A deep link to "cards" lands on
 /// Compte and opens `.cards` (phones have five tabs; Mes cartes lives there).
+enum OwnerManagementRoute: Hashable {
+    case menu, inventory, finance, reports, team, settings, locations
+}
+
 enum CompteRoute: Hashable {
     case cards, favorites, orders, pointsHistory, updates
     case appearance, notifications, privacy, security, help, about
@@ -33,8 +37,12 @@ final class DeepLinkRouter: ObservableObject {
     static let shared = DeepLinkRouter()
 
     @Published var pendingTab: AppTab?
+    @Published var pendingReorderCart: [String: Int]?
+    var pendingReorderRestaurantId: String?
+    var pendingReorderCustomerId: String?
     @Published var pendingCompteRoute: CompteRoute?
     @Published var pendingOwnerSection: Int?
+    @Published var pendingOwnerRoute: OwnerManagementRoute?
     @Published var pendingNotificationLink: String?
     @Published var pendingUniversalLink: PendingUniversalLink?
     @Published var googleBusinessProfileStatus: String?
@@ -73,6 +81,7 @@ final class DeepLinkRouter: ObservableObject {
         case "rewards": pendingTab = .rewards
         case "cards", "mes-cartes": pendingTab = .cards
         case "order", "commander": pendingTab = .order
+        case "orders", "commandes": pendingTab = .orders
         case "scan", "scanner": pendingTab = .scan
         case "profile", "profil": pendingTab = .profile
         default: pendingTab = .home
@@ -98,11 +107,14 @@ final class DeepLinkRouter: ObservableObject {
         case normalized.contains("/commandes") || normalized.contains("/orders"):
             if isOwner { pendingOwnerSection = 1 } else { pendingTab = .order }
         case normalized.contains("/menu"):
-            if isOwner { pendingOwnerSection = 2 } else { pendingTab = .order }
+            if isOwner { pendingOwnerSection = 2; pendingOwnerRoute = .menu } else { pendingTab = .order }
         case normalized.contains("/fidelisation") || normalized.contains("/rewards") || normalized.contains("/loyalty"):
             if isOwner { pendingOwnerSection = 3 } else { pendingTab = .rewards }
         case normalized.contains("/inventaire") || normalized.contains("/inventory") || normalized.contains("/finance"):
-            if isOwner { pendingOwnerSection = 4 } else { pendingTab = .profile }
+            if isOwner {
+                pendingOwnerSection = 2
+                pendingOwnerRoute = normalized.contains("/finance") ? .finance : .inventory
+            } else { pendingTab = .profile }
         default:
             if isOwner { pendingOwnerSection = 0 } else { pendingTab = .home }
         }

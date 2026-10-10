@@ -12,6 +12,16 @@ struct MinervaFlowApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        Analytics.start()
+        #if DEBUG
+        // Set the persisted test preference instead of NSArgumentDomain:
+        // launch arguments would override subsequent language changes.
+        if ProcessInfo.processInfo.arguments.contains("-minervaUITestStaging"),
+           let language = ProcessInfo.processInfo.environment["MV_TEST_LANGUAGE"],
+           AppLanguage(rawValue: language) != nil {
+            UserDefaults.standard.set(language, forKey: AppLanguagePreference.key)
+        }
+        #endif
         AppLanguagePreference.ensureFrenchDefault()
 
         // AsyncImage (menu items, offers, restaurant photos) uses

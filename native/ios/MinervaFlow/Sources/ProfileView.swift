@@ -37,6 +37,13 @@ struct ProfileView: View {
                             }
                             if let customer = supabase.customer {
                                 identityCard(for: customer)
+                                if supabase.isOwnerExperience {
+                                    CompteGroup {
+                                        Button { Task { await supabase.openOwnerWorkspace() } } label: {
+                                            CompteRowLabel(icon: "storefront", title: isFrench ? "Gérer mon établissement" : "Manage my restaurant", subtitle: isFrench ? "Votre espace du portail web" : "Your web portal workspace")
+                                        }.buttonStyle(.plain).accessibilityIdentifier("accountManageRestaurant")
+                                    }
+                                }
                                 accountSection
                                 recentActivity
                                 CompteGroup {

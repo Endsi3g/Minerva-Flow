@@ -8,6 +8,7 @@ struct MainTabView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selection: AppTab = .home
     @State private var showVersionSurvey = false
+    @State private var showScanner = false
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
 
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
@@ -18,9 +19,9 @@ struct MainTabView: View {
             NavigationSplitView {
                 List {
                     tabletTab(.home, title: isFrench ? "Accueil" : "Home", icon: "house.fill")
-                    tabletTab(.order, title: isFrench ? "Commander" : "Order", icon: "fork.knife")
-                    tabletTab(.scan, title: isFrench ? "Scanner" : "Scan", icon: "qrcode.viewfinder")
-                    tabletTab(.rewards, title: isFrench ? "Offres" : "Offers", icon: "gift.fill")
+                    tabletTab(.order, title: "Menu", icon: "fork.knife")
+                    tabletTab(.orders, title: isFrench ? "Commandes" : "Orders", icon: "bag.fill")
+                    tabletTab(.rewards, title: isFrench ? "Fidélité" : "Loyalty", icon: "heart.fill")
                     tabletTab(.cards, title: isFrench ? "Mes cartes" : "My cards", icon: "creditcard.fill")
                     tabletTab(.profile, title: isFrench ? "Compte" : "Account", icon: "person.crop.circle.fill")
                 }
@@ -40,15 +41,15 @@ struct MainTabView: View {
                 .tag(AppTab.home)
 
             MenuView()
-                .tabItem { Label(isFrench ? "Commander" : "Order", systemImage: "fork.knife") }
+                .tabItem { Label("Menu", systemImage: "fork.knife") }
                 .tag(AppTab.order)
 
-            ScannerTabView()
-                .tabItem { Label(isFrench ? "Scanner" : "Scan", systemImage: "qrcode.viewfinder") }
-                .tag(AppTab.scan)
+            NavigationStack { OrderHistoryView() }
+                .tabItem { Label(isFrench ? "Commandes" : "Orders", systemImage: "bag.fill") }
+                .tag(AppTab.orders)
 
             RewardsView()
-                .tabItem { Label(isFrench ? "Offres" : "Offers", systemImage: "gift.fill") }
+                .tabItem { Label(isFrench ? "Fidélité" : "Loyalty", systemImage: "heart.fill") }
                 .tag(AppTab.rewards)
 
             ProfileView()
@@ -76,6 +77,7 @@ struct MainTabView: View {
         .sheet(isPresented: $showVersionSurvey) {
             SurveyView()
         }
+        .sheet(isPresented: $showScanner) { ScannerTabView() }
     }
 
     private func tabletTab(_ tab: AppTab, title: String, icon: String) -> some View {
@@ -91,6 +93,7 @@ struct MainTabView: View {
         switch selection {
         case .home: HomeView()
         case .order: MenuView()
+        case .orders: NavigationStack { OrderHistoryView() }
         case .scan: ScannerTabView()
         case .rewards: RewardsView()
         case .cards: MembershipCardsView()
@@ -102,7 +105,9 @@ struct MainTabView: View {
         guard let pending = router.pendingTab else { return }
         // On phones "Mes cartes" lives inside Compte (five tabs fit the bar;
         // a sixth made iOS hide two of them behind a plain "Autre" list).
-        if pending == .cards && horizontalSizeClass != .regular {
+        if pending == .scan {
+            showScanner = true
+        } else if pending == .cards && horizontalSizeClass != .regular {
             router.pendingCompteRoute = .cards
             selection = .profile
         } else {

@@ -52,11 +52,11 @@ struct LanguageMenu: View {
     /// white-on-white there and was effectively invisible.
     var tint: Color = .white
 
-    @State private var isChoosingLanguage = false
-
     var body: some View {
-        Button {
-            isChoosingLanguage = true
+        Menu {
+            ForEach(AppLanguage.allCases) { option in
+                Button(option == .fr ? "Français" : "English") { language = option }
+            }
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: "globe")
@@ -69,18 +69,7 @@ struct LanguageMenu: View {
             .clipShape(Capsule())
             .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
         .foregroundStyle(tint)
-        .confirmationDialog(
-            language == .fr ? "Choisir une langue" : "Choose a language",
-            isPresented: $isChoosingLanguage,
-            titleVisibility: .visible
-        ) {
-            ForEach(AppLanguage.allCases) { option in
-                Button(option == .fr ? "Français" : "English") { language = option }
-            }
-            Button(language == .fr ? "Annuler" : "Cancel", role: .cancel) {}
-        }
         .accessibilityLabel(language == .fr ? "Langue: français" : "Language: English")
         .accessibilityIdentifier("languagePicker")
     }
@@ -181,7 +170,10 @@ extension Font {
     /// Drop-in for `.system(size:weight:design:)` that honours Dynamic Type.
     @MainActor
     static func mv(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> Font {
-        .system(size: MinervaFont.scaled(size), weight: weight, design: design)
+        if design == .default {
+            return .custom("PlusJakartaSans-Regular", size: MinervaFont.scaled(size)).weight(weight)
+        }
+        return .system(size: MinervaFont.scaled(size), weight: weight, design: design)
     }
 }
 

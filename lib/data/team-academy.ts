@@ -177,7 +177,7 @@ const GTM_PAGE: AcademyPage = {
       teamOnly: true,
       items: [
         { text: "Coût d’acquisition visé : moins de 120 $ CA.", tag: "cible" },
-        { text: "Valeur sur 24 mois visée : plus de 2 400 $ CA (un abonnement Profit Core à 150 $ par mois représente 3 600 $ sur 24 mois).", tag: "cible" },
+        { text: "Valeur sur 24 mois visée : plus de 2 400 $ CA.", tag: "cible" },
         { text: "Rapport valeur/coût visé : plus de 15 pour 1.", tag: "cible" },
       ],
       note: {

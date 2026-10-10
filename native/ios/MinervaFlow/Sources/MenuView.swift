@@ -11,6 +11,7 @@ import SwiftUI
 /// Action, since native has no way to call one of those directly.
 struct MenuView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @EnvironmentObject var router: DeepLinkRouter
 
     @State private var cart: [String: Int] = [:]
     @State private var restoredCart: [String: Int]?
@@ -25,18 +26,7 @@ struct MenuView: View {
 
     private var cartCount: Int { cart.values.reduce(0, +) }
     private var cartLines: [NativeCartLine] {
-        supabase.menuItems.flatMap { item -> [NativeCartLine] in
-            let options = item.priceOptions ?? []
-            if options.isEmpty {
-                guard let qty = cart[item.id], qty > 0 else { return [] }
-                return [NativeCartLine(key: item.id, item: item, option: nil, quantity: qty)]
-            }
-            return options.compactMap { option in
-                let key = nativeMenuCartKey(menuItemId: item.id, priceOptionId: option.id)
-                guard let qty = cart[key], qty > 0 else { return nil }
-                return NativeCartLine(key: key, item: item, option: option, quantity: qty)
-            }
-        }
+        resolveNativeCustomerCart(cart, items: supabase.menuItems) ?? []
     }
     private var cartSubtotal: Double {
         cartLines.reduce(0) { $0 + $1.total }
@@ -129,6 +119,7 @@ struct MenuView: View {
                 hasLoadedOnce = true
                 await supabase.fetchMenu()
                 restoreCheckoutDraft()
+                applyPendingReorder()
                 if supabase.nearbyRestaurants.isEmpty {
                     await supabase.fetchNearbyRestaurants()
                 }
@@ -143,6 +134,8 @@ struct MenuView: View {
                 await supabase.fetchMealSuggestions()
                 await supabase.fetchCustomerServiceQuotes()
             }
+            .onAppear { applyPendingReorder() }
+            .onChange(of: router.pendingReorderCart) { _, _ in applyPendingReorder() }
             .fullScreenCover(isPresented: $showScanner) {
                 ScanToOrderView()
             }
@@ -151,10 +144,10 @@ struct MenuView: View {
                     lines: cartLines,
                     taxRate: supabase.taxRate,
                     acceptsTips: supabase.acceptsTips,
-                    canPayAtReceipt: supabase.canPayAtReceipt && !supabase.isUsingDemoMenuFallback,
-                    canPayOnline: supabase.canPayOnline && !supabase.isUsingDemoMenuFallback,
-                    pickupEnabled: supabase.pickupEnabled && !supabase.isUsingDemoMenuFallback,
-                    deliveryEnabled: supabase.deliveryEnabled && !supabase.isUsingDemoMenuFallback,
+                    canPayAtReceipt: supabase.canPayAtReceipt,
+                    canPayOnline: supabase.canPayOnline,
+                    pickupEnabled: supabase.pickupEnabled,
+                    deliveryEnabled: supabase.deliveryEnabled,
                     googleMapsUrl: supabase.restaurantGoogleMapsUrl,
                     checkoutAttemptId: $checkoutAttemptId,
                     checkoutAttemptStorageKey: checkoutAttemptStorageKey,
@@ -185,10 +178,7 @@ struct MenuView: View {
         if let key = cartStorageKey,
            let data = UserDefaults.standard.data(forKey: key),
            let savedCart = try? JSONDecoder().decode([String: Int].self, from: data) {
-            let availableCartKeys = Set(supabase.menuItems.flatMap { item in
-                [item.id] + (item.priceOptions ?? []).map { nativeMenuCartKey(menuItemId: item.id, priceOptionId: $0.id) }
-            })
-            let validCart = savedCart.filter { availableCartKeys.contains($0.key) && $0.value > 0 }
+            let validCart = savedCart.filter { $0.value > 0 }
             restoredCart = validCart
             cart = validCart
         }
@@ -197,6 +187,19 @@ struct MenuView: View {
            UUID(uuidString: savedAttempt) != nil {
             checkoutAttemptId = savedAttempt
         }
+    }
+
+    private func applyPendingReorder() {
+        guard let proposed = router.pendingReorderCart, router.pendingReorderRestaurantId == supabase.customer?.restaurantId,
+              router.pendingReorderCustomerId == supabase.customer?.id,
+              resolveNativeCustomerCart(proposed, items: supabase.menuItems) != nil else { return }
+        cart = proposed
+        checkoutAttemptId = nil
+        if let key = checkoutAttemptStorageKey { UserDefaults.standard.removeObject(forKey: key) }
+        persistCart(proposed)
+        router.pendingReorderCart = nil
+        router.pendingReorderRestaurantId = nil
+        router.pendingReorderCustomerId = nil
     }
 
     private func persistCart(_ value: [String: Int]) {
@@ -219,25 +222,6 @@ struct MenuView: View {
                     .font(MinervaFont.display(24))
                     .foregroundStyle(MinervaColor.ink)
                     .padding(.top, 4)
-
-                if supabase.isUsingDemoMenuFallback {
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: "wifi.exclamationmark")
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(isFrench ? "Mode démo actif" : "Demo mode active")
-                                .font(.mv(size: 12.5, weight: .semibold))
-                            Text(isFrench ? "Le menu local reste disponible. Réessayez quand la connexion est rétablie." : "The local menu is available. Retry when your connection is restored.")
-                                .font(.mv(size: 11.5))
-                        }
-                        Spacer()
-                        Button(isFrench ? "Réessayer" : "Retry") { Task { await supabase.fetchMenu() } }
-                            .font(.mv(size: 11.5, weight: .semibold))
-                    }
-                    .foregroundStyle(MinervaColor.emeraldDark)
-                    .padding(12)
-                    .background(MinervaColor.emerald.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
 
                 if supabase.restaurantIsBusy {
                     busyBanner
@@ -781,12 +765,16 @@ struct MenuView: View {
 
     private var cartBar: some View {
         Button {
-            checkoutOpen = true
+            if resolveNativeCustomerCart(cart, items: supabase.menuItems) == nil {
+                cart = cart.filter { resolveNativeCustomerCart([$0.key: $0.value], items: supabase.menuItems) != nil }
+            } else { checkoutOpen = true }
         } label: {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "cart.fill")
-                    Text("\(cartCount) article\(cartCount > 1 ? "s" : "")")
+                    Text(resolveNativeCustomerCart(cart, items: supabase.menuItems) == nil
+                         ? (isFrench ? "Retirer les articles indisponibles" : "Remove unavailable items")
+                         : "\(cartCount) article\(cartCount > 1 ? "s" : "")")
                         .font(.mv(size: 13.5, weight: .semibold))
                 }
                 Spacer()
@@ -1196,6 +1184,7 @@ struct CheckoutSheet: View {
 
     @State private var tipPct: Double?
     @State private var paymentMethod = ""
+    @State private var customerNote = ""
     @State private var payOnline = false
     @State private var paymentURL: URL?
     @State private var paymentConfirmed = false
@@ -1269,6 +1258,7 @@ struct CheckoutSheet: View {
         .interactiveDismissDisabled(status == .submitting)
         .onChange(of: tipPct) { _, _ in invalidateAttemptAfterEdit() }
         .onChange(of: paymentMethod) { _, _ in invalidateAttemptAfterEdit() }
+        .onChange(of: customerNote) { _, _ in invalidateAttemptAfterEdit() }
         .onChange(of: payOnline) { _, _ in invalidateAttemptAfterEdit() }
         .onChange(of: deliverySelected) { _, _ in invalidateAttemptAfterEdit() }
         .onChange(of: deliveryAddress) { _, _ in invalidateAttemptAfterEdit() }
@@ -1480,6 +1470,18 @@ struct CheckoutSheet: View {
                 .background(MinervaColor.creamSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(isFrench ? "Note pour le restaurant (facultatif)" : "Note for the restaurant (optional)")
+                        .font(.mv(size: 12.5, weight: .semibold))
+                    TextField(isFrench ? "Votre note" : "Your note", text: $customerNote, axis: .vertical)
+                        .lineLimit(3...5)
+                        .font(.mv(size: 13))
+                        .onChange(of: customerNote) { _, value in if value.count > 500 { customerNote = String(value.prefix(500)) } }
+                }
+                .padding(14)
+                .background(MinervaColor.creamSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+
                 if status == .error {
                     Text(isFrench ? "Oups, l’envoi n’a pas abouti. Vous pouvez réessayer dans un instant." : "Oops, we couldn’t send that just yet. Please try again in a moment.")
                         .font(.mv(size: 12.5))
@@ -1663,7 +1665,8 @@ struct CheckoutSheet: View {
             requestedReadyAt: isScheduled ? requestedReadyAt : nil,
             payOnline: payOnline,
             delivery: deliverySelected ? .init(address: deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines)) : nil,
-            idempotencyKey: checkoutAttemptId!
+            idempotencyKey: checkoutAttemptId!,
+            customerNote: customerNote
         )
         let generator = UINotificationFeedbackGenerator()
         if result.ok {

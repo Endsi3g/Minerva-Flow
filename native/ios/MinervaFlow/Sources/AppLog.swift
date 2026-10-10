@@ -8,7 +8,14 @@ import os
 enum AppLog {
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.minervaflow.loyalty", category: "app")
 
+    static func diagnostic(_ message: String) {
+        #if DEBUG
+        logger.notice("\(message, privacy: .public)")
+        #endif
+    }
+
     static func failure(_ operation: String, _ error: Error) {
         logger.error("\(operation, privacy: .public) failed: \(String(describing: error), privacy: .private)")
+        Analytics.captureError(operation, error)
     }
 }
