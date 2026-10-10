@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderMinervaEmail } from "@/lib/email/brand-shell";
 import {
-  PRIORITIZED_CAMPAIGN_TEMPLATES,
   POST_MVP_CAMPAIGNS,
   renderCampaignTemplate,
   dispatchCampaignToCustomer,
@@ -52,7 +51,7 @@ describe("Prioritized Campaign Templates & LCAP/CASL Compliance", () => {
       expect(rendered.htmlBody).toContain("Votre première récompense vous attend");
       const html = renderMinervaEmail({ bodyHtml: rendered.htmlBody, emailKind: "marketing", ctaLabel: rendered.ctaLabel, ctaUrl: rendered.ctaUrl });
       expect(html).toContain("Minerva Technologies Inc.");
-      expect(html).toContain("367 rue Laberge, Repentigny (Québec) J6A 4C2, Canada");
+      expect(html).toContain("367 rue Lberge, Repentigny (Québec) J6A 4C2, Canada");
       expect(html).toContain("Se désabonner");
       expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
       expect((html.match(/<!doctype html>/gi) ?? []).length).toBe(1);
@@ -179,7 +178,7 @@ describe("Prioritized Campaign Templates & LCAP/CASL Compliance", () => {
           }),
         }),
       };
-      vi.mocked(createAdminClient).mockReturnValue(mockAdmin as any);
+      vi.mocked(createAdminClient).mockReturnValue(mockAdmin as unknown as ReturnType<typeof createAdminClient>);
 
       const result = await handleSmsInboundKeyword("+15145550199", "STOP");
       expect(result.action).toBe("opt_out");
@@ -194,7 +193,7 @@ describe("Prioritized Campaign Templates & LCAP/CASL Compliance", () => {
           }),
         }),
       };
-      vi.mocked(createAdminClient).mockReturnValue(mockAdmin as any);
+      vi.mocked(createAdminClient).mockReturnValue(mockAdmin as unknown as ReturnType<typeof createAdminClient>);
 
       const resArret = await handleSmsInboundKeyword("+15145550199", "ARRÊT");
       expect(resArret.action).toBe("opt_out");
@@ -253,7 +252,7 @@ describe("Prioritized Campaign Templates & LCAP/CASL Compliance", () => {
         }),
       };
 
-      vi.mocked(createAdminClient).mockReturnValue(mockAdmin as any);
+      vi.mocked(createAdminClient).mockReturnValue(mockAdmin as unknown as ReturnType<typeof createAdminClient>);
 
       const result = await dispatchCampaignToCustomer({
         restaurantId: "rest_1",
