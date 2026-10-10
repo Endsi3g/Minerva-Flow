@@ -1337,6 +1337,11 @@ final class SupabaseManager: ObservableObject {
         } catch { AppLog.failure("updateOwnerMenuItem", error); return false }
     }
 
+    /// What the server actually delivered to the customer for the last order
+    /// action ("push", "email"). Empty means nobody could be reached, so the
+    /// owner is told the truth instead of "customer notified".
+    var lastCustomerNotifyChannels: [String] = []
+
     func updateOwnerOrderStatus(_ orderId: String, restaurantId: String, status: String) async -> Bool {
         guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return false }
         do {
@@ -1346,11 +1351,13 @@ final class SupabaseManager: ObservableObject {
                 status: status,
                 cancellationReason: status == "annulee" ? "Un imprévu empêche le restaurant de préparer cette commande." : nil
             ))
-            let _: Data = try await authorizedRequest(
+            let data: Data = try await authorizedRequest(
                 Config.apiBaseURL.appending(path: "/api/native/owner/orders/\(orderId)/status"),
                 method: "POST",
                 body: body
             )
+            struct Response: Decodable { let channels: [String]? }
+            lastCustomerNotifyChannels = (try? JSONDecoder().decode(Response.self, from: data))?.channels ?? []
             await refreshOwnerOperations()
             Analytics.capture("owner_order_status_changed", ["status": status])
             return true
@@ -1363,7 +1370,6 @@ final class SupabaseManager: ObservableObject {
     func notifyOwnerOrder(_ orderId: String, restaurantId: String) async -> Bool {
         guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return false }
         struct Body: Encodable { let restaurantId: String }
-        struct Response: Decodable { let ok: Bool }
         do {
             let body = try JSONEncoder().encode(Body(restaurantId: restaurantId))
             let data = try await authorizedRequest(
@@ -1371,8 +1377,12 @@ final class SupabaseManager: ObservableObject {
                 method: "POST",
                 body: body
             )
-            return try JSONDecoder().decode(Response.self, from: data).ok
+            struct Delivery: Decodable { let ok: Bool; let channels: [String]? }
+            let delivery = try JSONDecoder().decode(Delivery.self, from: data)
+            lastCustomerNotifyChannels = delivery.channels ?? []
+            return delivery.ok
         } catch {
+            lastCustomerNotifyChannels = []
             lastError = "La notification n'a pas pu être envoyée. Réessayez."
             AppLog.failure("notifyOwnerOrder", error)
             return false
@@ -2842,10 +2852,18 @@ final class SupabaseManager: ObservableObject {
                 let user_id: UUID
                 let token: String
                 let platform: String
+                let apns_environment: String
             }
+            // Xcode/dev builds get sandbox tokens; TestFlight and the App
+            // Store get production ones. The server routes on this value.
+            #if DEBUG
+            let environment = "sandbox"
+            #else
+            let environment = "production"
+            #endif
             try await client
                 .from("device_push_tokens")
-                .upsert(TokenRow(user_id: userId, token: token, platform: "ios"), onConflict: "user_id,token")
+                .upsert(TokenRow(user_id: userId, token: token, platform: "ios", apns_environment: environment), onConflict: "user_id,token")
                 .execute()
         } catch {
             AppLog.failure("registerPushToken", error)

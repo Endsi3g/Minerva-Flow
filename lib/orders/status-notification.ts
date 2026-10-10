@@ -23,13 +23,15 @@ const COPY_EN: Record<OrderStatus, { title: string; body: string }> = {
   annulee: { title: "Order cancelled at no charge", body: "A small hiccup: the restaurant will not be able to prepare this order. You will not be asked to pay." },
 };
 
-export async function notifyOrderStatusCustomer(restaurantId: string, orderId: string, status: OrderStatus, cancellationReason?: string) {
+export type OrderNotifyChannels = Array<"email" | "push">;
+
+export async function notifyOrderStatusCustomer(restaurantId: string, orderId: string, status: OrderStatus, cancellationReason?: string): Promise<OrderNotifyChannels> {
   const admin = createAdminClient();
   const [{ data: order }, { data: restaurant }] = await Promise.all([
     admin.from("orders").select("id, customer_id, total, status_changed_at").eq("restaurant_id", restaurantId).eq("id", orderId).maybeSingle(),
     admin.from("restaurants").select("name").eq("id", restaurantId).maybeSingle(),
   ]);
-  if (!order || !restaurant) return;
+  if (!order || !restaurant) return [];
   let customer: { email: string | null; userId: string | null; language: CustomerLanguage } = { email: null, userId: null, language: "fr" };
   if (order.customer_id) {
     const { data } = await admin.from("customers").select("email, user_id, preferred_language").eq("id", order.customer_id).maybeSingle();
@@ -40,10 +42,12 @@ export async function notifyOrderStatusCustomer(restaurantId: string, orderId: s
   const message = status === "annulee" && cancellationReason
     ? { ...base, body: en ? base.body.replace(" You will not", ` ${cancellationReason}. You will not`) : base.body.replace(" Aucun paiement", ` ${cancellationReason}. Aucun paiement`) }
     : base;
+  const channels: OrderNotifyChannels = [];
   if (customer.email) {
-    await sendOrderStatusEmail({ to: customer.email, restaurantName: restaurant.name, orderId, status, total: Number(order.total), cancellationReason, language: customer.language }).catch(() => ({ ok: false }));
+    const emailResult = await sendOrderStatusEmail({ to: customer.email, restaurantName: restaurant.name, orderId, status, total: Number(order.total), cancellationReason, language: customer.language }).catch(() => ({ ok: false }));
+    if (emailResult.ok) channels.push("email");
   }
-  if (!customer.userId) return;
+  if (!customer.userId) return channels;
   const { error } = await admin.from("notifications").insert({
     restaurant_id: restaurantId,
     user_id: customer.userId,
@@ -53,5 +57,9 @@ export async function notifyOrderStatusCustomer(restaurantId: string, orderId: s
     link: "/portal",
     dedupe_key: `order:${orderId}:${status}:${order.status_changed_at ?? Date.now()}`,
   });
-  if (!error) await sendPushToUsers([customer.userId], { ...message, link: "/portal" }, restaurantId);
+  if (!error) {
+    const reached = await sendPushToUsers([customer.userId], { ...message, link: "/portal" }, restaurantId);
+    if (reached > 0) channels.push("push");
+  }
+  return channels;
 }

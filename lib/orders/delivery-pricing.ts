@@ -33,7 +33,8 @@ export function isValidDeliveryPricingPatch(patch: DeliveryPricingPatch): boolea
     averageSpeedKmh: { min: 1, max: 200 },
     perMinuteFee: { min: 0, max: 100 },
   };
-  return (Object.entries(patch) as [keyof DeliveryPricingPatch, number][]).every(([key, value]) => {
+  return (Object.entries(patch) as [keyof DeliveryPricingPatch, number | undefined][]).every(([key, value]) => {
+    if (value === undefined) return true;
     const range = limits[key];
     return Number.isFinite(value) && value >= range.min && value <= range.max;
   });

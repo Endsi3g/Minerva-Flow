@@ -185,7 +185,7 @@ struct OwnerOrdersScreen: View {
             busyOrderId = nil
             withAnimation {
                 banner = (ok, ok
-                    ? L("Commande mise à jour. Le client est averti.", "Order updated. The customer has been notified.")
+                    ? L("Commande mise à jour. ", "Order updated. ") + customerNoticeText(supabase.lastCustomerNotifyChannels)
                     : L("La commande n'a pas pu être mise à jour. Réessayez.", "The order could not be updated. Try again."))
             }
             try? await Task.sleep(for: .seconds(4))
@@ -383,7 +383,25 @@ struct OwnerOrderDetailSheet: View {
         Task {
             let ok = await work()
             busy = false
-            message = (ok, ok ? L("Fait.", "Done.") : L("L'action a échoué. Réessayez.", "The action failed. Try again."))
+            let channels = supabase.lastCustomerNotifyChannels
+            message = (ok, ok ? L("Fait. ", "Done. ") + customerNoticeText(channels) : L("L'action a échoué. Réessayez.", "The action failed. Try again."))
         }
+    }
+}
+
+extension View {
+    /// Honest delivery receipt for the owner: says which channel actually
+    /// reached the customer instead of always claiming success.
+    func customerNoticeText(_ channels: [String], language: String = UserDefaults.standard.string(forKey: AppLanguagePreference.key) ?? "fr") -> String {
+        let L = Lx(language)
+        if channels.contains("push") {
+            return channels.contains("email")
+                ? L("Client prévenu sur son téléphone et par courriel.", "Customer notified on their phone and by email.")
+                : L("Client prévenu sur son téléphone.", "Customer notified on their phone.")
+        }
+        if channels.contains("email") {
+            return L("Client prévenu par courriel seulement : il n'a pas activé les notifications sur son téléphone.", "Customer notified by email only: notifications are off on their phone.")
+        }
+        return L("Le client n'a pas pu être prévenu (aucun courriel ni notification).", "The customer could not be notified (no email or notifications).")
     }
 }

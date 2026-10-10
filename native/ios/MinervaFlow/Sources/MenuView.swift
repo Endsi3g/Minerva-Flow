@@ -1616,6 +1616,8 @@ struct CheckoutSheet: View {
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
 
+            OrderPushOptInCard(isFrench: isFrench)
+
             if let mapsUrlString = googleMapsUrl, let url = URL(string: mapsUrlString) {
                 Link(destination: url) {
                     HStack(spacing: 8) {
