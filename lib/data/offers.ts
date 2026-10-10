@@ -29,7 +29,7 @@ type OfferRow = {
  * whichever share exists first. Returns null if the restaurant has never
  * generated a share link at all (nothing to link to yet).
  */
-async function getPrimaryMenuShareLink(restaurantId: string): Promise<string | null> {
+export async function getPrimaryMenuShareLink(restaurantId: string): Promise<string | null> {
   const admin = createAdminClient();
   const { data } = await admin
     .from("menu_shares")
@@ -44,7 +44,7 @@ async function getPrimaryMenuShareLink(restaurantId: string): Promise<string | n
 }
 
 /** True when an offer is active AND its start/end window (if any) currently contains `now`. */
-function isEffectivelyLive(offer: { active: boolean; startsAt: string | null; endsAt: string | null }, now = Date.now()): boolean {
+export function isEffectivelyLive(offer: { active: boolean; startsAt: string | null; endsAt: string | null }, now = Date.now()): boolean {
   if (!offer.active) return false;
   if (offer.startsAt && new Date(offer.startsAt).getTime() > now) return false;
   if (offer.endsAt && new Date(offer.endsAt).getTime() < now) return false;

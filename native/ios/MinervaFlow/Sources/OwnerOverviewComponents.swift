@@ -215,7 +215,7 @@ struct OwnerTodayCard: View {
             Text(label).font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkSoft).lineLimit(1)
             Text(value).font(MinervaFont.display(21, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                 .lineLimit(1).minimumScaleFactor(0.6)
-            if delta != nil { OwnerDeltaChip(percent: delta) } else { Color.clear.frame(height: 20) }
+            if delta != nil { OwnerDeltaChip(percent: delta) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

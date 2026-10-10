@@ -1295,7 +1295,7 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, priceOptions: [NativeMenuPriceOption], description: String?, active: Bool, allergens: [String], allergensConfirmed: Bool) async -> Bool {
+    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, priceOptions: [NativeMenuPriceOption], description: String?, active: Bool, allergens: [String], allergensConfirmed: Bool, imageUrl: String? = nil, imageChanged: Bool = false) async -> Bool {
         guard let restaurantId = selectedOwnerRestaurantId, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false, price >= 0 else { return false }
         var seenOptionIds = Set<String>()
         let validOptions = Array(priceOptions.prefix(20).filter {
@@ -1332,9 +1332,176 @@ final class SupabaseManager: ObservableObject {
                 allergens: allergens,
                 allergensConfirmed: allergensConfirmed
             )).eq("restaurant_id", value: restaurantId).eq("id", value: item.id).execute()
+            if imageChanged {
+                // Explicit null so removing the photo really clears the column.
+                struct ImagePatch: Encodable {
+                    let url: String?
+                    enum CodingKeys: String, CodingKey { case url = "image_url" }
+                    func encode(to encoder: Encoder) throws {
+                        var container = encoder.container(keyedBy: CodingKeys.self)
+                        try container.encode(url, forKey: .url)
+                    }
+                }
+                try await client.from("menu_items").update(ImagePatch(url: imageUrl)).eq("restaurant_id", value: restaurantId).eq("id", value: item.id).execute()
+            }
             await refreshOwnerOperations()
             return true
         } catch { AppLog.failure("updateOwnerMenuItem", error); return false }
+    }
+
+    // MARK: - Owner offers (create from the phone)
+
+    private struct OfferWrite: Encodable {
+        let id: String?
+        let restaurantId: String?
+        let title: String
+        let description: String?
+        let price: Double?
+        let startsAt: String?
+        let endsAt: String?
+        let imageUrl: String?
+        let active: Bool
+        enum CodingKeys: String, CodingKey {
+            case id, title, description, price, active
+            case restaurantId = "restaurant_id", startsAt = "starts_at", endsAt = "ends_at", imageUrl = "image_url"
+        }
+        // Explicit nulls: editing an offer must be able to clear dates/photo/price.
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encodeIfPresent(id, forKey: .id)
+            try c.encodeIfPresent(restaurantId, forKey: .restaurantId)
+            try c.encode(title, forKey: .title)
+            try c.encode(description, forKey: .description)
+            try c.encode(price, forKey: .price)
+            try c.encode(startsAt, forKey: .startsAt)
+            try c.encode(endsAt, forKey: .endsAt)
+            try c.encode(imageUrl, forKey: .imageUrl)
+            try c.encode(active, forKey: .active)
+        }
+    }
+
+    private func offerWrite(id: String?, restaurantId: String?, title: String, description: String?, price: Double?, startsAt: Date?, endsAt: Date?, imageUrl: String?, active: Bool) -> OfferWrite {
+        let iso = ISO8601DateFormatter()
+        let cleaned = description?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return OfferWrite(id: id, restaurantId: restaurantId, title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                          description: (cleaned?.isEmpty ?? true) ? nil : cleaned, price: price,
+                          startsAt: startsAt.map(iso.string(from:)), endsAt: endsAt.map(iso.string(from:)), imageUrl: imageUrl, active: active)
+    }
+
+    func createOwnerOffer(id: String, title: String, description: String?, price: Double?, startsAt: Date?, endsAt: Date?, imageUrl: String?, active: Bool) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        if let startsAt, let endsAt, endsAt <= startsAt { return false }
+        do {
+            try await client.from("offers").insert(offerWrite(id: id, restaurantId: restaurantId, title: title, description: description, price: price, startsAt: startsAt, endsAt: endsAt, imageUrl: imageUrl, active: active)).execute()
+            await refreshOwnerOperations()
+            Analytics.capture("owner_offer_created")
+            return true
+        } catch { AppLog.failure("createOwnerOffer", error); return false }
+    }
+
+    func updateOwnerOffer(id: String, title: String, description: String?, price: Double?, startsAt: Date?, endsAt: Date?, imageUrl: String?, active: Bool) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        if let startsAt, let endsAt, endsAt <= startsAt { return false }
+        do {
+            try await client.from("offers").update(offerWrite(id: nil, restaurantId: nil, title: title, description: description, price: price, startsAt: startsAt, endsAt: endsAt, imageUrl: imageUrl, active: active))
+                .eq("restaurant_id", value: restaurantId).eq("id", value: id).execute()
+            await refreshOwnerOperations()
+            return true
+        } catch { AppLog.failure("updateOwnerOffer", error); return false }
+    }
+
+    func setOwnerOfferActive(_ id: String, active: Bool) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId else { return false }
+        struct Patch: Encodable { let active: Bool }
+        do {
+            try await client.from("offers").update(Patch(active: active)).eq("restaurant_id", value: restaurantId).eq("id", value: id).execute()
+            await refreshOwnerOperations()
+            return true
+        } catch { AppLog.failure("setOwnerOfferActive", error); return false }
+    }
+
+    func deleteOwnerOffer(_ id: String) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId else { return false }
+        do {
+            try await client.from("offers").delete().eq("restaurant_id", value: restaurantId).eq("id", value: id).execute()
+            await refreshOwnerOperations()
+            return true
+        } catch { AppLog.failure("deleteOwnerOffer", error); return false }
+    }
+
+    /// Sends the "new offer" push to customers (once per offer, server-enforced).
+    func announceOwnerOffer(_ id: String) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId else { return false }
+        struct Body: Encodable { let restaurantId: String }
+        do {
+            let _: Data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/native/owner/offers/\(id)/announce"),
+                method: "POST",
+                body: try JSONEncoder().encode(Body(restaurantId: restaurantId))
+            )
+            Analytics.capture("owner_offer_announced")
+            return true
+        } catch { AppLog.failure("announceOwnerOffer", error); return false }
+    }
+
+    // MARK: - Owner team member profile
+
+    func fetchOwnerEmployeeProfile(employeeId: String) async -> OwnerEmployeeProfile? {
+        guard let restaurantId = selectedOwnerRestaurantId else { return nil }
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        let from = formatter.string(from: Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date())
+        let to = formatter.string(from: Calendar.current.date(byAdding: .day, value: 21, to: Date()) ?? Date())
+        do {
+            let rows: [OwnerEmployeeProfile] = try await client.from("employees")
+                .select("id, full_name, role_title, hourly_wage, active, description, contact_phone, contact_email, shift_schedules(id, shift_date, start_time, end_time, position_label, status)")
+                .eq("restaurant_id", value: restaurantId).eq("id", value: employeeId)
+                .gte("shift_schedules.shift_date", value: from)
+                .lte("shift_schedules.shift_date", value: to)
+                .order("shift_date", ascending: true, referencedTable: "shift_schedules")
+                .limit(1).execute().value
+            return rows.first
+        } catch { AppLog.failure("fetchOwnerEmployeeProfile", error); return nil }
+    }
+
+    /// Contact details and notes for a team member (null clears a field).
+    func updateOwnerEmployeeContact(employeeId: String, phone: String?, email: String?, notes: String?) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId else { return false }
+        struct Patch: Encodable {
+            let phone: String?; let email: String?; let notes: String?
+            enum CodingKeys: String, CodingKey { case phone = "contact_phone", email = "contact_email", notes = "description" }
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(phone, forKey: .phone); try c.encode(email, forKey: .email); try c.encode(notes, forKey: .notes)
+            }
+        }
+        func clean(_ value: String?) -> String? { let t = value?.trimmingCharacters(in: .whitespacesAndNewlines); return (t?.isEmpty ?? true) ? nil : t }
+        do {
+            try await client.from("employees").update(Patch(phone: clean(phone), email: clean(email), notes: clean(notes)))
+                .eq("restaurant_id", value: restaurantId).eq("id", value: employeeId).execute()
+            return true
+        } catch { AppLog.failure("updateOwnerEmployeeContact", error); return false }
+    }
+
+    // MARK: - Owner customer profile
+
+    /// One customer with the history the web customer page shows: loyalty
+    /// activity and recent orders. RLS limits it to the owner's restaurant.
+    func fetchOwnerCustomerProfile(customerId: String) async -> OwnerCustomerProfile? {
+        guard let restaurantId = selectedOwnerRestaurantId else { return nil }
+        do {
+            let rows: [OwnerCustomerProfile] = try await client.from("customers")
+                .select("id, name, email, phone, loyalty_points, visit_count, total_spent, last_visit_at, created_at, birthday, city, marketing_consent, loyalty_transactions(id, type, amount_spent, points_delta, note, created_at), orders(id, status, total, created_at, order_items(item_name, quantity))")
+                .eq("restaurant_id", value: restaurantId).eq("id", value: customerId)
+                .order("created_at", ascending: false, referencedTable: "loyalty_transactions")
+                .limit(20, referencedTable: "loyalty_transactions")
+                .order("created_at", ascending: false, referencedTable: "orders")
+                .limit(15, referencedTable: "orders")
+                .limit(1).execute().value
+            return rows.first
+        } catch { AppLog.failure("fetchOwnerCustomerProfile", error); return nil }
     }
 
     /// What the server actually delivered to the customer for the last order
@@ -1497,17 +1664,19 @@ final class SupabaseManager: ObservableObject {
 
     /// Adds a menu item. Without confirmed allergen information it is saved as
     /// a hidden draft, the same safety rule the edit sheet applies.
-    func createOwnerMenuItem(name: String, category: String?, price: Double, description: String?, allergens: [String], allergensConfirmed: Bool, active: Bool) async -> Bool {
+    func createOwnerMenuItem(id: String? = nil, imageUrl: String? = nil, name: String, category: String?, price: Double, description: String?, allergens: [String], allergensConfirmed: Bool, active: Bool) async -> Bool {
         guard let restaurantId = selectedOwnerRestaurantId,
               !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               price.isFinite, price >= 0 else { return false }
         let publishable = active && allergensConfirmed && price > 0
         struct Row: Encodable {
+            let id: String?; let imageUrl: String?
             let restaurantId: String; let name: String; let category: String?; let price: Double
             let description: String?; let active: Bool; let isDraft: Bool
             let allergens: [String]; let allergensConfirmed: Bool
             enum CodingKeys: String, CodingKey {
-                case name, category, price, description, active, allergens
+                case id, name, category, price, description, active, allergens
+                case imageUrl = "image_url"
                 case restaurantId = "restaurant_id", isDraft = "is_draft", allergensConfirmed = "allergens_confirmed"
             }
         }
@@ -1515,6 +1684,7 @@ final class SupabaseManager: ObservableObject {
         let cleanedDescription = description?.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             try await client.from("menu_items").insert(Row(
+                id: id, imageUrl: imageUrl,
                 restaurantId: restaurantId,
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
                 category: (cleanedCategory?.isEmpty ?? true) ? nil : cleanedCategory,
@@ -1638,6 +1808,21 @@ final class SupabaseManager: ObservableObject {
             lastError = "La mise à jour de votre numéro a échoué. Réessayez."
             AppLog.failure("updatePhone", error)
             return false
+        }
+    }
+
+    /// Uploads an owner-side image (menu item or offer) to a public bucket under
+    /// `{restaurantId}/{scopeId}/…` — the folder the members-only storage policy
+    /// checks — and returns its public URL.
+    func uploadOwnerImage(_ data: Data, bucket: String, restaurantId: String, scopeId: String) async -> String? {
+        guard ownerRestaurants.contains(where: { $0.id == restaurantId }), ["menu-item-images", "offer-images"].contains(bucket) else { return nil }
+        let path = "\(restaurantId)/\(scopeId)/\(UUID().uuidString.lowercased()).jpg"
+        do {
+            try await client.storage.from(bucket).upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            return try client.storage.from(bucket).getPublicURL(path: path).absoluteString
+        } catch {
+            AppLog.failure("uploadOwnerImage", error)
+            return nil
         }
     }
 

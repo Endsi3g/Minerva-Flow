@@ -8,7 +8,10 @@ struct OwnerLoyaltyScreen: View {
     @State private var section: Section = .counter
     @State private var respondingTo: NativeOwnerRestaurantReview?
     @State private var notingCustomer: NativeOwnerCustomer?
+    @State private var offerSheet: OfferSheetTarget?
     private var L: Lx { Lx(storedLanguage) }
+
+    struct OfferSheetTarget: Identifiable { let offer: Offer?; let id = UUID() }
 
     enum Section: String, CaseIterable, Identifiable { case counter, customers, rewards, reviews; var id: String { rawValue } }
 
@@ -39,6 +42,7 @@ struct OwnerLoyaltyScreen: View {
             }
             .sheet(item: $respondingTo) { ReviewReplyEditor(review: $0) }
             .sheet(item: $notingCustomer) { OwnerStaffNoteEditor(customer: $0) }
+            .sheet(item: $offerSheet) { OwnerOfferSheet(offer: $0.offer) }
         }
     }
 
@@ -51,7 +55,7 @@ struct OwnerLoyaltyScreen: View {
                 VStack(spacing: 0) {
                     ForEach(Array(supabase.ownerCustomers.enumerated()), id: \.element.id) { index, customer in
                         if index > 0 { OwnerDivider() }
-                        Button { notingCustomer = customer } label: {
+                        NavigationLink { OwnerCustomerDetailScreen(customer: customer) } label: {
                             OwnerRow(icon: "person.fill", title: customer.name,
                                      subtitle: L("\(customer.loyaltyPoints) pts · \(customer.visitCount) visites · \(customer.totalSpent.cad)", "\(customer.loyaltyPoints) pts · \(customer.visitCount) visits · \(customer.totalSpent.cad)"), chevron: true)
                                 .padding(.horizontal, 10).padding(.vertical, 4)
@@ -81,24 +85,40 @@ struct OwnerLoyaltyScreen: View {
                     }
                 }
             }
-            VStack(alignment: .leading, spacing: 10) {
-                OwnerSectionHeader(title: L("Offres", "Offers"))
+            VStack(alignment: .leading, spacing: 8) {
+                OwnerSectionHeader(title: L("Offres", "Offers"), actionTitle: L("Nouvelle offre", "New offer")) { offerSheet = OfferSheetTarget(offer: nil) }
                 OwnerCard(padding: 6) {
                     if supabase.ownerOffers.isEmpty {
-                        Text(L("Aucune offre pour le moment.", "No offers yet.")).font(.mv(size: 14)).foregroundStyle(MinervaColor.inkSoft).padding(14)
+                        OwnerEmptyState(icon: "tag", title: L("Aucune offre", "No offers"),
+                                        message: L("Lancez une offre depuis votre téléphone : vos clients la voient tout de suite.", "Launch an offer from your phone: customers see it right away."),
+                                        actionTitle: L("Créer une offre", "Create an offer")) { offerSheet = OfferSheetTarget(offer: nil) }
                     } else {
                         VStack(spacing: 0) {
                             ForEach(Array(supabase.ownerOffers.enumerated()), id: \.element.id) { index, offer in
                                 if index > 0 { OwnerDivider() }
-                                OwnerRow(icon: "tag.fill", title: offer.title, subtitle: offer.description) {
-                                    OwnerPill(text: offer.active ? L("Active", "Live") : L("En pause", "Paused"), tone: offer.active ? .good : .neutral)
-                                }.padding(.horizontal, 10).padding(.vertical, 4)
+                                Button { offerSheet = OfferSheetTarget(offer: offer) } label: {
+                                    OwnerRow(icon: "tag.fill", title: offer.title, subtitle: offerSubtitle(offer)) {
+                                        OwnerPill(text: offerStatus(offer).0, tone: offerStatus(offer).1)
+                                    }.padding(.horizontal, 10).padding(.vertical, 4)
+                                }.buttonStyle(.plain)
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private func offerStatus(_ offer: Offer) -> (String, OwnerTone) {
+        if !offer.active { return (L("En pause", "Paused"), .neutral) }
+        if let end = offer.endsAt, end < Date() { return (L("Terminée", "Ended"), .neutral) }
+        if let start = offer.startsAt, start > Date() { return (L("Programmée", "Scheduled"), .info) }
+        return (L("Active", "Live"), .good)
+    }
+
+    private func offerSubtitle(_ offer: Offer) -> String? {
+        if let end = offer.endsAt { return L("Jusqu'au ", "Until ") + end.formatted(date: .abbreviated, time: .omitted) }
+        return offer.description
     }
 
     private var reviews: some View {

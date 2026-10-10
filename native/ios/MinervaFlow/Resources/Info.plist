@@ -36,7 +36,7 @@
 	<key>NFCFeatureEnabled</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>Minerva Flow utilise l'appareil photo pour scanner le code du restaurant et accéder directement à son menu.</string>
+	<string>Minerva Flow utilise l'appareil photo pour scanner le code du restaurant et, côté restaurateur, pour photographier vos plats et vos offres.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Utilisez Face ID pour déverrouiller rapidement votre compte de fidélité Minerva Flow.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

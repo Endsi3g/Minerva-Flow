@@ -198,6 +198,8 @@ struct OwnerAddMenuItemSheet: View {
     @State private var allergens = ""
     @State private var allergensConfirmed = false
     @State private var active = true
+    @State private var itemId = UUID().uuidString.lowercased()
+    @State private var imageURL: String?
     @State private var saving = false
     @State private var error: String?
     private var L: Lx { Lx(storedLanguage) }
@@ -209,6 +211,9 @@ struct OwnerAddMenuItemSheet: View {
     var body: some View {
         OwnerFormSheet(title: L("Nouvel article", "New item"), saveTitle: L("Ajouter", "Add"),
                        canSave: !name.trimmingCharacters(in: .whitespaces).isEmpty && parsedPrice != nil, isSaving: saving, errorMessage: error, onSave: save) {
+            Section(L("Photo", "Photo")) {
+                OwnerPhotoField(bucket: "menu-item-images", scopeId: itemId, imageURL: $imageURL)
+            }
             Section(L("Article", "Item")) {
                 TextField(L("Nom", "Name"), text: $name)
                 TextField(L("Prix ($)", "Price ($)"), text: $price).keyboardType(.decimalPad)
@@ -239,7 +244,7 @@ struct OwnerAddMenuItemSheet: View {
         saving = true; error = nil
         let list = allergens.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         Task {
-            let ok = await supabase.createOwnerMenuItem(name: name, category: category, price: amount, description: description, allergens: list, allergensConfirmed: allergensConfirmed, active: active)
+            let ok = await supabase.createOwnerMenuItem(id: itemId, imageUrl: imageURL, name: name, category: category, price: amount, description: description, allergens: list, allergensConfirmed: allergensConfirmed, active: active)
             saving = false
             if ok { dismiss() } else { error = L("L'article n'a pas été ajouté. Vérifiez les champs et réessayez.", "The item was not added. Check the fields and try again.") }
         }

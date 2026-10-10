@@ -1214,3 +1214,110 @@ struct NativeOwnerOrderDetail: Codable {
         case items = "order_items"
     }
 }
+
+/// Full customer page for the owner: totals, contact, loyalty activity and recent orders.
+struct OwnerCustomerProfile: Decodable, Identifiable {
+    struct LoyaltyEntry: Decodable, Identifiable {
+        let id: String
+        let type: String
+        let amountSpent: Double?
+        let pointsDelta: Int
+        let note: String?
+        let createdAt: String
+        enum CodingKeys: String, CodingKey {
+            case id, type, note
+            case amountSpent = "amount_spent", pointsDelta = "points_delta", createdAt = "created_at"
+        }
+    }
+    struct OrderEntry: Decodable, Identifiable {
+        struct Line: Decodable { let itemName: String; let quantity: Int
+            enum CodingKeys: String, CodingKey { case itemName = "item_name", quantity } }
+        let id: String
+        let status: String
+        let total: Double
+        let createdAt: String
+        let items: [Line]
+        enum CodingKeys: String, CodingKey { case id, status, total, createdAt = "created_at", items = "order_items" }
+    }
+
+    let id: String
+    let name: String
+    let email: String?
+    let phone: String?
+    let loyaltyPoints: Int
+    let visitCount: Int
+    let totalSpent: Double
+    let lastVisitAt: String?
+    let createdAt: String
+    let birthday: String?
+    let city: String?
+    let marketingConsent: Bool?
+    let loyalty: [LoyaltyEntry]
+    let orders: [OrderEntry]
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, email, phone, birthday, city, orders
+        case loyaltyPoints = "loyalty_points", visitCount = "visit_count", totalSpent = "total_spent"
+        case lastVisitAt = "last_visit_at", createdAt = "created_at", marketingConsent = "marketing_consent"
+        case loyalty = "loyalty_transactions"
+    }
+
+    /// Dishes this customer orders most (from their recent orders).
+    var favoriteItems: [(name: String, quantity: Int)] {
+        var counts: [String: Int] = [:]
+        for order in orders where order.status != "annulee" { for line in order.items { counts[line.itemName, default: 0] += line.quantity } }
+        return counts.sorted { $0.value > $1.value }.prefix(3).map { ($0.key, $0.value) }
+    }
+}
+
+/// A team member's full page for the owner: contact, notes and upcoming shifts.
+struct OwnerEmployeeProfile: Decodable, Identifiable {
+    struct Shift: Decodable, Identifiable {
+        let id: String
+        let shiftDate: String
+        let startTime: String
+        let endTime: String
+        let positionLabel: String?
+        let status: String?
+        enum CodingKeys: String, CodingKey {
+            case id, status
+            case shiftDate = "shift_date", startTime = "start_time", endTime = "end_time", positionLabel = "position_label"
+        }
+
+        /// Length in hours; a shift ending before it starts is overnight.
+        var hours: Double {
+            func minutes(_ value: String) -> Double? {
+                let parts = value.split(separator: ":")
+                guard parts.count >= 2, let h = Double(parts[0]), let m = Double(parts[1]) else { return nil }
+                return h * 60 + m
+            }
+            guard let start = minutes(startTime), let end = minutes(endTime) else { return 0 }
+            return (end >= start ? end - start : end + 1440 - start) / 60
+        }
+        var date: Date? {
+            let formatter = DateFormatter()
+            formatter.calendar = Calendar(identifier: .gregorian)
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyy-MM-dd"
+            return formatter.date(from: String(shiftDate.prefix(10)))
+        }
+        var timeRange: String { "\(startTime.prefix(5))–\(endTime.prefix(5))" }
+    }
+
+    let id: String
+    let fullName: String
+    let roleTitle: String
+    let hourlyWage: Double?
+    let active: Bool
+    let description: String?
+    let contactPhone: String?
+    let contactEmail: String?
+    let shifts: [Shift]
+
+    enum CodingKeys: String, CodingKey {
+        case id, active, description
+        case fullName = "full_name", roleTitle = "role_title", hourlyWage = "hourly_wage"
+        case contactPhone = "contact_phone", contactEmail = "contact_email"
+        case shifts = "shift_schedules"
+    }
+}

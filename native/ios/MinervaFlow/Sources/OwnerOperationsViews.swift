@@ -39,6 +39,7 @@ struct MenuItemEditor: View {
     @State private var allergens: String
     @State private var allergensConfirmed: Bool
     @State private var active: Bool
+    @State private var imageURL: String?
     @State private var saving = false
     @State private var validationMessage: String?
 
@@ -52,11 +53,15 @@ struct MenuItemEditor: View {
         _allergens = State(initialValue: (item.allergens ?? []).joined(separator: ", "))
         _allergensConfirmed = State(initialValue: item.allergensConfirmed ?? false)
         _active = State(initialValue: item.active)
+        _imageURL = State(initialValue: item.imageUrl)
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section(isFrench ? "Photo" : "Photo") {
+                    OwnerPhotoField(bucket: "menu-item-images", scopeId: item.id, imageURL: $imageURL)
+                }
                 Section(isFrench ? "Article" : "Item") {
                     TextField(isFrench ? "Nom" : "Name", text: $name)
                     TextField(priceOptions.isEmpty ? (isFrench ? "Prix" : "Price") : (isFrench ? "Prix de départ (formats ci-dessous)" : "Starting price (formats below)"), text: $price)
@@ -122,7 +127,7 @@ struct MenuItemEditor: View {
                         saving = true
                         Task {
                             let parsedAllergens = allergens.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                            let ok = await supabase.updateOwnerMenuItem(item, name: name, price: amount, priceOptions: priceOptions, description: description, active: active, allergens: parsedAllergens, allergensConfirmed: allergensConfirmed)
+                            let ok = await supabase.updateOwnerMenuItem(item, name: name, price: amount, priceOptions: priceOptions, description: description, active: active, allergens: parsedAllergens, allergensConfirmed: allergensConfirmed, imageUrl: imageURL, imageChanged: imageURL != item.imageUrl)
                             saving = false
                             if ok { dismiss() }
                             else { validationMessage = isFrench ? "L’article n’a pas été enregistré. Vérifiez les champs et réessayez." : "The item was not saved. Check the fields and try again." }
@@ -231,7 +236,7 @@ struct OwnerManagementDestination: View {
         case .statistics: OwnerStatisticsScreen()
         case .team: OwnerEmployeesView()
         case .settings: OwnerSettingsView()
-        case .locations: BrandLocationsView(isOwner: true)
+        case .locations: OwnerLocationsScreen()
         }
     }
 }
@@ -255,9 +260,12 @@ struct OwnerEmployeesView: View {
                     VStack(spacing: 0) {
                         ForEach(Array(supabase.ownerEmployees.enumerated()), id: \.element.id) { index, member in
                             if index > 0 { OwnerDivider() }
-                            Button { employee = member } label: {
+                            NavigationLink { OwnerEmployeeDetailScreen(employee: member) } label: {
                                 OwnerRow(icon: "person.fill", title: member.fullName, subtitle: member.roleTitle) {
-                                    OwnerPill(text: member.active ? L("Actif", "Active") : L("Inactif", "Inactive"), tone: member.active ? .good : .neutral)
+                                    HStack(spacing: 6) {
+                                        OwnerPill(text: member.active ? L("Actif", "Active") : L("Inactif", "Inactive"), tone: member.active ? .good : .neutral)
+                                        Image(systemName: "chevron.right").font(.mv(size: 11, weight: .semibold)).foregroundStyle(MinervaColor.inkFaint)
+                                    }
                                 }.padding(.horizontal, 10).padding(.vertical, 4)
                             }.buttonStyle(.plain)
                         }
@@ -269,7 +277,7 @@ struct OwnerEmployeesView: View {
     }
 }
 
-private struct EmployeeEditor: View {
+struct EmployeeEditor: View {
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     private var L: Lx { Lx(storedLanguage) }
     @EnvironmentObject private var supabase: SupabaseManager

@@ -16,6 +16,7 @@ Numérotation séquentielle `NNNN_description.sql`, une migration par changement
 - `0187` (`owner_overview_insights(restaurant, jours)` : série quotidienne des ventes, heures de pointe, meilleurs articles et activité de la semaine pour l'Aperçu iOS; `SECURITY INVOKER`, donc soumise aux RLS) appliquée directement en base le 2026-10-10.
 - `0188` (`owner_finance_summary(restaurant, jours)` : série quotidienne revenus/dépenses, dépenses par catégorie, comparaison à la période précédente et transactions récentes pour l'écran Finances iOS; `SECURITY INVOKER`) appliquée directement en base le 2026-10-10.
 - `0189` (`orders.owner_message`, `owner_message_at`, `review_requested_at` : note du propriétaire au client et demande d'avis Google 30 min après « Prête ») appliquée directement en base le 2026-10-10.
+- `0190` (`offers.announced_at` : une offre publiée depuis le téléphone ne notifie les clients qu'une seule fois) appliquée directement en base le 2026-10-10.
 - Un seul prochain numéro à la fois : vérifier `ls supabase/migrations | tail` avant d'en créer une, pour ne pas dupliquer un numéro.
 
 ## Autres fichiers SQL

@@ -8,11 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		006EB054257CBD3CCD3F7F25 /* RewardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639E5AD94A1648D1C2D5F907 /* RewardDetailView.swift */; };
+		03EB137DB3B33040E36F7138 /* OwnerLocationsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D33112A967C4538F0A6AFE2 /* OwnerLocationsScreen.swift */; };
 		0495357F2293E777E693FFF9 /* OwnerOverviewComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CFA46CF73B721451B3E513 /* OwnerOverviewComponents.swift */; };
 		068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */; };
 		09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8ABC1E0681608032F18B9B5 /* Assets.xcassets */; };
 		0B57FA9509F969FAE1332E46 /* TeamMembersViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9775C34EA3437D508F22CBC5 /* TeamMembersViews.swift */; };
+		0B7E7D435DD4D74E11B4A9BC /* OwnerEmployeeDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B7F357E4A93CBA3ECA59816 /* OwnerEmployeeDetail.swift */; };
 		0F10BBBAE4E0A577ADF58A88 /* OwnerAccountScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81569723AC09D6788DF5EAC1 /* OwnerAccountScreen.swift */; };
 		10C0C5419F672163010D89E7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8895010156F5D764817E886D /* PrivacyInfo.xcprivacy */; };
 		111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA484AE32471A39B3214052F /* QRScannerView.swift */; };
@@ -27,6 +29,7 @@
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
 		31C2B1DC693A37CD2CCA402A /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC74D7EFE8F6B593AB50D654 /* FavoritesView.swift */; };
 		334B756E8CFD91AFED64561A /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */; };
+		36D3A8D17A24057F7F769B91 /* OwnerCustomerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34473048B6BEC18CA01E6D28 /* OwnerCustomerDetail.swift */; };
 		3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */; };
 		3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */; };
 		3B10C75B62BC3B3E99E7158C /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A3D603E77246AEB6C2EFEE5 /* SupportView.swift */; };
@@ -42,6 +45,7 @@
 		5643F61017A3F0DBA40C7ED1 /* BrandLocationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADC8BCCB0E5CF9A11888A9CC /* BrandLocationsView.swift */; };
 		570AB4FD46A6A85C98B3C6AE /* OwnerGoogleBusinessProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C9CE03254A37BA24BE73AC7 /* OwnerGoogleBusinessProfileView.swift */; };
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
+		5E88F2AE534710A5E0D5B287 /* OwnerOfferSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2E6CBA58F57DA5CA72F5B7 /* OwnerOfferSheet.swift */; };
 		5F9EF1186433358348AA47D6 /* OwnerOperationsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */; };
 		622058C5423B38F6461FDC6F /* EnrollmentSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A301CDA2BC1C3EDAD2ED5CC9 /* EnrollmentSelectionView.swift */; };
 		711F8C635DBEB517E4DF362B /* AmbassadorHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F28EE263E79CF34DAB4921AB /* AmbassadorHubView.swift */; };
@@ -58,6 +62,7 @@
 		81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001F62368824618EE0ACB49 /* SupabaseManager.swift */; };
 		83A4C4962380D2949E0E7699 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2322CAFF570744A7B01CEE6B /* PrivacyInfo.xcprivacy */; };
 		85AB6A5594778C5544D34E18 /* RestaurantMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E2365512980AA23003195C /* RestaurantMapView.swift */; };
+		85BBDDEC5C7F2ED6C48F3341 /* OwnerPhotoField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F43CD223D0431DB07587435 /* OwnerPhotoField.swift */; };
 		8701495AF3F09B76A9A329BE /* NativeOTPOnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F763D3C4831621880294354 /* NativeOTPOnboardingUITests.swift */; };
 		8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */; };
 		976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */; };
@@ -160,7 +165,9 @@
 		2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2F39A7BD582C92D40EAA2DF7 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
+		2F43CD223D0431DB07587435 /* OwnerPhotoField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerPhotoField.swift; sourceTree = "<group>"; };
 		3205D4D5215353DA7D12F483 /* TeamMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamMainView.swift; sourceTree = "<group>"; };
+		34473048B6BEC18CA01E6D28 /* OwnerCustomerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerCustomerDetail.swift; sourceTree = "<group>"; };
 		376F3EEA99798EAF0012A1A4 /* ScannerTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerTabView.swift; sourceTree = "<group>"; };
 		3BA3D11519756F718ABABD7D /* OwnerFinanceScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerFinanceScreen.swift; sourceTree = "<group>"; };
 		3FDF4D1B53C09BD25A26EEDF /* MinervaFlowWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlowWidget.entitlements; sourceTree = "<group>"; };
@@ -185,6 +192,7 @@
 		6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowUITests.swift; sourceTree = "<group>"; };
 		6A8D908D671D58893AB1BE44 /* OwnerOverviewScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerOverviewScreen.swift; sourceTree = "<group>"; };
 		6B1569E775588C2FD619D005 /* OwnerNFCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerNFCView.swift; sourceTree = "<group>"; };
+		6D33112A967C4538F0A6AFE2 /* OwnerLocationsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerLocationsScreen.swift; sourceTree = "<group>"; };
 		727DA186E9C381DB419BDA27 /* NativeRealtimeStatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRealtimeStatusPill.swift; sourceTree = "<group>"; };
 		75D53BED95FFB389516CCEF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		76F1F3348C94BFFA345AA42A /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
@@ -202,6 +210,7 @@
 		96EFC326CA426C0304BAF5FA /* WriteRestaurantReviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteRestaurantReviewSheet.swift; sourceTree = "<group>"; };
 		9775C34EA3437D508F22CBC5 /* TeamMembersViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamMembersViews.swift; sourceTree = "<group>"; };
 		9A0EAB5E155550FAF2B1ECFA /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		9B7F357E4A93CBA3ECA59816 /* OwnerEmployeeDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerEmployeeDetail.swift; sourceTree = "<group>"; };
 		9D7AF171574E4F3EC1EE8096 /* OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = OFL.txt; sourceTree = "<group>"; };
 		A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MinervaFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A301CDA2BC1C3EDAD2ED5CC9 /* EnrollmentSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrollmentSelectionView.swift; sourceTree = "<group>"; };
@@ -246,6 +255,7 @@
 		F711B3EFAD45C54F77276B73 /* OwnerUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerUI.swift; sourceTree = "<group>"; };
 		F97A65D9827AB6E19EB970C1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		FA4B0852605EFE3B8B30F88D /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		FE2E6CBA58F57DA5CA72F5B7 /* OwnerOfferSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerOfferSheet.swift; sourceTree = "<group>"; };
 		FF37FC58F8C72617B6A3B772 /* ClientUpdatesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientUpdatesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -372,17 +382,22 @@
 				EA427B759305A43BF018AB62 /* OrderTotals.swift */,
 				1DD9888337DDE60E67B4F8CE /* OtherView.swift */,
 				81569723AC09D6788DF5EAC1 /* OwnerAccountScreen.swift */,
+				34473048B6BEC18CA01E6D28 /* OwnerCustomerDetail.swift */,
+				9B7F357E4A93CBA3ECA59816 /* OwnerEmployeeDetail.swift */,
 				3BA3D11519756F718ABABD7D /* OwnerFinanceScreen.swift */,
 				8C9CE03254A37BA24BE73AC7 /* OwnerGoogleBusinessProfileView.swift */,
 				45AF6D6F9EAECFF6744C7889 /* OwnerInsights.swift */,
+				6D33112A967C4538F0A6AFE2 /* OwnerLocationsScreen.swift */,
 				B7A2751C1C420892B62F811B /* OwnerLoyaltyScreen.swift */,
 				D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */,
 				93E0C4713BF1C2DB98A15598 /* OwnerManageScreens.swift */,
 				6B1569E775588C2FD619D005 /* OwnerNFCView.swift */,
+				FE2E6CBA58F57DA5CA72F5B7 /* OwnerOfferSheet.swift */,
 				5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */,
 				855F057FAD3DD0BABBC880CA /* OwnerOrdersScreen.swift */,
 				E3CFA46CF73B721451B3E513 /* OwnerOverviewComponents.swift */,
 				6A8D908D671D58893AB1BE44 /* OwnerOverviewScreen.swift */,
+				2F43CD223D0431DB07587435 /* OwnerPhotoField.swift */,
 				F711B3EFAD45C54F77276B73 /* OwnerUI.swift */,
 				AF27DE9A4FC86CD170C6592A /* PointsHistoryView.swift */,
 				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
@@ -736,17 +751,22 @@
 				9BC5FB157B434B491741712A /* OrderTotals.swift in Sources */,
 				71C78FA6B78748548AE57D71 /* OtherView.swift in Sources */,
 				0F10BBBAE4E0A577ADF58A88 /* OwnerAccountScreen.swift in Sources */,
+				36D3A8D17A24057F7F769B91 /* OwnerCustomerDetail.swift in Sources */,
+				0B7E7D435DD4D74E11B4A9BC /* OwnerEmployeeDetail.swift in Sources */,
 				1975EC03744AB0F8CDA9BCF0 /* OwnerFinanceScreen.swift in Sources */,
 				570AB4FD46A6A85C98B3C6AE /* OwnerGoogleBusinessProfileView.swift in Sources */,
 				AAE53B27AAED0A5FE81499CA /* OwnerInsights.swift in Sources */,
+				03EB137DB3B33040E36F7138 /* OwnerLocationsScreen.swift in Sources */,
 				43D2C2D3DCE916474D542A8B /* OwnerLoyaltyScreen.swift in Sources */,
 				DEDC40321085D36EBF1F9A8E /* OwnerMainTabView.swift in Sources */,
 				C318F9F8FAE87B4C6C959DD7 /* OwnerManageScreens.swift in Sources */,
 				CAA23FFC5163988353E01A6B /* OwnerNFCView.swift in Sources */,
+				5E88F2AE534710A5E0D5B287 /* OwnerOfferSheet.swift in Sources */,
 				5F9EF1186433358348AA47D6 /* OwnerOperationsViews.swift in Sources */,
 				DD40AA19055504E4C44C5F78 /* OwnerOrdersScreen.swift in Sources */,
 				0495357F2293E777E693FFF9 /* OwnerOverviewComponents.swift in Sources */,
 				9E7A9289DFF36249EE62450B /* OwnerOverviewScreen.swift in Sources */,
+				85BBDDEC5C7F2ED6C48F3341 /* OwnerPhotoField.swift in Sources */,
 				D03E6A4E03EF6FCB2ECFF994 /* OwnerUI.swift in Sources */,
 				B8068A7B59C3AB391FE1F959 /* PointsHistoryView.swift in Sources */,
 				068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */,
