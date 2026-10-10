@@ -134,6 +134,8 @@ export async function proxy(request: NextRequest) {
     // Bearer token rather than a browser cookie. Let the route handler return
     // the binary pass instead of redirecting the request to the login page.
     pathWithoutLocale.startsWith("/api/wallet/") ||
+    // The desktop app polls this manifest without any session (see app/api/desktop/update).
+    pathWithoutLocale === "/api/desktop/update" ||
     // Apple fetches Universal Links config with no cookies at all, from
     // its own infrastructure, not a browser — confirmed live: without
     // this, both the /.well-known/... URL and its next.config.ts rewrite
