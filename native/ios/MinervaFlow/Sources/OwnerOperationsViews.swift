@@ -237,26 +237,38 @@ struct OwnerManagementDestination: View {
 
 struct OwnerEmployeesView: View {
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    private var L: Lx { Lx(storedLanguage) }
     @EnvironmentObject private var supabase: SupabaseManager
     @State private var employee: NativeOwnerEmployee?
+
     var body: some View {
-        List(supabase.ownerEmployees) { member in
-            Button { employee = member } label: {
-                HStack { VStack(alignment: .leading, spacing: 3) { Text(member.fullName).font(.mv(size: 16, weight: .semibold)); Text(member.roleTitle).font(.mv(size: 12)).foregroundStyle(.secondary) }; Spacer(); Text(member.active ? (isFrench ? "Actif" : "Active") : (isFrench ? "Inactif" : "Inactive")).font(.mv(size: 12, weight: .semibold)).foregroundStyle(member.active ? MinervaColor.emeraldDark : .secondary) }
-            }.buttonStyle(.plain)
+        OwnerScreen(title: L("Équipe", "Team"), subtitle: L("\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "membre" : "membres") · touchez pour modifier",
+                                                           "\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "member" : "members") · tap to edit")) {
+            if supabase.ownerEmployees.isEmpty {
+                OwnerCard { OwnerEmptyState(icon: "person.3", title: L("Aucun membre d'équipe", "No team members"),
+                                            message: L("Ajoutez votre équipe depuis l'application web. Elle apparaîtra ici.", "Add your team from the web app. It will appear here.")) }
+            } else {
+                OwnerCard(padding: 6) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(supabase.ownerEmployees.enumerated()), id: \.element.id) { index, member in
+                            if index > 0 { OwnerDivider() }
+                            Button { employee = member } label: {
+                                OwnerRow(icon: "person.fill", title: member.fullName, subtitle: member.roleTitle) {
+                                    OwnerPill(text: member.active ? L("Actif", "Active") : L("Inactif", "Inactive"), tone: member.active ? .good : .neutral)
+                                }.padding(.horizontal, 10).padding(.vertical, 4)
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
         }
-        .overlay { if supabase.ownerEmployees.isEmpty { ContentUnavailableView(isFrench ? "Aucun membre de l’équipe" : "No team members", systemImage: "person.3", description: Text(isFrench ? "Les membres de cet emplacement apparaîtront ici." : "Team members from this location will appear here.")) } }
-        .scrollContentBackground(.hidden).background(MinervaColor.cream).font(.mv(size: 14))
-        .navigationTitle(isFrench ? "Équipe" : "Team").navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
         .sheet(item: $employee) { EmployeeEditor(employee: $0) }
     }
 }
 
 private struct EmployeeEditor: View {
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    private var L: Lx { Lx(storedLanguage) }
     @EnvironmentObject private var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
     let employee: NativeOwnerEmployee
@@ -265,14 +277,30 @@ private struct EmployeeEditor: View {
     @State private var wage: String
     @State private var active: Bool
     @State private var saving = false
-    init(employee: NativeOwnerEmployee) { self.employee = employee; _name = State(initialValue: employee.fullName); _role = State(initialValue: employee.roleTitle); _wage = State(initialValue: employee.hourlyWage.map { String(format: "%.2f", $0) } ?? ""); _active = State(initialValue: employee.active) }
+    @State private var error: String?
+    init(employee: NativeOwnerEmployee) {
+        self.employee = employee
+        _name = State(initialValue: employee.fullName); _role = State(initialValue: employee.roleTitle)
+        _wage = State(initialValue: employee.hourlyWage.map { String(format: "%.2f", $0) } ?? ""); _active = State(initialValue: employee.active)
+    }
     var body: some View {
-        NavigationStack { Form { Section(isFrench ? "Membre de l’équipe" : "Team member") { TextField(isFrench ? "Nom complet" : "Full name", text: $name); TextField(isFrench ? "Rôle" : "Role", text: $role); TextField(isFrench ? "Salaire horaire" : "Hourly wage", text: $wage).keyboardType(.decimalPad) }; Section { Toggle(isFrench ? "Actif" : "Active", isOn: $active) } }
-            .scrollContentBackground(.hidden)
-            .background(MinervaColor.cream.ignoresSafeArea())
-            .font(.mv(size: 14))
-            .navigationTitle(isFrench ? "Modifier le membre" : "Edit team member")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button(isFrench ? "Annuler" : "Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button(saving ? (isFrench ? "Enregistrement…" : "Saving…") : (isFrench ? "Enregistrer" : "Save")) { saving = true; Task { let amount = Double(wage.replacingOccurrences(of: ",", with: ".")); let ok = await supabase.updateOwnerEmployee(employee, fullName: name, roleTitle: role, hourlyWage: amount, active: active); saving = false; if ok { dismiss() } } }.disabled(saving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) } }
+        OwnerFormSheet(title: L("Modifier le membre", "Edit team member"), canSave: !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       isSaving: saving, errorMessage: error, onSave: save) {
+            Section(L("Membre", "Member")) {
+                LabeledContent(L("Nom complet", "Full name")) { TextField("", text: $name).multilineTextAlignment(.trailing) }
+                LabeledContent(L("Rôle", "Role")) { TextField("", text: $role).multilineTextAlignment(.trailing) }
+                LabeledContent(L("Salaire horaire ($)", "Hourly wage ($)")) { TextField("0.00", text: $wage).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
+            }
+            Section { Toggle(L("Actif", "Active"), isOn: $active).tint(MinervaColor.emerald) }
+        }
+    }
+    private func save() {
+        saving = true; error = nil
+        Task {
+            let amount = Double(wage.replacingOccurrences(of: ",", with: "."))
+            let ok = await supabase.updateOwnerEmployee(employee, fullName: name, roleTitle: role, hourlyWage: amount, active: active)
+            saving = false
+            if ok { dismiss() } else { error = L("Le membre n'a pas été enregistré. Réessayez.", "The team member was not saved. Try again.") }
         }
     }
 }
@@ -337,86 +365,59 @@ struct InventoryEditor: View {
 struct OwnerFinanceView: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    private var L: Lx { Lx(storedLanguage) }
 
     private var revenue: Double { supabase.ownerTransactions.filter { $0.direction == "in" }.reduce(0) { $0 + $1.amount } }
     private var expenses: Double { supabase.ownerTransactions.filter { $0.direction == "out" }.reduce(0) { $0 + $1.amount } }
 
-    private struct FlowPoint: Identifiable { let id = UUID(); let label: String; let value: Double }
+    private struct FlowPoint: Identifiable { let id = UUID(); let label: String; let value: Double; let isRevenue: Bool }
     private var revenueVsExpenses: [FlowPoint] {
-        [
-            FlowPoint(label: isFrench ? "Revenus" : "Revenue", value: revenue),
-            FlowPoint(label: isFrench ? "Dépenses" : "Expenses", value: expenses),
-        ]
+        [FlowPoint(label: L("Revenus", "Revenue"), value: revenue, isRevenue: true), FlowPoint(label: L("Dépenses", "Expenses"), value: expenses, isRevenue: false)]
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text(isFrench ? "Finances" : "Finance")
-                    .font(MinervaFont.display(30, weight: .semibold))
-                    .foregroundStyle(MinervaColor.ink)
-
-                HStack(spacing: 12) {
-                    OwnerStatTile(icon: "arrow.down.circle.fill", value: revenue.cad, label: isFrench ? "Revenus" : "Revenue")
-                    OwnerStatTile(icon: "arrow.up.circle.fill", value: expenses.cad, label: isFrench ? "Dépenses" : "Expenses")
-                    OwnerStatTile(icon: "equal.circle.fill", value: (revenue - expenses).cad, label: isFrench ? "Net" : "Net")
-                }
-
-                if !supabase.ownerTransactions.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(isFrench ? "Revenus contre dépenses" : "Revenue vs expenses")
-                            .font(MinervaFont.display(22, weight: .semibold))
-                        Chart(revenueVsExpenses) { point in
-                            BarMark(x: .value(isFrench ? "Catégorie" : "Category", point.label), y: .value(isFrench ? "Montant" : "Amount", point.value))
-                                .foregroundStyle(point.label == (isFrench ? "Revenus" : "Revenue") ? MinervaColor.emeraldDark : .red)
-                        }
-                        .frame(height: 180)
-                        .chartYAxis { AxisMarks(position: .leading) }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(18)
-                    .background(MinervaColor.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(isFrench ? "Transactions" : "Transactions")
-                        .font(MinervaFont.display(22, weight: .semibold))
-                    if supabase.ownerTransactions.isEmpty {
-                        ContentUnavailableView(
-                            isFrench ? "Aucune transaction" : "No transactions",
-                            systemImage: "dollarsign.circle",
-                            description: Text(isFrench ? "Les transactions de ce lieu apparaîtront ici." : "Transactions from this location will appear here.")
-                        )
-                    } else {
-                        ForEach(supabase.ownerTransactions) { transaction in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(transaction.description).font(.subheadline.weight(.medium)).foregroundStyle(MinervaColor.ink)
-                                    Text("\(transaction.category) · \(transaction.date)").font(.mv(size: 12)).foregroundStyle(MinervaColor.inkFaint)
-                                }
-                                Spacer()
-                                Text(transaction.amount.cad)
-                                    .font(.mv(size: 14, weight: .semibold))
-                                    .foregroundStyle(transaction.direction == "in" ? MinervaColor.emeraldDark : .red)
-                            }
-                            .padding(14)
-                            .background(MinervaColor.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(18)
-                .background(MinervaColor.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+        OwnerScreen(title: L("Finances", "Finance"), subtitle: supabase.selectedOwnerRestaurant?.name) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                OwnerStatTile(icon: "arrow.down.circle.fill", value: revenue.cad, label: L("Revenus", "Revenue"))
+                OwnerStatTile(icon: "arrow.up.circle.fill", value: expenses.cad, label: L("Dépenses", "Expenses"), tone: .bad)
             }
-            .padding(20)
+            OwnerStatTile(icon: "equal.circle.fill", value: (revenue - expenses).cad, label: L("Net", "Net"), tone: revenue >= expenses ? .good : .bad)
+
+            if !supabase.ownerTransactions.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    OwnerSectionHeader(title: L("Revenus contre dépenses", "Revenue vs expenses"))
+                    OwnerCard {
+                        Chart(revenueVsExpenses) { point in
+                            BarMark(x: .value(L("Catégorie", "Category"), point.label), y: .value(L("Montant", "Amount"), point.value))
+                                .foregroundStyle(point.isRevenue ? MinervaColor.emerald : OwnerTone.bad.color)
+                                .cornerRadius(8)
+                        }
+                        .frame(height: 180).chartYAxis { AxisMarks(position: .leading) }
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                OwnerSectionHeader(title: L("Transactions", "Transactions"))
+                OwnerCard(padding: 6) {
+                    if supabase.ownerTransactions.isEmpty {
+                        OwnerEmptyState(icon: "dollarsign.circle", title: L("Aucune transaction", "No transactions"),
+                                        message: L("Les transactions de ce lieu apparaîtront ici.", "Transactions from this location will appear here."))
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(Array(supabase.ownerTransactions.enumerated()), id: \.element.id) { index, tx in
+                                if index > 0 { OwnerDivider() }
+                                OwnerRow(icon: tx.direction == "in" ? "arrow.down.circle.fill" : "arrow.up.circle.fill", title: tx.description,
+                                         subtitle: "\(tx.category) · \(tx.date)", tint: tx.direction == "in" ? MinervaColor.emeraldDark : OwnerTone.bad.color) {
+                                    Text((tx.direction == "in" ? "+" : "−") + tx.amount.cad).font(.mv(size: 14, weight: .semibold))
+                                        .foregroundStyle(tx.direction == "in" ? MinervaColor.emeraldDark : OwnerTone.bad.color)
+                                }.padding(.horizontal, 10).padding(.vertical, 4)
+                            }
+                        }
+                    }
+                }
+            }
         }
-        .background(MinervaColor.cream.ignoresSafeArea())
-        .navigationTitle(isFrench ? "Finances" : "Finance")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
     }
 }
 
@@ -427,6 +428,7 @@ struct OwnerSettingsView: View {
     @State private var showSignOutConfirm = false
     @State private var showDeleteAccount = false
     @State private var analyticsEnabled = Analytics.isEnabled
+    @State private var replayConsent = Analytics.sessionReplayConsent
     private var L: Lx { Lx(storedLanguage) }
     var body: some View {
         Form {
@@ -449,9 +451,13 @@ struct OwnerSettingsView: View {
                 Toggle(L("Statistiques d'usage anonymes", "Anonymous usage statistics"), isOn: $analyticsEnabled)
                     .tint(MinervaColor.emerald)
                     .onChange(of: analyticsEnabled) { _, value in Analytics.isEnabled = value }
+                Toggle(L("Enregistrer mes sessions", "Record my sessions"), isOn: $replayConsent)
+                    .tint(MinervaColor.emerald)
+                    .disabled(!analyticsEnabled)
+                    .onChange(of: replayConsent) { _, value in Analytics.sessionReplayConsent = value }
             } header: { Text(L("Confidentialité", "Privacy")) } footer: {
-                Text(L("Aide Minerva Flow à repérer les écrans qui posent problème. Aucun courriel, nom, téléphone ni contenu de commande n'est envoyé.",
-                       "Helps Minerva Flow find screens that cause trouble. No email, name, phone or order content is sent."))
+                Text(L("Aide Minerva Flow à repérer les écrans qui posent problème. Aucun courriel, nom, téléphone ni contenu de commande n'est envoyé. L'enregistrement des sessions est facultatif et masque tous les textes et images.",
+                       "Helps Minerva Flow find screens that cause trouble. No email, name, phone or order content is sent. Session recording is optional and masks all text and images."))
             }
             Section(L("Aide", "Support")) { Link(Config.supportEmail, destination: SupportContact.emailURL) }
             Section(L("Compte", "Account")) {

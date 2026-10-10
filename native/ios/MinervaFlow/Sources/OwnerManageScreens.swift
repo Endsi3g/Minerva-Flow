@@ -22,10 +22,10 @@ struct OwnerManageHub: View {
         NavigationStack(path: $path) {
             OwnerScreen(title: L("Gestion", "Manage"), subtitle: supabase.selectedOwnerRestaurant?.name) {
                 group(L("Opérations", "Operations")) {
-                    row(.menu, "fork.knife", L("Menu", "Menu"), L("\(supabase.ownerMenuItems.count) articles", "\(supabase.ownerMenuItems.count) items"))
+                    row(.menu, "fork.knife", L("Menu", "Menu"), L("\(supabase.ownerMenuItems.count) \(supabase.ownerMenuItems.count == 1 ? "article" : "articles")", "\(supabase.ownerMenuItems.count) \(supabase.ownerMenuItems.count == 1 ? "item" : "items")"))
                     OwnerDivider()
                     row(.inventory, "shippingbox.fill", L("Inventaire", "Inventory"),
-                        lowStockCount > 0 ? L("\(lowStockCount) à réapprovisionner", "\(lowStockCount) to restock") : L("\(supabase.ownerInventoryItems.count) articles suivis", "\(supabase.ownerInventoryItems.count) tracked items"),
+                        lowStockCount > 0 ? L("\(lowStockCount) à réapprovisionner", "\(lowStockCount) to restock") : L("\(supabase.ownerInventoryItems.count) \(supabase.ownerInventoryItems.count == 1 ? "article suivi" : "articles suivis")", "\(supabase.ownerInventoryItems.count) tracked \(supabase.ownerInventoryItems.count == 1 ? "item" : "items")"),
                         tint: lowStockCount > 0 ? OwnerTone.warn.color : MinervaColor.emeraldDark)
                     OwnerDivider()
                     row(.reports, "chart.bar.fill", L("Rapports", "Reports"), L("Ventes, clients et activité", "Sales, customers and activity"))
@@ -33,7 +33,7 @@ struct OwnerManageHub: View {
                     row(.finance, "creditcard.fill", L("Finances", "Finance"), L("Revenus et dépenses", "Revenue and expenses"))
                 }
                 group(L("Équipe et lieux", "Team and locations")) {
-                    row(.team, "person.3.fill", L("Équipe", "Team"), L("\(supabase.ownerEmployees.count) membres", "\(supabase.ownerEmployees.count) members"))
+                    row(.team, "person.3.fill", L("Équipe", "Team"), L("\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "membre" : "membres")", "\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "member" : "members")"))
                     OwnerDivider()
                     row(.locations, "mappin.and.ellipse", L("Emplacements", "Locations"), L("\(supabase.ownerRestaurants.count) établissement(s)", "\(supabase.ownerRestaurants.count) location(s)"))
                 }
@@ -94,7 +94,7 @@ struct OwnerMenuScreen: View {
     }
 
     var body: some View {
-        OwnerScreen(title: L("Menu", "Menu"), subtitle: L("\(supabase.ownerMenuItems.count) articles · touchez pour modifier", "\(supabase.ownerMenuItems.count) items · tap to edit")) {
+        OwnerScreen(title: L("Menu", "Menu"), subtitle: L("\(supabase.ownerMenuItems.count) \(supabase.ownerMenuItems.count == 1 ? "article" : "articles") · touchez pour modifier", "\(supabase.ownerMenuItems.count) \(supabase.ownerMenuItems.count == 1 ? "item" : "items") · tap to edit")) {
             Button { showAdd = true } label: { Label(L("Ajouter un article", "Add an item"), systemImage: "plus") }
                 .buttonStyle(OwnerPrimaryButtonStyle())
             if !supabase.ownerMealSuggestions.isEmpty { suggestions }

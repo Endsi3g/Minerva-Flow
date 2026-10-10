@@ -30,6 +30,7 @@ struct AuthView: View {
     @State private var step: Step = .email
     @State private var acceptedTerms = false
     @State private var marketingOptIn = false
+    @State private var sessionReplayOptIn = false
     @State private var isBusy = false
     @State private var errorMessage: String?
     @State private var resendCooldown = 0
@@ -652,6 +653,11 @@ struct AuthView: View {
             consentRow(checked: $marketingOptIn) {
                 Text("J'aimerais recevoir des offres par courriel. Optionnel.")
             }
+            consentRow(checked: $sessionReplayOptIn, identifier: "sessionReplayConsent") {
+                Text(language == .fr
+                     ? "J'accepte que mes sessions dans l'app soient enregistrées (texte et images masqués) pour améliorer Minerva Flow. Optionnel, modifiable dans les paramètres."
+                     : "I agree to have my in-app sessions recorded (text and images masked) to improve Minerva Flow. Optional, changeable in settings.")
+            }
             HStack(alignment: .top, spacing: 9) {
                 consentCheckbox(checked: $acceptedTerms, identifier: "acceptTerms")
                 VStack(alignment: .leading, spacing: 3) {
@@ -677,9 +683,9 @@ struct AuthView: View {
         }
     }
 
-    private func consentRow<Label: View>(checked: Binding<Bool>, @ViewBuilder label: () -> Label) -> some View {
+    private func consentRow<Label: View>(checked: Binding<Bool>, identifier: String = "marketingConsent", @ViewBuilder label: () -> Label) -> some View {
         HStack(alignment: .top, spacing: 9) {
-            consentCheckbox(checked: checked, identifier: "marketingConsent")
+            consentCheckbox(checked: checked, identifier: identifier)
 
             label()
                 .font(.mv(size: 11.5))
@@ -696,7 +702,7 @@ struct AuthView: View {
             Image(systemName: checked.wrappedValue ? "checkmark.square.fill" : "square")
                 .font(.mv(size: 16))
                 .foregroundStyle(MinervaColor.emeraldDark)
-                .frame(width: 44, height: 44).contentShape(Rectangle())
+                .frame(width: 44, height: 44, alignment: .leading).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(checked.wrappedValue ? "Consentement accepté" : "Accepter le consentement")
@@ -709,6 +715,7 @@ struct AuthView: View {
         errorMessage = nil
         isBusy = true
         defer { isBusy = false }
+        if needsConsent && step == .email && sessionReplayOptIn { Analytics.sessionReplayConsent = true }
         do {
             if step == .code {
                 try await supabase.verifyCode(email: trimmedEmail, code: code)

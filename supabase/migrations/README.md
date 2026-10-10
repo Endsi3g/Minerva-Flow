@@ -11,6 +11,7 @@ Numérotation séquentielle `NNNN_description.sql`, une migration par changement
 - `0174` à `0177` (coordonnées de démonstration, fréquence « Fréquent », bonus d'installation de l'app, notes de convives réservées à l'équipe) ont aussi été appliquées directement en base.
 - `0178` (protection des colonnes de solde d'une fiche client) a été appliquée directement en base.
 - `0179` (colonne `customers.preferred_language`, `fr` par défaut, `fr|en`) a été appliquée directement en base le 2026-10-05. Les courriels et notifications destinés aux clients doivent la lire; aucune route ne l'alimente encore.
+- `0185` (déclencheur de stock bas : un article d'inventaire sans seuil `par_level` ne doit plus échouer) appliquée directement en base le 2026-10-10 après test avec la session propriétaire.
 - Un seul prochain numéro à la fois : vérifier `ls supabase/migrations | tail` avant d'en créer une, pour ne pas dupliquer un numéro.
 
 ## Autres fichiers SQL
