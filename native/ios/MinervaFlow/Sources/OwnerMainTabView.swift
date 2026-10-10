@@ -1,5 +1,6 @@
 import SwiftUI
 import AudioToolbox
+import StoreKit
 
 /// Owner shell. Tabs: Aperçu, Commandes, Gestion (menu, inventaire, rapports,
 /// équipe, finances), Fidélité, Compte. Same floating tab bar as the client.
@@ -8,6 +9,9 @@ struct OwnerMainTabView: View {
     @EnvironmentObject private var router: DeepLinkRouter
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @StateObject private var insights = OwnerInsightsStore()
+    @Environment(\.requestReview) private var requestReview
+    @Environment(\.scenePhase) private var scenePhase
+    private let usageTick = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     @State private var selection = 0
     @State private var managePath: [OwnerManagementRoute] = []
     @State private var showWebSetup = false
@@ -31,6 +35,7 @@ struct OwnerMainTabView: View {
         tabContainer
         .tint(MinervaColor.emeraldDark)
         .environmentObject(insights)
+        .onReceive(usageTick) { _ in countUsageMinute() }
         .task {
             await supabase.refreshOwnerOperations()
             knownNewOrderIDs = newOrderIDs
@@ -97,6 +102,25 @@ struct OwnerMainTabView: View {
         UserDefaults.standard.set(true, forKey: key)
         Analytics.capture("owner_web_setup_notice_shown")
         showWebSetup = true
+    }
+
+    /// Asks for an App Store rating after 30 minutes of real use, once per app
+    /// version (Apple also rate-limits the prompt itself). Counted per account,
+    /// only while the app is in the foreground.
+    private func countUsageMinute() {
+        guard scenePhase == .active, let id = supabase.authUserID?.uuidString else { return }
+        let defaults = UserDefaults.standard
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+        let askedKey = "ownerReviewAsked.\(id).\(version)"
+        guard !defaults.bool(forKey: askedKey) else { return }
+        let minutesKey = "ownerUsageMinutes.\(id)"
+        let minutes = defaults.integer(forKey: minutesKey) + 1
+        defaults.set(minutes, forKey: minutesKey)
+        if minutes >= 30 {
+            defaults.set(true, forKey: askedKey)
+            Analytics.capture("owner_review_requested")
+            requestReview()
+        }
     }
 
     private func applyPendingNotificationSection() {

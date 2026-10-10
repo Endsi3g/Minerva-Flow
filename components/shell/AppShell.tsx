@@ -14,6 +14,7 @@ import { usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { brandingCssVariables } from "@/lib/branding/workspace-branding";
 import { DesktopOrderAlerts } from "@/components/desktop/DesktopOrderAlerts";
+import { OwnerExperiencePrompt } from "@/components/onboarding/OwnerExperiencePrompt";
 
 // Full-bleed routes render edge-to-edge, without the shared page padding/max-width.
 const FULL_BLEED_ROUTES = ["/maps"];
@@ -29,6 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <RealtimeProvider>
       <PresenceProvider>
         <DesktopOrderAlerts />
+        <OwnerExperiencePrompt />
         <div className="mv-brand-scope flex h-screen w-full overflow-hidden bg-mv-cream" style={brandingCssVariables(branding)}>
         <div className="no-print mv-shell-sidebar hidden md:flex">
           <AppSidebar />
