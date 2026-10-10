@@ -55,76 +55,125 @@ function buildAuthToken(): string {
 }
 
 type ApnsPayload = { title: string; body?: string; link?: string };
+type ApnsEnvironment = "sandbox" | "production";
+type TokenTarget = { token: string; environment: ApnsEnvironment | null };
+
+const APNS_HOSTS: Record<ApnsEnvironment, string> = {
+  sandbox: "api.sandbox.push.apple.com",
+  production: "api.push.apple.com",
+};
+
+function defaultEnvironment(): ApnsEnvironment {
+  return process.env.APNS_ENVIRONMENT === "production" ? "production" : "sandbox";
+}
+
+type ApnsResult = { status: number; reason: string | null };
+
+function sendOne(token: string, environment: ApnsEnvironment, body: string, authToken: string): Promise<ApnsResult> {
+  return new Promise<ApnsResult>((resolve) => {
+    const client = http2.connect(`https://${APNS_HOSTS[environment]}`);
+    let settled = false;
+    const finish = (result: ApnsResult) => {
+      if (settled) return;
+      settled = true;
+      client.close();
+      resolve(result);
+    };
+    client.on("error", (err) => {
+      console.error("APNs connection failed:", err);
+      finish({ status: 0, reason: "connection" });
+    });
+
+    const req = client.request({
+      ":method": "POST",
+      ":path": `/3/device/${token}`,
+      authorization: `bearer ${authToken}`,
+      "apns-topic": process.env.APNS_BUNDLE_ID!,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      "content-type": "application/json",
+    });
+
+    let status = 0;
+    let raw = "";
+    req.setEncoding("utf8");
+    req.on("response", (headers) => {
+      status = Number(headers[":status"] ?? 0);
+    });
+    req.on("data", (chunk: string) => {
+      raw += chunk;
+    });
+    req.on("end", () => {
+      let reason: string | null = null;
+      try {
+        reason = (JSON.parse(raw) as { reason?: string }).reason ?? null;
+      } catch {
+        reason = null;
+      }
+      finish({ status, reason });
+    });
+    req.on("error", (err) => {
+      console.error("APNs request failed:", err);
+      finish({ status: 0, reason: "request" });
+    });
+    req.end(body);
+  });
+}
+
+const DEAD_TOKEN_REASONS = new Set(["Unregistered", "BadDeviceToken", "DeviceTokenNotForTopic"]);
 
 /**
- * Sends one APNs push per device token. Never throws — a push failure
- * must not break the notification flow that triggered it, same
- * never-throws contract as sendPushToUsers. A token APNs reports as
- * unregistered (410/BadDeviceToken) is deleted so it stops being retried.
+ * Sends one APNs push per device token and returns how many devices Apple
+ * accepted. Never throws — a push failure must not break the notification
+ * flow that triggered it. A token is deleted only when Apple confirms it is
+ * dead in the right environment: when the environment is unknown the other
+ * host is tried first, because a sandbox (Xcode) token sent to production
+ * answers BadDeviceToken even though it is perfectly valid.
  */
-export async function sendAPNsToTokens(tokens: string[], payload: ApnsPayload): Promise<void> {
-  if (!isAPNsConfigured() || tokens.length === 0) return;
+export async function sendAPNsToTokens(targets: Array<string | TokenTarget>, payload: ApnsPayload): Promise<number> {
+  if (!isAPNsConfigured() || targets.length === 0) return 0;
 
   const admin = createAdminClient();
-  const host = process.env.APNS_ENVIRONMENT === "production" ? "api.push.apple.com" : "api.sandbox.push.apple.com";
   const authToken = buildAuthToken();
   const body = JSON.stringify({
     aps: { alert: { title: payload.title, body: payload.body }, sound: "default" },
     link: payload.link,
   });
 
-  await Promise.all(
-    tokens.map(
-      (token) =>
-        new Promise<void>((resolve) => {
-          const client = http2.connect(`https://${host}`);
-          client.on("error", (err) => {
-            console.error("APNs connection failed:", err);
-            resolve();
-          });
-
-          const req = client.request({
-            ":method": "POST",
-            ":path": `/3/device/${token}`,
-            authorization: `bearer ${authToken}`,
-            "apns-topic": process.env.APNS_BUNDLE_ID!,
-            "apns-push-type": "alert",
-            "content-type": "application/json",
-          });
-
-          let status = 0;
-          req.on("response", (headers) => {
-            status = Number(headers[":status"] ?? 0);
-          });
-          req.on("data", () => {});
-          req.on("end", async () => {
-            if (status === 410 || status === 400) {
-              await admin.from("device_push_tokens").delete().eq("token", token);
-            }
-            client.close();
-            resolve();
-          });
-          req.on("error", (err) => {
-            console.error("APNs request failed:", err);
-            client.close();
-            resolve();
-          });
-
-          req.end(body);
-        })
-    )
+  const results = await Promise.all(
+    targets.map(async (target) => {
+      const { token, environment } = typeof target === "string" ? { token: target, environment: null } : target;
+      const first = environment ?? defaultEnvironment();
+      let result = await sendOne(token, first, body, authToken);
+      if (result.status !== 200 && result.status !== 0 && !environment && result.reason === "BadDeviceToken") {
+        const other: ApnsEnvironment = first === "production" ? "sandbox" : "production";
+        const retry = await sendOne(token, other, body, authToken);
+        if (retry.status === 200) {
+          await admin.from("device_push_tokens").update({ apns_environment: other }).eq("token", token);
+          return true;
+        }
+        result = retry;
+      }
+      if (result.status === 200) return true;
+      console.error("APNs rejected a notification:", result.status, result.reason);
+      if (result.status === 410 || (result.reason && DEAD_TOKEN_REASONS.has(result.reason))) {
+        await admin.from("device_push_tokens").delete().eq("token", token);
+      }
+      return false;
+    })
   );
+  return results.filter(Boolean).length;
 }
 
 export { sendAPNsToTokens as sendApnsToTokens };
 
-export async function sendAPNsToUsers(userIds: string[], payload: ApnsPayload): Promise<void> {
-  if (!isAPNsConfigured() || userIds.length === 0) return;
+export async function sendAPNsToUsers(userIds: string[], payload: ApnsPayload): Promise<number> {
+  if (!isAPNsConfigured() || userIds.length === 0) return 0;
 
   const admin = createAdminClient();
-  const { data } = await admin.from("device_push_tokens").select("token").in("user_id", userIds);
-  const tokens = ((data as { token: string }[] | null) ?? []).map((row) => row.token);
-  if (tokens.length === 0) return;
+  const { data } = await admin.from("device_push_tokens").select("token, apns_environment").in("user_id", userIds);
+  const rows = (data as { token: string; apns_environment: ApnsEnvironment | null }[] | null) ?? [];
+  if (rows.length === 0) return 0;
 
-  await sendAPNsToTokens(tokens, payload);
+  return sendAPNsToTokens(rows.map((row) => ({ token: row.token, environment: row.apns_environment })), payload);
 }

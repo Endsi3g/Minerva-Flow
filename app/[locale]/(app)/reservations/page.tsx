@@ -29,7 +29,7 @@ export default async function ReservationsPage() {
         <PlanTierLockedState
           minimumTier="croissance"
           featureName="La gestion des réservations"
-          description="Suivi des réservations, gestion des tables et intégrations OpenTable/Resy/SevenRooms — disponible avec le forfait Croissance."
+          description="Suivi des réservations, gestion des tables et intégrations OpenTable/Resy/SevenRooms — disponible avec l’offre Croissance."
         />
       </div>
     );

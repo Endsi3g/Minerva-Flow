@@ -208,3 +208,50 @@ export async function prepareLoyaltyOnboardingAction(
     return { ok: false };
   }
 }
+
+const GOAL_IDS = new Set(["retention", "basket", "quiet_hours", "time_saving"]);
+const SIZE_BANDS = new Set(["1", "2-5", "6+"]);
+const POS_IDS = new Set(["square", "clover", "lightspeed", "other", "none"]);
+
+/**
+ * Saves what the owner told us in the qualification step. Best effort by
+ * design: it returns false on failure and the wizard moves on, because a
+ * qualification question must never block someone from reaching their
+ * restaurant. Values are checked against fixed lists (the table has CHECK
+ * constraints too) and written with the caller's own session, so RLS limits
+ * every row to its owner.
+ */
+export async function saveOnboardingQualificationAction(input: {
+  restaurantId: string;
+  goals: string[];
+  locationsBand: string | null;
+  posSystem: string | null;
+  offerVariant?: string | null;
+}): Promise<boolean> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !input.restaurantId) return false;
+
+  const goals = [...new Set(input.goals.filter((goal) => GOAL_IDS.has(goal)))].slice(0, 2);
+  const locationsBand = input.locationsBand && SIZE_BANDS.has(input.locationsBand) ? input.locationsBand : null;
+  const posSystem = input.posSystem && POS_IDS.has(input.posSystem) ? input.posSystem : null;
+
+  const { error } = await supabase.from("owner_onboarding_responses").upsert(
+    {
+      user_id: user.id,
+      restaurant_id: input.restaurantId,
+      goals,
+      locations_band: locationsBand,
+      pos_system: posSystem,
+      offer_variant: input.offerVariant?.slice(0, 40) ?? null,
+      platform: "web",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,restaurant_id" }
+  );
+  if (error) {
+    console.warn("[Onboarding] qualification not saved:", error.message);
+    return false;
+  }
+  return true;
+}

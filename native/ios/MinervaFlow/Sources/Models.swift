@@ -30,6 +30,37 @@ struct NativeOwnerBranding: Codable {
     let primaryColor: String
     let secondaryColor: String
     let accentColor: String
+
+    enum CodingKeys: String, CodingKey {
+        case brandName = "brand_name"
+        case logoUrl = "logo_url"
+        case primaryColor = "primary_color"
+        case secondaryColor = "secondary_color"
+        case accentColor = "accent_color"
+    }
+
+    init(
+        brandName: String,
+        logoUrl: String? = nil,
+        primaryColor: String = "#167F5B",
+        secondaryColor: String = "#0E5A40",
+        accentColor: String = "#DFFF5F"
+    ) {
+        self.brandName = brandName
+        self.logoUrl = logoUrl
+        self.primaryColor = primaryColor
+        self.secondaryColor = secondaryColor
+        self.accentColor = accentColor
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.brandName = try container.decodeIfPresent(String.self, forKey: .brandName) ?? "Minerva Flow"
+        self.logoUrl = try container.decodeIfPresent(String.self, forKey: .logoUrl)
+        self.primaryColor = try container.decodeIfPresent(String.self, forKey: .primaryColor) ?? "#167F5B"
+        self.secondaryColor = try container.decodeIfPresent(String.self, forKey: .secondaryColor) ?? "#0E5A40"
+        self.accentColor = try container.decodeIfPresent(String.self, forKey: .accentColor) ?? "#DFFF5F"
+    }
 }
 
 /// Branding that is safe to return to an authenticated customer app. It is
@@ -63,6 +94,7 @@ struct NativeOwnerOrder: Codable, Identifiable {
     let total: Double
     let createdAt: String
     let requestedReadyAt: String?
+    let estimatedReadyAt: String?
     let orderKind: String?
     enum CodingKeys: String, CodingKey {
         case id, status, total
@@ -70,6 +102,7 @@ struct NativeOwnerOrder: Codable, Identifiable {
         case guestName = "guest_name"
         case createdAt = "created_at"
         case requestedReadyAt = "requested_ready_at"
+        case estimatedReadyAt = "estimated_ready_at"
         case orderKind = "order_kind"
     }
 }
@@ -514,6 +547,23 @@ func nativeMenuCartKey(menuItemId: String, priceOptionId: String? = nil) -> Stri
     return "\(menuItemId)::\(priceOptionId)"
 }
 
+func resolveNativeCustomerCart(_ cart: [String: Int], items: [NativeMenuItem]) -> [NativeCartLine]? {
+    var lines: [NativeCartLine] = []
+    for (key, quantity) in cart.sorted(by: { $0.key < $1.key }) {
+        if quantity == 0 { continue }
+        let parts = key.components(separatedBy: "::")
+        guard parts.count <= 2, (1...99).contains(quantity),
+              let item = items.first(where: { $0.id == parts[0] && $0.active && $0.isDraft != true && $0.isOrderable != false }) else { return nil }
+        let options = item.priceOptions ?? []
+        let option = parts.count == 2 ? options.first(where: { $0.id == parts[1] }) : nil
+        guard options.isEmpty == (option == nil), parts.count == 1 || option != nil else { return nil }
+        let price = option?.price ?? item.price
+        guard price.isFinite, price > 0 else { return nil }
+        lines.append(NativeCartLine(key: key, item: item, option: option, quantity: quantity))
+    }
+    return lines
+}
+
 struct NativeMenuItem: Codable, Identifiable {
     let id: String
     let restaurantId: String
@@ -528,6 +578,7 @@ struct NativeMenuItem: Codable, Identifiable {
     var allergens: [String]? = nil
     var allergensConfirmed: Bool? = nil
     var priceOptions: [NativeMenuPriceOption]? = nil
+    var isOrderable: Bool? = nil
 
     /// Every photo available for the carousel — the single legacy
     /// image_url first (if it isn't already duplicated in image_urls),
@@ -548,8 +599,34 @@ struct NativeMenuItem: Codable, Identifiable {
         case isDraft = "is_draft"
         case allergensConfirmed = "allergens_confirmed"
         case priceOptions = "price_options"
+        case isOrderable = "is_orderable"
         case imageUrl = "image_url"
         case imageUrls = "image_urls"
+    }
+}
+
+extension NativeMenuItem {
+    private enum BridgeKeys: String, CodingKey {
+        case restaurantId, imageUrl, imageUrls, isDraft, allergensConfirmed, priceOptions, isOrderable
+    }
+    // Owner reads use PostgREST snake_case; the shared web API maps to camelCase.
+    init(from decoder: Decoder) throws {
+        let row = try decoder.container(keyedBy: CodingKeys.self)
+        let bridge = try decoder.container(keyedBy: BridgeKeys.self)
+        id = try row.decode(String.self, forKey: .id)
+        restaurantId = try bridge.decodeIfPresent(String.self, forKey: .restaurantId) ?? row.decode(String.self, forKey: .restaurantId)
+        name = try row.decode(String.self, forKey: .name)
+        category = try row.decodeIfPresent(String.self, forKey: .category)
+        price = try row.decode(Double.self, forKey: .price)
+        description = try row.decodeIfPresent(String.self, forKey: .description)
+        active = try row.decode(Bool.self, forKey: .active)
+        imageUrl = try bridge.decodeIfPresent(String.self, forKey: .imageUrl) ?? row.decodeIfPresent(String.self, forKey: .imageUrl)
+        imageUrls = try bridge.decodeIfPresent([String].self, forKey: .imageUrls) ?? row.decodeIfPresent([String].self, forKey: .imageUrls) ?? []
+        isDraft = try bridge.decodeIfPresent(Bool.self, forKey: .isDraft) ?? row.decodeIfPresent(Bool.self, forKey: .isDraft)
+        allergens = try row.decodeIfPresent([String].self, forKey: .allergens)
+        allergensConfirmed = try bridge.decodeIfPresent(Bool.self, forKey: .allergensConfirmed) ?? row.decodeIfPresent(Bool.self, forKey: .allergensConfirmed)
+        priceOptions = try bridge.decodeIfPresent([NativeMenuPriceOption].self, forKey: .priceOptions) ?? row.decodeIfPresent([NativeMenuPriceOption].self, forKey: .priceOptions)
+        isOrderable = try bridge.decodeIfPresent(Bool.self, forKey: .isOrderable) ?? row.decodeIfPresent(Bool.self, forKey: .isOrderable)
     }
 }
 
@@ -570,20 +647,6 @@ struct PortalDeliveryQuote: Codable {
     let etaMinutes: Int?
     let available: Bool
     let reason: String?
-}
-
-extension NativeMenuItem {
-    /// Offline-safe catalog used by the TestFlight demo account. The real
-    /// API remains the source of truth; this catalog keeps the ordering flow
-    /// usable when a transient bridge/network failure occurs.
-    static let demoCatalog: [NativeMenuItem] = [
-        NativeMenuItem(id: "demo-burger", restaurantId: "demo", name: "Burger Minerva", category: "Plats principaux", price: 22, description: "Bœuf local, cheddar, oignons confits et pommes allumettes.", active: true, imageUrl: nil, imageUrls: []),
-        NativeMenuItem(id: "demo-risotto", restaurantId: "demo", name: "Risotto aux champignons", category: "Plats principaux", price: 24, description: "Champignons sauvages, parmesan et huile de truffe.", active: true, imageUrl: nil, imageUrls: []),
-        NativeMenuItem(id: "demo-soupe", restaurantId: "demo", name: "Soupe à l’oignon gratinée", category: "Entrées", price: 12, description: "Bouillon maison, oignons caramélisés et gruyère.", active: true, imageUrl: nil, imageUrls: []),
-        NativeMenuItem(id: "demo-saumon", restaurantId: "demo", name: "Tartare de saumon", category: "Entrées", price: 18, description: "Saumon, citron, ciboulette et croûtons.", active: true, imageUrl: nil, imageUrls: []),
-        NativeMenuItem(id: "demo-creme", restaurantId: "demo", name: "Crème brûlée", category: "Desserts", price: 9, description: "Vanille de Madagascar et sucre caramélisé.", active: true, imageUrl: nil, imageUrls: []),
-        NativeMenuItem(id: "demo-cafe", restaurantId: "demo", name: "Café allongé", category: "Boissons", price: 4, description: "Torréfaction locale, servi chaud.", active: true, imageUrl: nil, imageUrls: []),
-    ]
 }
 
 struct MenuItemReview: Codable, Identifiable {
@@ -793,12 +856,14 @@ struct CustomerOrderItem: Codable, Identifiable {
     let itemName: String
     let unitPrice: Double
     let quantity: Int
+    let menuItemId: String?
 
     enum CodingKeys: String, CodingKey {
         case id
         case itemName = "item_name"
         case unitPrice = "unit_price"
         case quantity
+        case menuItemId = "menu_item_id"
     }
 }
 
@@ -812,11 +877,18 @@ struct CustomerOrder: Codable, Identifiable {
     let total: Double
     let createdAt: Date
     var items: [CustomerOrderItem]
+    let estimatedReadyAt: Date?
+    let cancellationReason: String?
+    /// Short note the restaurant sent about this order ("About 20 min, busy tonight").
+    let ownerMessage: String?
 
     enum CodingKeys: String, CodingKey {
         case id, status, total
         case createdAt = "created_at"
         case items = "order_items"
+        case estimatedReadyAt = "estimated_ready_at"
+        case cancellationReason = "cancellation_reason"
+        case ownerMessage = "owner_message"
     }
 }
 
@@ -1133,5 +1205,150 @@ struct AppBonusAward: Decodable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case restaurantId = "restaurant_id", restaurantName = "restaurant_name", points
+    }
+}
+
+struct NativeOwnerOrderLine: Codable, Identifiable {
+    let id: String
+    let itemName: String
+    let unitPrice: Double
+    let quantity: Int
+    let notes: String?
+    enum CodingKeys: String, CodingKey {
+        case id, quantity, notes
+        case itemName = "item_name"
+        case unitPrice = "unit_price"
+    }
+}
+
+struct NativeOwnerOrderDetail: Codable {
+    let guestPhone: String?
+    let notes: String?
+    let paymentStatus: String?
+    let fulfillmentMode: String?
+    let subtotal: Double
+    let taxAmount: Double
+    let tipAmount: Double
+    let total: Double
+    let deliveryAddress: String?
+    let ownerMessage: String?
+    let items: [NativeOwnerOrderLine]
+    enum CodingKeys: String, CodingKey {
+        case notes, subtotal, total
+        case ownerMessage = "owner_message"
+        case guestPhone = "guest_phone"
+        case paymentStatus = "payment_status"
+        case fulfillmentMode = "fulfillment_mode"
+        case taxAmount = "tax_amount"
+        case tipAmount = "tip_amount"
+        case deliveryAddress = "delivery_address"
+        case items = "order_items"
+    }
+}
+
+/// Full customer page for the owner: totals, contact, loyalty activity and recent orders.
+struct OwnerCustomerProfile: Decodable, Identifiable {
+    struct LoyaltyEntry: Decodable, Identifiable {
+        let id: String
+        let type: String
+        let amountSpent: Double?
+        let pointsDelta: Int
+        let note: String?
+        let createdAt: String
+        enum CodingKeys: String, CodingKey {
+            case id, type, note
+            case amountSpent = "amount_spent", pointsDelta = "points_delta", createdAt = "created_at"
+        }
+    }
+    struct OrderEntry: Decodable, Identifiable {
+        struct Line: Decodable { let itemName: String; let quantity: Int
+            enum CodingKeys: String, CodingKey { case itemName = "item_name", quantity } }
+        let id: String
+        let status: String
+        let total: Double
+        let createdAt: String
+        let items: [Line]
+        enum CodingKeys: String, CodingKey { case id, status, total, createdAt = "created_at", items = "order_items" }
+    }
+
+    let id: String
+    let name: String
+    let email: String?
+    let phone: String?
+    let loyaltyPoints: Int
+    let visitCount: Int
+    let totalSpent: Double
+    let lastVisitAt: String?
+    let createdAt: String
+    let birthday: String?
+    let city: String?
+    let marketingConsent: Bool?
+    let loyalty: [LoyaltyEntry]
+    let orders: [OrderEntry]
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, email, phone, birthday, city, orders
+        case loyaltyPoints = "loyalty_points", visitCount = "visit_count", totalSpent = "total_spent"
+        case lastVisitAt = "last_visit_at", createdAt = "created_at", marketingConsent = "marketing_consent"
+        case loyalty = "loyalty_transactions"
+    }
+
+    /// Dishes this customer orders most (from their recent orders).
+    var favoriteItems: [(name: String, quantity: Int)] {
+        var counts: [String: Int] = [:]
+        for order in orders where order.status != "annulee" { for line in order.items { counts[line.itemName, default: 0] += line.quantity } }
+        return counts.sorted { $0.value > $1.value }.prefix(3).map { ($0.key, $0.value) }
+    }
+}
+
+/// A team member's full page for the owner: contact, notes and upcoming shifts.
+struct OwnerEmployeeProfile: Decodable, Identifiable {
+    struct Shift: Decodable, Identifiable {
+        let id: String
+        let shiftDate: String
+        let startTime: String
+        let endTime: String
+        let positionLabel: String?
+        let status: String?
+        enum CodingKeys: String, CodingKey {
+            case id, status
+            case shiftDate = "shift_date", startTime = "start_time", endTime = "end_time", positionLabel = "position_label"
+        }
+
+        /// Length in hours; a shift ending before it starts is overnight.
+        var hours: Double {
+            func minutes(_ value: String) -> Double? {
+                let parts = value.split(separator: ":")
+                guard parts.count >= 2, let h = Double(parts[0]), let m = Double(parts[1]) else { return nil }
+                return h * 60 + m
+            }
+            guard let start = minutes(startTime), let end = minutes(endTime) else { return 0 }
+            return (end >= start ? end - start : end + 1440 - start) / 60
+        }
+        var date: Date? {
+            let formatter = DateFormatter()
+            formatter.calendar = Calendar(identifier: .gregorian)
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyy-MM-dd"
+            return formatter.date(from: String(shiftDate.prefix(10)))
+        }
+        var timeRange: String { "\(startTime.prefix(5))–\(endTime.prefix(5))" }
+    }
+
+    let id: String
+    let fullName: String
+    let roleTitle: String
+    let hourlyWage: Double?
+    let active: Bool
+    let description: String?
+    let contactPhone: String?
+    let contactEmail: String?
+    let shifts: [Shift]
+
+    enum CodingKeys: String, CodingKey {
+        case id, active, description
+        case fullName = "full_name", roleTitle = "role_title", hourlyWage = "hourly_wage"
+        case contactPhone = "contact_phone", contactEmail = "contact_email"
+        case shifts = "shift_schedules"
     }
 }

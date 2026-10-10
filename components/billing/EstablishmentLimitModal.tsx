@@ -19,8 +19,8 @@ export function EstablishmentLimitModal({ open, onClose }: { open: boolean; onCl
     <Modal
       open={open}
       onClose={onClose}
-      title="Passez à Flow Croissance pour ajouter un établissement"
-      description="Le forfait Essentiel est limité à 1 établissement."
+      title="Ajoutez un établissement"
+      description="Votre accès actuel est limité à 1 établissement."
     >
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-xl bg-mv-green-tint/40 border border-mv-green/20 p-4">
@@ -32,7 +32,7 @@ export function EstablishmentLimitModal({ open, onClose }: { open: boolean; onCl
               Flow {croissance.name} — établissements illimités
             </p>
             <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
-              {croissance.monthlyPriceCad}$ CAD/mois — gérez tous vos établissements depuis un seul workspace.
+              Gérez tous vos établissements depuis un seul espace. Votre offre est établie avec vous.
             </p>
           </div>
         </div>
@@ -49,7 +49,7 @@ export function EstablishmentLimitModal({ open, onClose }: { open: boolean; onCl
             Plus tard
           </Button>
           <Button className="flex-1" onClick={() => router.push("/billing")}>
-            Voir les forfaits
+            Discuter de mon offre
           </Button>
         </div>
       </div>

@@ -5,58 +5,15 @@ private let lastSeenSurveyBuildKey = "lastSeenSurveyBuild"
 struct MainTabView: View {
     @EnvironmentObject var router: DeepLinkRouter
     @EnvironmentObject var supabase: SupabaseManager
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selection: AppTab = .home
     @State private var showVersionSurvey = false
+    @State private var showScanner = false
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
 
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     var body: some View {
-        Group {
-          if horizontalSizeClass == .regular {
-            NavigationSplitView {
-                List {
-                    tabletTab(.home, title: isFrench ? "Accueil" : "Home", icon: "house.fill")
-                    tabletTab(.order, title: isFrench ? "Commander" : "Order", icon: "fork.knife")
-                    tabletTab(.scan, title: isFrench ? "Scanner" : "Scan", icon: "qrcode.viewfinder")
-                    tabletTab(.rewards, title: isFrench ? "Offres" : "Offers", icon: "gift.fill")
-                    tabletTab(.cards, title: isFrench ? "Mes cartes" : "My cards", icon: "creditcard.fill")
-                    tabletTab(.profile, title: isFrench ? "Compte" : "Account", icon: "person.crop.circle.fill")
-                }
-                .listStyle(.sidebar)
-                .navigationTitle("Minerva Flow")
-                .navigationSplitViewColumnWidth(min: 220, ideal: 260)
-            } detail: {
-                selectedContent
-                    .frame(maxWidth: 1100)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .navigationSplitViewStyle(.balanced)
-          } else {
-            TabView(selection: $selection) {
-            HomeView()
-                .tabItem { Label(isFrench ? "Accueil" : "Home", systemImage: "house.fill") }
-                .tag(AppTab.home)
-
-            MenuView()
-                .tabItem { Label(isFrench ? "Commander" : "Order", systemImage: "fork.knife") }
-                .tag(AppTab.order)
-
-            ScannerTabView()
-                .tabItem { Label(isFrench ? "Scanner" : "Scan", systemImage: "qrcode.viewfinder") }
-                .tag(AppTab.scan)
-
-            RewardsView()
-                .tabItem { Label(isFrench ? "Offres" : "Offers", systemImage: "gift.fill") }
-                .tag(AppTab.rewards)
-
-            ProfileView()
-                .tabItem { Label(isFrench ? "Compte" : "Account", systemImage: "person.crop.circle.fill") }
-                .tag(AppTab.profile)
-            }
-          }
-        }
+        tabContainer
         .tint(MinervaColor.emeraldDark)
         // A widget tap can arrive before this view even exists (the app
         // was cold-launched by the tap itself), in which case
@@ -76,25 +33,53 @@ struct MainTabView: View {
         .sheet(isPresented: $showVersionSurvey) {
             SurveyView()
         }
+        .sheet(isPresented: $showScanner) { ScannerTabView() }
     }
 
-    private func tabletTab(_ tab: AppTab, title: String, icon: String) -> some View {
-        Button { selection = tab } label: {
-            Label(title, systemImage: icon).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+    /// System bar on iPhone; floating bottom bar on iPad (iPadOS pins the system one to the top).
+    @ViewBuilder private var tabContainer: some View {
+        if #available(iOS 18.0, *) {
+            tabView.tabViewStyle(.tabBarOnly)
+                .bottomTabBar(barItems, selection: $selection)
+        } else {
+            tabView.bottomTabBar(barItems, selection: $selection)
         }
-        .buttonStyle(.plain)
-        .listRowBackground(selection == tab ? MinervaColor.emerald.opacity(0.14) : Color.clear)
     }
 
-    @ViewBuilder
-    private var selectedContent: some View {
-        switch selection {
-        case .home: HomeView()
-        case .order: MenuView()
-        case .scan: ScannerTabView()
-        case .rewards: RewardsView()
-        case .cards: MembershipCardsView()
-        case .profile: ProfileView()
+    private var barItems: [BottomTabItem<AppTab>] {
+        [BottomTabItem(tag: .home, title: isFrench ? "Accueil" : "Home", icon: "house.fill"),
+         BottomTabItem(tag: .order, title: "Menu", icon: "fork.knife"),
+         BottomTabItem(tag: .orders, title: isFrench ? "Commandes" : "Orders", icon: "bag.fill"),
+         BottomTabItem(tag: .rewards, title: isFrench ? "Fidélité" : "Loyalty", icon: "heart.fill"),
+         BottomTabItem(tag: .profile, title: isFrench ? "Compte" : "Account", icon: "person.crop.circle.fill")]
+    }
+
+    private var tabView: some View {
+        TabView(selection: $selection) {
+            HomeView()
+                .hidesSystemTabBarOnRegular()
+                .tabItem { Label(isFrench ? "Accueil" : "Home", systemImage: "house.fill") }
+                .tag(AppTab.home)
+
+            MenuView()
+                .hidesSystemTabBarOnRegular()
+                .tabItem { Label("Menu", systemImage: "fork.knife") }
+                .tag(AppTab.order)
+
+            NavigationStack { OrderHistoryView() }
+                .hidesSystemTabBarOnRegular()
+                .tabItem { Label(isFrench ? "Commandes" : "Orders", systemImage: "bag.fill") }
+                .tag(AppTab.orders)
+
+            RewardsView()
+                .hidesSystemTabBarOnRegular()
+                .tabItem { Label(isFrench ? "Fidélité" : "Loyalty", systemImage: "heart.fill") }
+                .tag(AppTab.rewards)
+
+            ProfileView()
+                .hidesSystemTabBarOnRegular()
+                .tabItem { Label(isFrench ? "Compte" : "Account", systemImage: "person.crop.circle.fill") }
+                .tag(AppTab.profile)
         }
     }
 
@@ -102,7 +87,9 @@ struct MainTabView: View {
         guard let pending = router.pendingTab else { return }
         // On phones "Mes cartes" lives inside Compte (five tabs fit the bar;
         // a sixth made iOS hide two of them behind a plain "Autre" list).
-        if pending == .cards && horizontalSizeClass != .regular {
+        if pending == .scan {
+            showScanner = true
+        } else if pending == .cards {
             router.pendingCompteRoute = .cards
             selection = .profile
         } else {

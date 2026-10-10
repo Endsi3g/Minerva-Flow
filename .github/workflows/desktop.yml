@@ -1,0 +1,106 @@
+name: Desktop apps
+
+# Builds the Tauri shell (macOS universal .dmg, Windows .exe/.msi) in the cloud.
+# Run it from the Actions tab (workflow_dispatch) or push a tag like desktop-v0.1.0.
+# Releases are created as DRAFTS: nothing becomes public until someone publishes the draft.
+#
+# Optional secrets (the build still works without them, installers are then unsigned):
+#   macOS:   APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+#            APPLE_ID, APPLE_PASSWORD (app-specific password), APPLE_TEAM_ID
+#   Windows: not configured yet (SmartScreen will warn on unsigned installers)
+# Auto-update signing (separate from OS code signing): TAURI_SIGNING_PRIVATE_KEY (already set).
+#   The matching public key is in desktop/src-tauri/tauri.conf.json; losing the private key
+#   means installed apps can no longer receive updates.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: "Release tag for the draft (e.g. desktop-v0.1.0)"
+        required: true
+        default: "desktop-v0.1.0"
+  push:
+    tags:
+      - "desktop-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS (universal)
+            os: macos-latest
+            args: "--target universal-apple-darwin"
+          - name: Windows
+            os: windows-latest
+            args: ""
+    env:
+      HAS_APPLE: ${{ secrets.APPLE_CERTIFICATE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm install
+
+      - name: Generate app icons from the brand mark
+        working-directory: desktop
+        run: npm run icons
+
+      - name: Build and draft the release (macOS, signed and notarized)
+        if: matrix.os == 'macos-latest' && env.HAS_APPLE == 'true'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: desktop
+          tagName: ${{ github.event.inputs.version_tag || github.ref_name }}
+          releaseName: "Minerva Flow Desktop ${{ github.event.inputs.version_tag || github.ref_name }}"
+          releaseBody: "Installateurs macOS et Windows de Minerva Flow."
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          args: ${{ matrix.args }}
+
+      - name: Build and draft the release (unsigned)
+        if: matrix.os != 'macos-latest' || env.HAS_APPLE != 'true'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: desktop
+          tagName: ${{ github.event.inputs.version_tag || github.ref_name }}
+          releaseName: "Minerva Flow Desktop ${{ github.event.inputs.version_tag || github.ref_name }}"
+          releaseBody: "Installateurs macOS et Windows de Minerva Flow (non signés si aucun certificat n'est configuré)."
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          args: ${{ matrix.args }}

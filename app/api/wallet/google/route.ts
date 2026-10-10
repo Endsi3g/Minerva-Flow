@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveNativeUserId } from "@/lib/auth/native-bearer";
 import { getLoyaltyTier, loyaltyTierLabel } from "@/lib/loyalty-tiers";
+import { parseCustomerLanguage } from "@/lib/i18n/customer-language";
 import { isGoogleWalletConfigured } from "@/lib/wallet/config";
 import { buildGoogleWalletSaveUrl } from "@/lib/wallet/google-wallet";
 
@@ -44,7 +45,7 @@ export async function GET(req: Request) {
   const admin = createAdminClient();
   const { data: customer } = await admin
     .from("customers")
-    .select("id, name, phone, total_spent, loyalty_points, restaurant_id, restaurants(name, color, loyalty_tier_2_threshold, loyalty_tier_3_threshold)")
+    .select("id, name, phone, total_spent, loyalty_points, preferred_language, restaurant_id, restaurants(name, color, loyalty_tier_2_threshold, loyalty_tier_3_threshold)")
     .eq("id", customerId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -70,6 +71,7 @@ export async function GET(req: Request) {
     tierLabel: loyaltyTierLabel[tier],
     portalUrl: `${appUrl}/portal?customer=${customer.id}`,
     brandColorHex: restaurant?.color || "#167f5b",
+    language: parseCustomerLanguage(customer.preferred_language),
   });
 
   return viaBearer ? NextResponse.json({ url: saveUrl }) : NextResponse.redirect(saveUrl);

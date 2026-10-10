@@ -1512,7 +1512,7 @@
     "minervaFlowHome": "Minerva Flow, accueil",
     "backToTheMenu": "Retour au menu",
     "yourRewardsAreWaiting": "Vos récompenses vous attendent dans l’app.",
-    "yourPointsRewardsAnd": "Vos points, vos récompenses et vos commandes sont dans l’application : c’est là que vous les réclamez. Le menu reste consultable sur le Web.",
+    "yourPointsRewardsAnd": "Consultez le menu, passez commande et retrouvez vos récompenses dans votre espace client, sur le Web ou dans l’application.",
     "installTheAppAnd": "Installer l’app et réclamer mes récompenses",
     "createMyAccount": "Créer mon compte",
     "onIphoneOrIpad": "Sur iPhone ou iPad, TestFlight installe la version de test. L’accès au build le plus récent dépend de son traitement par Apple. Android : le menu Web fonctionne sans téléchargement.",
@@ -1523,10 +1523,11 @@
     "2InstallTestflightFrom": "2. Installez TestFlight depuis l’App Store si demandé.",
     "3GoBackTo": "3. Revenez au lien Minerva Flow et touchez « Accepter » puis « Installer ».",
     "4OpenMinervaFlow": "4. Ouvrez Minerva Flow depuis votre écran d’accueil.",
-    "1ChooseCreateMy": "1. Choisissez « Créer mon compte » et indiquez votre nom, votre courriel et un mot de passe.",
+    "1ChooseCreateMy": "1. Confirmez votre courriel avec le code reçu, puis indiquez votre prénom. Si vous êtes déjà connecté, ouvrez votre espace client.",
     "2YourAccountWill": "2. Votre compte sera associé à ce restaurant.",
     "3FindYourBalance": "3. Retrouvez votre solde, vos récompenses et vos visites dans l’espace client.",
     "getStarted": "Commencer",
+    "openMyCustomerSpace": "Ouvrir mon espace client",
     "findTheMenuAnd": "Retrouver menu et fidélité",
     "1BrowseTheDishes": "1. Parcourez les plats proposés et ceux présentés au catalogue.",
     "2OrderFromThe": "2. Commandez depuis le menu; le paiement se fait au restaurant si le paiement en ligne n’est pas activé.",
@@ -2745,7 +2746,15 @@
     "tellUsWhy": "Dites-nous pourquoi — ça nous aide à améliorer Minerva Flow.",
     "workspaceEyebrow": "Workspace",
     "billingTitle": "Facturation & Quotas IA",
-    "offerEyebrow": "Offre"
+    "offerEyebrow": "Offre",
+    "customOfferEyebrow": "Votre offre",
+    "customOfferTitle": "Un tarif basé sur vos résultats",
+    "customOfferBody": "Minerva Flow n'a pas de forfait fixe. Votre tarif est établi avec vous selon votre établissement, votre panier moyen et les revenus additionnels que la fidélité vous apporte, mesurés ensemble.",
+    "customOfferPoint1": "Gratuit pendant l'intégration et la mise en place",
+    "customOfferPoint2": "Rien à payer tant qu'aucun résultat n'est mesuré",
+    "customOfferPoint3": "Une part des revenus additionnels mesurés, fixée avec vous",
+    "customOfferCta": "Discuter de mon offre",
+    "customOfferPlanLabel": "Offre sur mesure"
   },
   "integrationsView": {
     "registerSettings": "Paramètres de caisse",
@@ -3223,12 +3232,18 @@
   },
   "joinFlow": {
     "checkYourEmail": "Vérifiez vos courriels",
+    "enterYourCode": "Saisissez le code à 6 chiffres envoyé à {email} pour accéder à votre compte de fidélité.",
+    "emailCode": "Code reçu par courriel",
+    "verifyCode": "Vérifier le code",
+    "verifyingCode": "Vérification…",
+    "resendCode": "Renvoyer le code",
     "loyaltyProgram": "Programme de fidélité",
     "somethingWentWrong": "Une erreur est survenue.",
     "sending": "Envoi…",
-    "resendMySignIn": "Renvoyer mon lien de connexion",
+    "resendMySignIn": "Renvoyer mon code",
     "joinTheProgram": "Rejoindre le programme",
-    "yourSignUpIs": "Votre inscription est enregistrée. Le courriel de connexion n'a pas pu être envoyé pour le moment."
+    "yourSignUpIs": "Votre inscription est enregistrée. Le courriel de connexion n'a pas pu être envoyé pour le moment.",
+    "retryCodeDelivery": "Réessayez dans quelques minutes pour recevoir un nouveau code à {email}."
   },
   "sharedReport": {
     "thisLinkHasExpired": "Ce lien a expiré.",
@@ -3303,11 +3318,12 @@
     "addToGoogleWallet": "Ajouter à Google Wallet"
   },
   "installPrompt": {
-    "installTheAppOn": "Installez l'app sur votre téléphone",
+    "installTheAppOn": "Installez Minerva Flow pour accéder à plus de fonctions",
     "share": "Partager",
     "addToHomeScreen": "Sur l'écran d'accueil",
-    "toFindTheMenu": "pour retrouver le menu et vos points en un geste.",
-    "findTheMenuAnd": "Retrouvez le menu et vos points de fidélité en un geste, et recevez les nouvelles offres."
+    "toFindTheMenu": "pour retrouver le menu, suivre vos commandes et garder vos avantages à portée de main.",
+    "findTheMenuAnd": "Retrouvez le menu, suivez vos commandes, gardez vos avantages et recevez les nouvelles offres.",
+    "installFromBrowserMenu": "Dans le menu du navigateur, choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil »."
   },
   "settingsNav": {
     "settingsSections": "Sections des paramètres",
@@ -4270,7 +4286,7 @@
     "yourPersonalLink": "Votre lien personnel",
     "copyTheMessage": "Copier le message",
     "share": "Partager",
-    "ownerOfferCurrent14": "Offre propriétaire : essai actuel de 14 jours et accès aux outils de gestion, fidélisation et analyse de Minerva Flow. Aucune remise ou résultat commercial supplémentaire n’est promis.",
+    "ownerOfferCurrent14": "Offre propriétaire : accès gratuit pendant le développement, puis rémunération à la performance convenue par écrit, et accès aux outils de gestion, fidélisation et analyse de Minerva Flow. Aucune remise ou résultat commercial supplémentaire n’est promis.",
     "aTrackableLinkFor": "Un lien traçable pour chaque vidéo",
     "addThisLinkTo": "Ajoutez ce lien à la bio, à la description ou à votre appel à l’action. Les clics et les inscriptions créées après ce lien seront attribués à cette vidéo.",
     "loyaltyProgramDemo": "Démo du programme fidélité",
@@ -4302,9 +4318,9 @@
     "iAgreeToBe": "J’accepte d’être présenté",
     "removeMyRestaurantFrom": "Retirer mon restaurant du répertoire",
     "helpChoose": "Aidez à choisir",
-    "presentTheToolsWith": "Présentez les outils avec une démo sincère; les owners gardent leur essai de 14 jours.",
+    "presentTheToolsWith": "Présentez les outils avec une démo sincère; les owners profitent de l’accès gratuit pendant le développement.",
     "afterTheFirstPayment": "Après le premier paiement et 30 jours, demandez un transfert Stripe sécurisé.",
-    "iMSharingMinerva": "Je partage Minerva Flow, une plateforme qui aide les restaurants à gérer leurs opérations, fidéliser leur clientèle et suivre leur activité. Découvre l’essai de 14 jours :",
+    "iMSharingMinerva": "Je partage Minerva Flow, une plateforme qui aide les restaurants à gérer leurs opérations, fidéliser leur clientèle et suivre leur activité. Découvre-le gratuitement :",
     "yourSpaceAndYour": "Votre espace et votre lien de recommandation sont prêts.",
     "couldNotCreateYour": "Impossible de créer votre espace. Réessayez.",
     "yourMessageAndLink": "Votre message et votre lien ont été copiés.",

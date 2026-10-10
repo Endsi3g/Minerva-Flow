@@ -13,6 +13,8 @@ import { PanelLeft } from "lucide-react";
 import { usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { brandingCssVariables } from "@/lib/branding/workspace-branding";
+import { DesktopOrderAlerts } from "@/components/desktop/DesktopOrderAlerts";
+import { OwnerExperiencePrompt } from "@/components/onboarding/OwnerExperiencePrompt";
 
 // Full-bleed routes render edge-to-edge, without the shared page padding/max-width.
 const FULL_BLEED_ROUTES = ["/maps"];
@@ -23,35 +25,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isFullBleed = FULL_BLEED_ROUTES.some((r) => pathname.startsWith(r));
 
+
   return (
     <RealtimeProvider>
       <PresenceProvider>
+        <DesktopOrderAlerts />
+        <OwnerExperiencePrompt />
         <div className="mv-brand-scope flex h-screen w-full overflow-hidden bg-mv-cream" style={brandingCssVariables(branding)}>
-        <div className="no-print hidden md:flex">
+        <div className="no-print mv-shell-sidebar hidden md:flex">
           <AppSidebar />
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="no-print flex h-16 shrink-0 items-center justify-between gap-4 border-b border-mv-border bg-mv-cream-soft px-4">
+          <header className="no-print mv-shell-header flex h-16 shrink-0 items-center justify-between gap-4 border-b border-mv-border bg-mv-cream-soft px-4">
             <div className="hidden items-center gap-2 md:flex">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 aria-label={t("toggleNav")}
                 title={sidebarCollapsed ? t("openMenu") : t("collapseMenu")}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                className="mv-shell-sidebar-toggle flex h-8 w-8 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
               >
                 <PanelLeft size={16} />
               </button>
               <div className="mr-1 h-5 w-px bg-mv-border" />
               <AppBreadcrumb />
             </div>
-            <div className="md:hidden">
+            <div className="min-w-0 flex-1 md:hidden">
               <AppBreadcrumb />
             </div>
             <TopbarActions />
           </header>
           <main
             className={cn(
-              "flex-1 overflow-y-auto",
+              "mv-shell-main flex-1 overflow-y-auto",
               isFullBleed
                 ? // Matches MobileTabBar's actual height (h-16 + safe area) exactly —
                   // the +24px extra breathing room below is deliberate for scrollable

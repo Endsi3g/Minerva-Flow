@@ -27,108 +27,7 @@ struct OwnerRestaurantPicker: View {
     }
 }
 
-struct OwnerMenuView: View {
-    @EnvironmentObject private var supabase: SupabaseManager
-    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    @State private var selectedItem: NativeMenuItem?
-
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if !supabase.ownerMealSuggestions.isEmpty {
-                    Section {
-                        ForEach(supabase.ownerMealSuggestions) { suggestion in
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(suggestion.title).font(.headline).foregroundStyle(MinervaColor.ink)
-                                    if let description = suggestion.description, !description.isEmpty {
-                                        Text(description).font(.caption).foregroundStyle(MinervaColor.inkFaint).lineLimit(2)
-                                    }
-                            Label(isFrench ? "\(suggestion.voteCount) votes" : "\(suggestion.voteCount) votes", systemImage: "hand.thumbsup.fill")
-                                        .font(.caption2.weight(.semibold)).foregroundStyle(MinervaColor.emeraldDark)
-                                }
-                                Spacer()
-                                if suggestion.status == "draft_added" {
-                                    Label {
-                                        Text(verbatim: isFrench ? "Brouillon" : "Draft")
-                                    } icon: {
-                                        Image(systemName: "checkmark.circle.fill")
-                                    }
-                                    .font(.caption.weight(.semibold)).foregroundStyle(MinervaColor.emeraldDark)
-                                } else if suggestion.status == "open" || suggestion.status == "under_review" {
-                                    Button {
-                                        Task { _ = await supabase.addMealSuggestionAsDraft(suggestion) }
-                                    } label: {
-                                        Text(verbatim: isFrench
-                                            ? (suggestion.status == "under_review" ? "Réessayer" : "Ajouter en brouillon")
-                                            : (suggestion.status == "under_review" ? "Retry" : "Add as draft"))
-                                    }
-                                    .font(.caption.weight(.semibold))
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(MinervaColor.emeraldDark)
-                                }
-                            }
-                            .padding(.vertical, 3)
-                        }
-                    } header: {
-                        Text(verbatim: isFrench
-                            ? "Idées de plats · classées par votes"
-                            : "Customer meal ideas · ranked by votes")
-                    }
-                }
-                Section(isFrench ? "Menu officiel · \(supabase.ownerMenuItems.count)" : "Official menu · \(supabase.ownerMenuItems.count)") {
-                    if supabase.ownerMenuItems.isEmpty {
-                        ContentUnavailableView(
-                            isFrench ? "Aucun article au menu" : "No menu items",
-                            systemImage: "fork.knife",
-                            description: Text(isFrench ? "Les articles de cet emplacement apparaîtront ici." : "Items from this location will appear here.")
-                        )
-                    } else {
-                        ForEach(supabase.ownerMenuItems) { item in
-                            Button { selectedItem = item } label: {
-                                HStack(spacing: 12) {
-                                    if let urlString = item.imageUrl, let url = URL(string: urlString) {
-                                        AsyncImage(url: url) { image in image.resizable().scaledToFill() } placeholder: { Color.gray.opacity(0.12) }
-                                            .frame(width: 48, height: 48).clipShape(RoundedRectangle(cornerRadius: 10))
-                                    } else {
-                                        Image(systemName: "fork.knife").frame(width: 48, height: 48).background(MinervaColor.emerald.opacity(0.12)).clipShape(RoundedRectangle(cornerRadius: 10))
-                                    }
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(item.name).font(.headline).foregroundStyle(MinervaColor.ink)
-                                        Text(item.category ?? (isFrench ? "Sans catégorie" : "Uncategorized")).font(.caption).foregroundStyle(MinervaColor.inkFaint)
-                                        if item.isDraft == true {
-                                            Label(isFrench ? "Brouillon · détails à compléter" : "Draft · complete details", systemImage: "pencil.line")
-                                                .font(.caption2.weight(.semibold)).foregroundStyle(.orange)
-                                        }
-                                    }
-                                    Spacer()
-                                    VStack(alignment: .trailing, spacing: 4) {
-                                        Text(item.priceOptions.flatMap { $0.map(\.price).min() }.map { (isFrench ? "À partir de " : "From ") + $0.cad } ?? item.price.cad)
-                                            .font(.subheadline.weight(.semibold)).foregroundStyle(MinervaColor.ink)
-                                        Text(item.active ? (isFrench ? "Actif" : "Active") : (isFrench ? "Inactif" : "Inactive"))
-                                            .font(.caption2.weight(.bold)).foregroundStyle(item.active ? MinervaColor.emeraldDark : .secondary)
-                                    }
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(MinervaColor.cream.ignoresSafeArea())
-            .navigationTitle(isFrench ? "Menu" : "Menu")
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
-            .refreshable { await supabase.refreshOwnerOperations() }
-            .sheet(item: $selectedItem) { MenuItemEditor(item: $0, isFrench: isFrench) }
-        }
-    }
-}
-
-private struct MenuItemEditor: View {
+struct MenuItemEditor: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
     let item: NativeMenuItem
@@ -140,6 +39,7 @@ private struct MenuItemEditor: View {
     @State private var allergens: String
     @State private var allergensConfirmed: Bool
     @State private var active: Bool
+    @State private var imageURL: String?
     @State private var saving = false
     @State private var validationMessage: String?
 
@@ -153,11 +53,15 @@ private struct MenuItemEditor: View {
         _allergens = State(initialValue: (item.allergens ?? []).joined(separator: ", "))
         _allergensConfirmed = State(initialValue: item.allergensConfirmed ?? false)
         _active = State(initialValue: item.active)
+        _imageURL = State(initialValue: item.imageUrl)
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section(isFrench ? "Photo" : "Photo") {
+                    OwnerPhotoField(bucket: "menu-item-images", scopeId: item.id, imageURL: $imageURL)
+                }
                 Section(isFrench ? "Article" : "Item") {
                     TextField(isFrench ? "Nom" : "Name", text: $name)
                     TextField(priceOptions.isEmpty ? (isFrench ? "Prix" : "Price") : (isFrench ? "Prix de départ (formats ci-dessous)" : "Starting price (formats below)"), text: $price)
@@ -168,7 +72,7 @@ private struct MenuItemEditor: View {
                     Text(isFrench
                          ? "Ajoutez des choix fixes. Le prix du format sélectionné sera celui de la commande."
                          : "Add fixed options. The selected option’s price will be used for the order.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.mv(size: 12)).foregroundStyle(.secondary)
                     ForEach($priceOptions) { $option in
                         HStack(spacing: 8) {
                             TextField(isFrench ? "Format" : "Option", text: $option.label).frame(minWidth: 70)
@@ -192,13 +96,16 @@ private struct MenuItemEditor: View {
                         Text(isFrench
                              ? "Ce brouillon reste masqué jusqu’à ce qu’un prix et les renseignements sur les allergènes soient confirmés."
                              : "This draft stays hidden until a price and allergen details are confirmed.")
-                            .font(.caption).foregroundStyle(MinervaColor.inkSoft)
+                            .font(.mv(size: 12)).foregroundStyle(MinervaColor.inkSoft)
                     } header: { Text(isFrench ? "Vérifier le brouillon" : "Review this draft") }
                 }
                 if let validationMessage {
                     Section { Label(validationMessage, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(MinervaColor.cream.ignoresSafeArea())
+            .font(.mv(size: 14))
             .navigationTitle(isFrench ? "Modifier l’article" : "Edit item")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(isFrench ? "Annuler" : "Cancel") { dismiss() } }
@@ -220,7 +127,7 @@ private struct MenuItemEditor: View {
                         saving = true
                         Task {
                             let parsedAllergens = allergens.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                            let ok = await supabase.updateOwnerMenuItem(item, name: name, price: amount, priceOptions: priceOptions, description: description, active: active, allergens: parsedAllergens, allergensConfirmed: allergensConfirmed)
+                            let ok = await supabase.updateOwnerMenuItem(item, name: name, price: amount, priceOptions: priceOptions, description: description, active: active, allergens: parsedAllergens, allergensConfirmed: allergensConfirmed, imageUrl: imageURL, imageChanged: imageURL != item.imageUrl)
                             saving = false
                             if ok { dismiss() }
                             else { validationMessage = isFrench ? "L’article n’a pas été enregistré. Vérifiez les champs et réessayez." : "The item was not saved. Check the fields and try again." }
@@ -232,225 +139,8 @@ private struct MenuItemEditor: View {
     }
 }
 
-struct OwnerLoyaltyView: View {
-    @EnvironmentObject private var supabase: SupabaseManager
-    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    @State private var respondingTo: NativeOwnerRestaurantReview?
-    @State private var notingCustomer: NativeOwnerCustomer?
-    @State private var counterPhone = ""
-    @State private var counterMatches: [NativeOwnerCustomerLookup] = []
-    @State private var selectedCounterMatch: NativeOwnerCustomerLookup?
-    @State private var confirmedCounterCustomer: NativeCounterCustomer?
-    @State private var counterCode = ""
-    @State private var counterAmount = ""
-    @State private var counterSearching = false
-    @State private var counterConfirming = false
-    @State private var counterSaving = false
-    @State private var counterDidSearch = false
-    @State private var counterSuccess: String?
-
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
-    private var parsedCounterAmount: Double? {
-        guard let amount = Double(counterAmount.replacingOccurrences(of: ",", with: ".")),
-              amount.isFinite, amount > 0, amount <= 100_000 else { return nil }
-        return amount
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section(isFrench ? "Identifier et créditer une visite" : "Identify and credit a visit") {
-                    Text(isFrench
-                         ? "Recherchez par téléphone. Le solde reste masqué jusqu’à ce que le client confirme son identité avec le code temporaire de sa carte."
-                         : "Search by phone. The balance stays hidden until the customer confirms their identity with the temporary code on their card.")
-                        .font(.footnote).foregroundStyle(.secondary)
-
-                    HStack {
-                        TextField(isFrench ? "Numéro de téléphone" : "Phone number", text: $counterPhone)
-                            .keyboardType(.phonePad)
-                            .textContentType(.telephoneNumber)
-                        Button {
-                            counterSearching = true
-                            counterDidSearch = false
-                            counterMatches = []
-                            selectedCounterMatch = nil
-                            confirmedCounterCustomer = nil
-                            counterCode = ""
-                            counterAmount = ""
-                            counterSuccess = nil
-                            Task {
-                                counterMatches = await supabase.lookupOwnerCustomersByPhone(counterPhone)
-                                counterDidSearch = true
-                                counterSearching = false
-                            }
-                        } label: {
-                            if counterSearching { ProgressView() }
-                            else { Label(isFrench ? "Rechercher" : "Search", systemImage: "magnifyingglass") }
-                        }
-                        .disabled(counterSearching || counterPhone.filter(\.isNumber).count < 7)
-                    }
-
-                    if counterDidSearch && counterMatches.isEmpty && supabase.lastError == nil {
-                        Label(
-                            isFrench ? "Aucun client trouvé avec ce numéro." : "No customer found for that number.",
-                            systemImage: "person.crop.circle.badge.questionmark"
-                        ).font(.footnote).foregroundStyle(.secondary)
-                    }
-
-                    ForEach(counterMatches) { match in
-                        Button {
-                            selectedCounterMatch = match
-                            confirmedCounterCustomer = nil
-                            counterCode = ""
-                            counterAmount = ""
-                            counterSuccess = nil
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(match.name).font(.headline).foregroundStyle(MinervaColor.ink)
-                                    if let phone = match.phone { Text(phone).font(.caption).foregroundStyle(.secondary) }
-                                }
-                                Spacer()
-                                if selectedCounterMatch?.id == match.id { Image(systemName: "checkmark.circle.fill").foregroundStyle(MinervaColor.emeraldDark) }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(counterConfirming)
-                    }
-
-                    if let selected = selectedCounterMatch, confirmedCounterCustomer == nil {
-                        Text(isFrench
-                             ? "Demandez au client d’ouvrir sa carte et de vous communiquer le code actuel à 6 chiffres."
-                             : "Ask the customer to open their card and share the current 6-digit code.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                        HStack {
-                            TextField(isFrench ? "Code client" : "Customer code", text: $counterCode)
-                                .keyboardType(.numberPad)
-                                .textContentType(.oneTimeCode)
-                                .monospacedDigit()
-                            Button {
-                                counterConfirming = true
-                                Task {
-                                    confirmedCounterCustomer = await supabase.confirmOwnerCustomerIdentity(selected, code: counterCode)
-                                    counterConfirming = false
-                                    if confirmedCounterCustomer == nil {
-                                        counterSuccess = nil
-                                    }
-                                }
-                            } label: {
-                                if counterConfirming { ProgressView() }
-                                else { Text(isFrench ? "Confirmer" : "Confirm") }
-                            }
-                            .disabled(counterConfirming || counterCode.count != 6)
-                        }
-                    }
-
-                    if let customer = confirmedCounterCustomer {
-                        Label(isFrench ? "Identité confirmée" : "Identity confirmed", systemImage: "checkmark.seal.fill")
-                            .font(.subheadline.weight(.semibold)).foregroundStyle(MinervaColor.emeraldDark)
-                        Text("\(customer.name) · \(customer.loyaltyPoints) \(isFrench ? "points" : "points") · \(customer.visitCount) \(isFrench ? "visites" : "visits")")
-                            .font(.footnote).foregroundStyle(MinervaColor.ink)
-                        TextField(isFrench ? "Montant de l’achat" : "Purchase amount", text: $counterAmount)
-                            .keyboardType(.decimalPad)
-                        Button {
-                            guard let amount = parsedCounterAmount else { return }
-                            counterSaving = true
-                            counterSuccess = nil
-                            Task {
-                                if let updated = await supabase.recordOwnerCustomerVisit(customer: customer, amountSpent: amount) {
-                                    confirmedCounterCustomer = NativeCounterCustomer(
-                                        id: updated.id,
-                                        name: updated.name,
-                                        phone: updated.phone,
-                                        loyaltyPoints: updated.loyaltyPoints,
-                                        visitCount: updated.visitCount,
-                                        totalSpent: updated.totalSpent
-                                    )
-                                    counterSuccess = isFrench ? "Visite enregistrée et points crédités." : "Visit recorded and points credited."
-                                    counterAmount = ""
-                                }
-                                counterSaving = false
-                            }
-                        } label: {
-                            if counterSaving { ProgressView() }
-                            else { Label(isFrench ? "Enregistrer la visite" : "Record visit", systemImage: "plus.circle.fill") }
-                        }
-                        .disabled(counterSaving || parsedCounterAmount == nil)
-                        if let counterSuccess {
-                            Text(counterSuccess).font(.footnote.weight(.medium)).foregroundStyle(MinervaColor.emeraldDark)
-                        }
-                    }
-                }
-
-                Section(isFrench ? "Clients" : "Customers") {
-                    if supabase.ownerCustomers.isEmpty {
-                        Text(isFrench ? "Aucun client pour le moment." : "No customers yet.").foregroundStyle(.secondary)
-                    }
-                    ForEach(supabase.ownerCustomers) { customer in
-                        Button { notingCustomer = customer } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(customer.name).font(.headline).foregroundStyle(MinervaColor.ink)
-                                    Text(isFrench
-                                         ? "\(customer.loyaltyPoints) points · \(customer.visitCount) visites · \(customer.totalSpent.cad)"
-                                         : "\(customer.loyaltyPoints) points · \(customer.visitCount) visits · \(customer.totalSpent.cad)")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                    if let email = customer.email { Text(email).font(.caption2).foregroundStyle(.secondary) }
-                                }
-                                Spacer()
-                                Image(systemName: "note.text").foregroundStyle(MinervaColor.emeraldDark)
-                                    .accessibilityLabel(isFrench ? "Notes de l'équipe" : "Team notes")
-                            }
-                            .frame(minHeight: 44)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                Section(isFrench ? "Récompenses" : "Rewards") {
-                    if supabase.ownerRewards.isEmpty {
-                        Text(isFrench ? "Aucune récompense pour le moment." : "No rewards yet.").foregroundStyle(.secondary)
-                    }
-                    ForEach(supabase.ownerRewards) { reward in
-                        HStack { VStack(alignment: .leading) { Text(reward.name); if let description = reward.description { Text(description).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Text("\(reward.pointsCost) pts").font(.caption.weight(.semibold)) }
-                    }
-                }
-                Section(isFrench ? "Offres" : "Offers") {
-                    if supabase.ownerOffers.isEmpty {
-                        Text(isFrench ? "Aucune offre pour le moment." : "No offers yet.").foregroundStyle(.secondary)
-                    }
-                    ForEach(supabase.ownerOffers) { offer in
-                        HStack { VStack(alignment: .leading) { Text(offer.title); if let description = offer.description { Text(description).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Text(offer.active ? (isFrench ? "Active" : "Live") : (isFrench ? "En pause" : "Paused")).font(.caption.weight(.semibold)).foregroundStyle(offer.active ? MinervaColor.emeraldDark : .secondary) }
-                    }
-                }
-                Section(isFrench ? "Avis et réponses" : "Reviews and replies") {
-                    if supabase.ownerReviews.isEmpty {
-                        Text(isFrench ? "Aucun avis pour le moment." : "No reviews yet.").foregroundStyle(.secondary)
-                    }
-                    ForEach(supabase.ownerReviews) { review in
-                        Button { respondingTo = review } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(String(repeating: "★", count: review.rating)).foregroundStyle(.orange)
-                                if let comment = review.comment, !comment.isEmpty { Text(comment).foregroundStyle(MinervaColor.ink) }
-                                Text(review.ownerResponse?.isEmpty == false
-                                     ? (isFrench ? "Réponse envoyée" : "Reply sent")
-                                     : (isFrench ? "Répondre à cet avis" : "Reply to this review"))
-                                    .font(.caption).foregroundStyle(MinervaColor.emeraldDark)
-                            }
-                        }.buttonStyle(.plain)
-                    }
-                }
-            }
-            .navigationTitle(isFrench ? "Fidélité" : "Loyalty")
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
-            .refreshable { await supabase.refreshOwnerOperations() }
-            .sheet(item: $respondingTo) { ReviewReplyEditor(review: $0) }
-            .sheet(item: $notingCustomer) { OwnerStaffNoteEditor(customer: $0) }
-        }
-    }
-}
-
 /// Staff-only guest note, never shown to the guest. Same text as the web customer page.
-private struct OwnerStaffNoteEditor: View {
+struct OwnerStaffNoteEditor: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
@@ -479,6 +169,9 @@ private struct OwnerStaffNoteEditor: View {
                         .font(.footnote).foregroundStyle(.red)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(MinervaColor.cream.ignoresSafeArea())
+            .font(.mv(size: 14))
             .navigationTitle(customer.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -503,79 +196,90 @@ private struct OwnerStaffNoteEditor: View {
     }
 }
 
-private struct ReviewReplyEditor: View {
+struct ReviewReplyEditor: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     let review: NativeOwnerRestaurantReview
     @State private var reply: String
     @State private var saving = false
+    @State private var failed = false
+    private var L: Lx { Lx(storedLanguage) }
 
     init(review: NativeOwnerRestaurantReview) { self.review = review; _reply = State(initialValue: review.ownerResponse ?? "") }
     var body: some View {
-        NavigationStack {
-            Form { Section("Your public reply") { TextField("Write a response", text: $reply, axis: .vertical).lineLimit(4...8) } }
-                .navigationTitle("Review reply")
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                    ToolbarItem(placement: .confirmationAction) { Button(saving ? "Saving…" : "Publish") { saving = true; Task { let ok = await supabase.updateOwnerReviewResponse(review.id, response: reply); saving = false; if ok { dismiss() } } }.disabled(saving || reply.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
-                }
+        OwnerFormSheet(title: L("Répondre à l'avis", "Reply to review"), saveTitle: L("Publier", "Publish"),
+                       canSave: !reply.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, isSaving: saving,
+                       errorMessage: failed ? L("La réponse n'a pas pu être publiée. Réessayez.", "The reply could not be published. Try again.") : nil, onSave: publish) {
+            if let comment = review.comment, !comment.isEmpty {
+                Section(String(repeating: "★", count: review.rating)) { Text(comment).font(.mv(size: 14)) }
+            }
+            Section(L("Votre réponse publique", "Your public reply")) {
+                TextField(L("Écrivez votre réponse", "Write a response"), text: $reply, axis: .vertical).lineLimit(4...8)
+            }
         }
+    }
+    private func publish() {
+        saving = true; failed = false
+        Task { let ok = await supabase.updateOwnerReviewResponse(review.id, response: reply); saving = false; if ok { dismiss() } else { failed = true } }
     }
 }
 
-struct OwnerManagementView: View {
-    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    @State private var showAmbassadorProgram = false
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section(isFrench ? "Gestion quotidienne" : "Daily operations") {
-                    NavigationLink(isFrench ? "Équipe" : "Team", destination: OwnerEmployeesView())
-                    NavigationLink(isFrench ? "Inventaire" : "Inventory", destination: OwnerInventoryView())
-                    NavigationLink(isFrench ? "Finances" : "Finance", destination: OwnerFinanceView())
-                }
-                Section(isFrench ? "Performance" : "Performance") {
-                    NavigationLink(isFrench ? "Rapports" : "Reports", destination: OwnerReportsView())
-                }
-                Section(isFrench ? "Développement" : "Growth") {
-                    Button { showAmbassadorProgram = true } label: {
-                        Label(isFrench ? "Programme ambassadeur" : "Ambassador program", systemImage: "megaphone.fill")
-                    }
-                    if NFCTagReader.isAvailable {
-                        NavigationLink(isFrench ? "Tags NFC" : "NFC tags", destination: OwnerNFCView())
-                    }
-                    NavigationLink("Google Business Profile", destination: OwnerGoogleBusinessProfileView())
-                }
-                Section(isFrench ? "Compte" : "Account") {
-                    NavigationLink(isFrench ? "Paramètres" : "Settings", destination: OwnerSettingsView())
-                    NavigationLink(isFrench ? "Mises à jour" : "Updates", destination: NativeChangelogView(audience: "owner"))
-                }
-            }
-            .navigationTitle(isFrench ? "Gestion" : "Manage")
-            .sheet(isPresented: $showAmbassadorProgram) { FlowAmbassadorMobileView() }
+struct OwnerManagementDestination: View {
+    let route: OwnerManagementRoute
+    @ViewBuilder var body: some View {
+        switch route {
+        case .menu: OwnerMenuScreen()
+        case .inventory: OwnerInventoryScreen()
+        case .finance: OwnerFinanceView()
+        case .reports: OwnerReportsScreen()
+        case .statistics: OwnerStatisticsScreen()
+        case .team: OwnerEmployeesView()
+        case .settings: OwnerSettingsView()
+        case .locations: OwnerLocationsScreen()
         }
     }
 }
 
 struct OwnerEmployeesView: View {
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    private var L: Lx { Lx(storedLanguage) }
     @EnvironmentObject private var supabase: SupabaseManager
     @State private var employee: NativeOwnerEmployee?
+
     var body: some View {
-        List(supabase.ownerEmployees) { member in
-            Button { employee = member } label: {
-                HStack { VStack(alignment: .leading, spacing: 3) { Text(member.fullName).font(.headline); Text(member.roleTitle).font(.caption).foregroundStyle(.secondary) }; Spacer(); Text(member.active ? "Active" : "Inactive").font(.caption.weight(.semibold)).foregroundStyle(member.active ? MinervaColor.emeraldDark : .secondary) }
-            }.buttonStyle(.plain)
+        OwnerScreen(title: L("Équipe", "Team"), subtitle: supabase.ownerEmployees.isEmpty
+                                ? L("Aucun membre pour l'instant", "No members yet")
+                                : L("\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "membre" : "membres") · touchez pour modifier",
+                                    "\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "member" : "members") · tap to edit")) {
+            if supabase.ownerEmployees.isEmpty {
+                OwnerCard { OwnerEmptyState(icon: "person.3", title: L("Aucun membre d'équipe", "No team members"),
+                                            message: L("Ajoutez votre équipe depuis l'application web. Elle apparaîtra ici.", "Add your team from the web app. It will appear here.")) }
+            } else {
+                OwnerCard(padding: 6) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(supabase.ownerEmployees.enumerated()), id: \.element.id) { index, member in
+                            if index > 0 { OwnerDivider() }
+                            NavigationLink { OwnerEmployeeDetailScreen(employee: member) } label: {
+                                OwnerRow(icon: "person.fill", title: member.fullName, subtitle: member.roleTitle) {
+                                    HStack(spacing: 6) {
+                                        OwnerPill(text: member.active ? L("Actif", "Active") : L("Inactif", "Inactive"), tone: member.active ? .good : .neutral)
+                                        Image(systemName: "chevron.right").font(.mv(size: 11, weight: .semibold)).foregroundStyle(MinervaColor.inkFaint)
+                                    }
+                                }.padding(.horizontal, 10).padding(.vertical, 4)
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
         }
-        .overlay { if supabase.ownerEmployees.isEmpty { ContentUnavailableView("No team members", systemImage: "person.3", description: Text("Team members from this location will appear here.")) } }
-        .navigationTitle("Team")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
         .sheet(item: $employee) { EmployeeEditor(employee: $0) }
     }
 }
 
-private struct EmployeeEditor: View {
+struct EmployeeEditor: View {
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    private var L: Lx { Lx(storedLanguage) }
     @EnvironmentObject private var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
     let employee: NativeOwnerEmployee
@@ -584,76 +288,37 @@ private struct EmployeeEditor: View {
     @State private var wage: String
     @State private var active: Bool
     @State private var saving = false
-    init(employee: NativeOwnerEmployee) { self.employee = employee; _name = State(initialValue: employee.fullName); _role = State(initialValue: employee.roleTitle); _wage = State(initialValue: employee.hourlyWage.map { String(format: "%.2f", $0) } ?? ""); _active = State(initialValue: employee.active) }
+    @State private var error: String?
+    init(employee: NativeOwnerEmployee) {
+        self.employee = employee
+        _name = State(initialValue: employee.fullName); _role = State(initialValue: employee.roleTitle)
+        _wage = State(initialValue: employee.hourlyWage.map { String(format: "%.2f", $0) } ?? ""); _active = State(initialValue: employee.active)
+    }
     var body: some View {
-        NavigationStack { Form { Section("Team member") { TextField("Full name", text: $name); TextField("Role", text: $role); TextField("Hourly wage", text: $wage).keyboardType(.decimalPad) }; Section { Toggle("Active", isOn: $active) } }
-            .navigationTitle("Edit team member")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button(saving ? "Saving…" : "Save") { saving = true; Task { let amount = Double(wage.replacingOccurrences(of: ",", with: ".")); let ok = await supabase.updateOwnerEmployee(employee, fullName: name, roleTitle: role, hourlyWage: amount, active: active); saving = false; if ok { dismiss() } } }.disabled(saving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) } }
+        OwnerFormSheet(title: L("Modifier le membre", "Edit team member"), canSave: !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       isSaving: saving, errorMessage: error, onSave: save) {
+            Section(L("Membre", "Member")) {
+                LabeledContent(L("Nom complet", "Full name")) { TextField("", text: $name).multilineTextAlignment(.trailing) }
+                LabeledContent(L("Rôle", "Role")) { TextField("", text: $role).multilineTextAlignment(.trailing) }
+                LabeledContent(L("Salaire horaire ($)", "Hourly wage ($)")) { TextField("0.00", text: $wage).keyboardType(.decimalPad).multilineTextAlignment(.trailing) }
+            }
+            Section { Toggle(L("Actif", "Active"), isOn: $active).tint(MinervaColor.emerald) }
+        }
+    }
+    private func save() {
+        saving = true; error = nil
+        Task {
+            let amount = Double(wage.replacingOccurrences(of: ",", with: "."))
+            let ok = await supabase.updateOwnerEmployee(employee, fullName: name, roleTitle: role, hourlyWage: amount, active: active)
+            saving = false
+            if ok { dismiss() } else { error = L("Le membre n'a pas été enregistré. Réessayez.", "The team member was not saved. Try again.") }
         }
     }
 }
 
-struct OwnerInventoryView: View {
-    @EnvironmentObject private var supabase: SupabaseManager
-    @State private var selected: NativeOwnerInventoryItem?
-
-    private var lowStockCount: Int {
-        supabase.ownerInventoryItems.filter { item in
-            guard let target = item.parLevel, target > 0 else { return false }
-            return item.quantityOnHand <= target * 0.3
-        }.count
-    }
-
-    var body: some View {
-        List {
-            if lowStockCount > 0 {
-                Section {
-                    Label("\(lowStockCount) item\(lowStockCount == 1 ? "" : "s") at or below 30% of target", systemImage: "exclamationmark.triangle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.red)
-                } footer: {
-                    Text("Counts follow recipes configured for each menu item. Set a target to receive a reliable low-stock alert.")
-                }
-            }
-            Section("Items · \(supabase.ownerInventoryItems.count)") {
-                ForEach(supabase.ownerInventoryItems) { item in
-                    Button { selected = item } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(item.name).font(.headline)
-                                Text("\(item.quantityOnHand.formatted()) \(item.unit) on hand · target \(item.parLevel?.formatted() ?? "—")")
-                                    .font(.caption)
-                                    .foregroundStyle(inLowStock(item) ? .red : (belowTarget(item) ? .orange : .secondary))
-                                if inLowStock(item) {
-                                    Text("Reorder soon · at or below 30%")
-                                        .font(.caption2.weight(.semibold)).foregroundStyle(.red)
-                                }
-                            }
-                            Spacer()
-                            Text(item.unitCost.cad).font(.caption.weight(.semibold))
-                        }
-                    }.buttonStyle(.plain)
-                }
-            }
-        }
-        .overlay { if supabase.ownerInventoryItems.isEmpty { ContentUnavailableView("No inventory items", systemImage: "shippingbox", description: Text("Inventory from this location will appear here.")) } }
-        .navigationTitle("Inventory")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
-        .sheet(item: $selected) { InventoryEditor(item: $0) }
-    }
-
-    private func belowTarget(_ item: NativeOwnerInventoryItem) -> Bool {
-        guard let target = item.parLevel, target > 0 else { return false }
-        return item.quantityOnHand < target
-    }
-
-    private func inLowStock(_ item: NativeOwnerInventoryItem) -> Bool {
-        guard let target = item.parLevel, target > 0 else { return false }
-        return item.quantityOnHand <= target * 0.3
-    }
-}
-
-private struct InventoryEditor: View {
+struct InventoryEditor: View {
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    private var L: Lx { Lx(storedLanguage) }
     @EnvironmentObject private var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
     let item: NativeOwnerInventoryItem
@@ -661,6 +326,7 @@ private struct InventoryEditor: View {
     @State private var parLevel: String
     @State private var unitCost: String
     @State private var saving = false
+    @State private var error: String?
 
     init(item: NativeOwnerInventoryItem) {
         self.item = item
@@ -669,183 +335,41 @@ private struct InventoryEditor: View {
         _unitCost = State(initialValue: String(format: "%.2f", item.unitCost))
     }
 
+    private func number(_ text: String) -> Double? { Double(text.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces)) }
+
     var body: some View {
-        NavigationStack {
-            Form {
-                Section(item.name) {
-                    TextField("Quantity on hand (\(item.unit))", text: $quantity).keyboardType(.decimalPad)
-                    TextField("Replenishment target", text: $parLevel).keyboardType(.decimalPad)
-                    Text("A low-stock alert appears in app at 30% of this target. Leave blank if unknown.").font(.footnote).foregroundStyle(.secondary)
-                    TextField("Unit cost", text: $unitCost).keyboardType(.decimalPad)
+        OwnerFormSheet(title: item.name, canSave: number(quantity) != nil && number(unitCost) != nil && (parLevel.isEmpty || number(parLevel) != nil),
+                       isSaving: saving, errorMessage: error, onSave: save) {
+            Section {
+                LabeledContent(L("En stock (\(item.unit))", "On hand (\(item.unit))")) {
+                    TextField("0", text: $quantity).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
                 }
+                LabeledContent(L("Seuil de réapprovisionnement", "Replenishment target")) {
+                    TextField(L("Optionnel", "Optional"), text: $parLevel).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                }
+            } header: { Text(L("Quantités", "Quantities")) } footer: {
+                Text(L("Une alerte apparaît à 30 % de ce seuil. Laissez vide si le seuil est inconnu.", "An alert appears at 30% of this target. Leave blank if unknown."))
             }
-            .navigationTitle("Edit inventory")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save") {
-                        guard let q = Double(quantity.replacingOccurrences(of: ",", with: ".")),
-                              let c = Double(unitCost.replacingOccurrences(of: ",", with: ".")) else { return }
-                        let targetText = parLevel.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let parsedTarget = targetText.isEmpty ? nil : Double(targetText.replacingOccurrences(of: ",", with: "."))
-                        if !targetText.isEmpty && parsedTarget == nil { return }
-                        saving = true
-                        Task {
-                            let ok = await supabase.updateOwnerInventoryItem(item, quantity: q, parLevel: parsedTarget, unitCost: c)
-                            saving = false
-                            if ok { dismiss() }
-                        }
-                    }.disabled(saving)
+            Section(L("Coût", "Cost")) {
+                LabeledContent(L("Coût unitaire ($)", "Unit cost ($)")) {
+                    TextField("0.00", text: $unitCost).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
                 }
             }
         }
     }
-}
 
-struct OwnerFinanceView: View {
-    @EnvironmentObject private var supabase: SupabaseManager
-    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
-
-    private var revenue: Double { supabase.ownerTransactions.filter { $0.direction == "in" }.reduce(0) { $0 + $1.amount } }
-    private var expenses: Double { supabase.ownerTransactions.filter { $0.direction == "out" }.reduce(0) { $0 + $1.amount } }
-
-    private struct FlowPoint: Identifiable { let id = UUID(); let label: String; let value: Double }
-    private var revenueVsExpenses: [FlowPoint] {
-        [
-            FlowPoint(label: isFrench ? "Revenus" : "Revenue", value: revenue),
-            FlowPoint(label: isFrench ? "Dépenses" : "Expenses", value: expenses),
-        ]
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text(isFrench ? "Finances" : "Finance")
-                    .font(MinervaFont.display(30, weight: .semibold))
-                    .foregroundStyle(MinervaColor.ink)
-
-                HStack(spacing: 12) {
-                    OwnerMetric(title: isFrench ? "Revenus" : "Revenue", value: revenue.cad, icon: "arrow.down.circle.fill")
-                    OwnerMetric(title: isFrench ? "Dépenses" : "Expenses", value: expenses.cad, icon: "arrow.up.circle.fill")
-                    OwnerMetric(title: isFrench ? "Net" : "Net", value: (revenue - expenses).cad, icon: "equal.circle.fill")
-                }
-
-                if !supabase.ownerTransactions.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(isFrench ? "Revenus contre dépenses" : "Revenue vs expenses")
-                            .font(MinervaFont.display(22, weight: .semibold))
-                        Chart(revenueVsExpenses) { point in
-                            BarMark(x: .value(isFrench ? "Catégorie" : "Category", point.label), y: .value(isFrench ? "Montant" : "Amount", point.value))
-                                .foregroundStyle(point.label == (isFrench ? "Revenus" : "Revenue") ? MinervaColor.emeraldDark : .red)
-                        }
-                        .frame(height: 180)
-                        .chartYAxis { AxisMarks(position: .leading) }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(18)
-                    .background(MinervaColor.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(isFrench ? "Transactions" : "Transactions")
-                        .font(MinervaFont.display(22, weight: .semibold))
-                    if supabase.ownerTransactions.isEmpty {
-                        ContentUnavailableView(
-                            isFrench ? "Aucune transaction" : "No transactions",
-                            systemImage: "dollarsign.circle",
-                            description: Text(isFrench ? "Les transactions de ce lieu apparaîtront ici." : "Transactions from this location will appear here.")
-                        )
-                    } else {
-                        ForEach(supabase.ownerTransactions) { transaction in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(transaction.description).font(.subheadline.weight(.medium)).foregroundStyle(MinervaColor.ink)
-                                    Text("\(transaction.category) · \(transaction.date)").font(.caption).foregroundStyle(MinervaColor.inkFaint)
-                                }
-                                Spacer()
-                                Text(transaction.amount.cad)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(transaction.direction == "in" ? MinervaColor.emeraldDark : .red)
-                            }
-                            .padding(14)
-                            .background(MinervaColor.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(18)
-                .background(MinervaColor.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-            }
-            .padding(20)
+    private func save() {
+        guard let q = number(quantity), let c = number(unitCost) else { return }
+        let target = parLevel.trimmingCharacters(in: .whitespaces)
+        let parsedTarget = target.isEmpty ? nil : number(target)
+        if !target.isEmpty && parsedTarget == nil { return }
+        saving = true; error = nil
+        Task {
+            let ok = await supabase.updateOwnerInventoryItem(item, quantity: q, parLevel: parsedTarget, unitCost: c)
+            saving = false
+            if ok { Analytics.capture("owner_inventory_item_updated"); dismiss() }
+            else { error = L("Les stocks n'ont pas été enregistrés. Réessayez.", "Stock was not saved. Try again.") }
         }
-        .background(MinervaColor.cream.ignoresSafeArea())
-        .navigationTitle(isFrench ? "Finances" : "Finance")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
-    }
-}
-
-struct OwnerReportsView: View {
-    @EnvironmentObject private var supabase: SupabaseManager
-    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
-
-    private var netByCategory: [(name: String, total: Double)] {
-        Dictionary(grouping: supabase.ownerTransactions, by: \.category).map { key, values in (key, values.reduce(0) { total, tx in total + (tx.direction == "in" ? tx.amount : -tx.amount) }) }.sorted { $0.total > $1.total }
-    }
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text(isFrench ? "Performance de l'entreprise" : "Business performance").font(MinervaFont.display(30, weight: .semibold))
-                Text(isFrench
-                     ? "Données en direct pour l'emplacement sélectionné. Chaque section occupe toute la page plutôt que de laisser un canevas de rapport vide."
-                     : "Live data for the selected location. Every section expands to use the full page instead of leaving an empty report canvas.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                HStack(spacing: 12) {
-                    OwnerMetric(title: isFrench ? "Ventes mensuelles" : "Monthly sales", value: supabase.ownerMetrics.monthRevenue.cad, icon: "chart.line.uptrend.xyaxis")
-                    OwnerMetric(title: isFrench ? "Commandes" : "Orders", value: "\(supabase.ownerMetrics.monthOrders)", icon: "list.clipboard")
-                }
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(isFrench ? "Net par catégorie" : "Net by category").font(MinervaFont.display(22, weight: .semibold))
-                    if netByCategory.isEmpty {
-                        ContentUnavailableView(
-                            isFrench ? "Aucune donnée financière" : "No finance data",
-                            systemImage: "chart.bar",
-                            description: Text(isFrench ? "Les transactions apparaîtront ici au fur et à mesure." : "Transactions will appear here as they are recorded.")
-                        )
-                    } else {
-                        Chart(netByCategory, id: \.name) { entry in
-                            BarMark(x: .value(isFrench ? "Catégorie" : "Category", entry.name), y: .value("Net", entry.total))
-                                .foregroundStyle(entry.total >= 0 ? MinervaColor.emeraldDark : .red)
-                        }
-                        .frame(height: 280)
-                        .chartYAxis { AxisMarks(position: .leading) }
-                    }
-                }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 18))
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(isFrench ? "Activité récente" : "Recent activity").font(MinervaFont.display(22, weight: .semibold))
-                    if supabase.ownerTransactions.isEmpty {
-                        ContentUnavailableView(
-                            isFrench ? "Aucune activité" : "No activity",
-                            systemImage: "clock",
-                            description: Text(isFrench ? "L'activité récente apparaîtra ici." : "Recent activity will appear here.")
-                        )
-                    } else {
-                        ForEach(supabase.ownerTransactions.prefix(12)) { tx in
-                            HStack {
-                                Text(tx.date).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                                Text(tx.description)
-                                Spacer()
-                                Text(tx.amount.cad).font(.subheadline.weight(.semibold))
-                            }.padding(.vertical, 4)
-                        }
-                    }
-                }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 18))
-            }.padding(20)
-        }.background(MinervaColor.cream.ignoresSafeArea()).navigationTitle(isFrench ? "Rapports" : "Reports").toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
     }
 }
 
@@ -855,42 +379,61 @@ struct OwnerSettingsView: View {
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @State private var showSignOutConfirm = false
     @State private var showDeleteAccount = false
-    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    @State private var analyticsEnabled = Analytics.isEnabled
+    @State private var replayConsent = Analytics.sessionReplayConsent
+    private var L: Lx { Lx(storedLanguage) }
     var body: some View {
         Form {
-            Section("Appearance") {
-                Picker("Theme", selection: $storedAppearance) {
+            Section(L("Apparence", "Appearance")) {
+                Picker(L("Thème", "Theme"), selection: $storedAppearance) {
                     ForEach(AppAppearance.allCases) { option in
-                        Text(option.label(isFrench: false)).tag(option.rawValue)
+                        Text(option.label(isFrench: L.fr)).tag(option.rawValue)
                     }
                 }
                 .pickerStyle(.segmented)
+                LanguageMenu(language: Binding(get: { AppLanguage(rawValue: storedLanguage) ?? .fr }, set: { storedLanguage = $0.rawValue }), tint: MinervaColor.emeraldDark)
             }
-            Section("Location") { LabeledContent("Selected location", value: supabase.selectedOwnerRestaurant?.name ?? "None") }
-            Section("Notifications") {
-                Text("Order-ready messages use push, in-app presentation and transactional email. SMS is not used.").font(.footnote).foregroundStyle(.secondary)
-                Link("Open iOS notification settings", destination: URL(string: UIApplication.openSettingsURLString)!)
+            Section(L("Emplacement", "Location")) { LabeledContent(L("Emplacement actif", "Active location"), value: supabase.selectedOwnerRestaurant?.name ?? L("Aucun", "None")) }
+            Section(L("Notifications", "Notifications")) {
+                Text(L("Les alertes de commande utilisent les notifications push, l'affichage dans l'app et le courriel transactionnel. Aucun texto n'est envoyé.",
+                       "Order alerts use push, in-app presentation and transactional email. SMS is not used.")).font(.footnote).foregroundStyle(.secondary)
+                Link(L("Ouvrir les réglages de notification iOS", "Open iOS notification settings"), destination: URL(string: UIApplication.openSettingsURLString)!)
             }
-            Section("Subscription") { Text("Software subscriptions are managed on a computer. No in-app purchase is offered in this iOS app.").font(.footnote).foregroundStyle(.secondary) }
-            Section("Support") { Link(Config.supportEmail, destination: SupportContact.emailURL) }
-            Section(isFrench ? "Compte" : "Account") {
-                Button(isFrench ? "Se déconnecter" : "Sign out", role: .destructive) { showSignOutConfirm = true }
+            Section {
+                Toggle(L("Statistiques d'usage anonymes", "Anonymous usage statistics"), isOn: $analyticsEnabled)
+                    .tint(MinervaColor.emerald)
+                    .onChange(of: analyticsEnabled) { _, value in Analytics.isEnabled = value }
+                Toggle(L("Enregistrer mes sessions", "Record my sessions"), isOn: $replayConsent)
+                    .tint(MinervaColor.emerald)
+                    .disabled(!analyticsEnabled)
+                    .onChange(of: replayConsent) { _, value in Analytics.sessionReplayConsent = value }
+            } header: { Text(L("Confidentialité", "Privacy")) } footer: {
+                Text(L("Aide Minerva Flow à repérer les écrans qui posent problème. Aucun courriel, nom, téléphone ni contenu de commande n'est envoyé. L'enregistrement des sessions est facultatif et masque tous les textes et images.",
+                       "Helps Minerva Flow find screens that cause trouble. No email, name, phone or order content is sent. Session recording is optional and masks all text and images."))
+            }
+            Section(L("Aide", "Support")) { Link(Config.supportEmail, destination: SupportContact.emailURL) }
+            Section(L("Compte", "Account")) {
+                Button(L("Se déconnecter", "Sign out"), role: .destructive) { showSignOutConfirm = true }
                     .frame(minHeight: 44, alignment: .leading)
                 // Deletion in the app and on the web share one server rule: a sole owner of a
                 // restaurant must transfer it first.
-                Button(isFrench ? "Supprimer mon compte" : "Delete my account", role: .destructive) { showDeleteAccount = true }
+                Button(L("Supprimer mon compte", "Delete my account"), role: .destructive) { showDeleteAccount = true }
                     .frame(minHeight: 44, alignment: .leading)
-                Link(isFrench ? "Supprimer mon compte sur le web" : "Delete my account on the web",
+                Link(L("Supprimer mon compte sur le web", "Delete my account on the web"),
                      destination: Config.publicLinkBaseURL.appending(path: "/profil"))
                     .font(.footnote)
                     .frame(minHeight: 44, alignment: .leading)
             }
         }
-        .confirmationDialog(isFrench ? "Se déconnecter ?" : "Sign out?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
-            Button(isFrench ? "Se déconnecter" : "Sign out", role: .destructive) { Task { await supabase.signOut() } }
-            Button(isFrench ? "Annuler" : "Cancel", role: .cancel) {}
+        .scrollContentBackground(.hidden)
+        .background(MinervaColor.cream.ignoresSafeArea())
+        .font(.mv(size: 15))
+        .confirmationDialog(L("Se déconnecter ?", "Sign out?"), isPresented: $showSignOutConfirm, titleVisibility: .visible) {
+            Button(L("Se déconnecter", "Sign out"), role: .destructive) { Task { await supabase.signOut() } }
+            Button(L("Annuler", "Cancel"), role: .cancel) {}
         }
         .sheet(isPresented: $showDeleteAccount) { DeleteAccountSheet(isOwner: true).environmentObject(supabase) }
-        .navigationTitle(isFrench ? "Paramètres" : "Settings")
+        .navigationTitle(L("Paramètres", "Settings"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

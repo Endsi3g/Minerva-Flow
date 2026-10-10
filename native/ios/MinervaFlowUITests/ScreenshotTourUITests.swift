@@ -207,7 +207,11 @@ final class ScreenshotTourUITests: XCTestCase {
 
         // Owner space: wait for a tab bar or sidebar, then visit every tab by position.
         let bar = app.tabBars.firstMatch
-        XCTAssertTrue(bar.waitForExistence(timeout: 40), "owner space never appeared")
+        let qrGate = app.staticTexts["Reliez votre compte à un restaurant"]
+        let deadline = Date().addingTimeInterval(40)
+        while !bar.exists && !qrGate.exists && Date() < deadline { Thread.sleep(forTimeInterval: 0.5) }
+        XCTAssertFalse(qrGate.exists, "signed-in owner was sent to customer QR onboarding")
+        XCTAssertTrue(bar.exists, "owner space never appeared")
         Thread.sleep(forTimeInterval: 4)
         dismissSurveyIfPresent()
         let count = bar.buttons.count

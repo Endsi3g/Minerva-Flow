@@ -25,6 +25,16 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
         authorizationStatus = settings.authorizationStatus
     }
 
+    /// Permission can be granted from several places (bell, welcome, order
+    /// confirmation, Settings). APNs tokens also rotate, so every foreground
+    /// entry re-registers when notifications are already allowed; the token
+    /// callback upserts it for the signed-in user.
+    func registerForPushIfAuthorized() async {
+        await refreshStatus()
+        guard authorizationStatus == .authorized || authorizationStatus == .provisional else { return }
+        UIApplication.shared.registerForRemoteNotifications()
+    }
+
     /// Requests permission, and on grant registers for remote
     /// notifications (the resulting APNs token arrives via
     /// AppDelegate.didRegisterForRemoteNotificationsWithDeviceToken →

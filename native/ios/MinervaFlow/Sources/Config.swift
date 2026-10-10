@@ -4,8 +4,8 @@ import Foundation
 /// binary, same as the web app's NEXT_PUBLIC_* env vars. Row Level Security
 /// is the actual trust boundary, not secrecy of these values.
 enum Config {
-    static let supabaseURL = URL(string: "https://vcfaianbdjowmiqaheee.supabase.co")!
-    static let supabaseAnonKey = "sb_publishable_DqXl75SSLlJL8MUKsdC0Wg_KujBsY8D"
+    static let supabaseURL = URL(string: testOverride("MV_TEST_SUPABASE_URL") ?? "https://vcfaianbdjowmiqaheee.supabase.co")!
+    static let supabaseAnonKey = testOverride("MV_TEST_SUPABASE_ANON_KEY") ?? "sb_publishable_DqXl75SSLlJL8MUKsdC0Wg_KujBsY8D"
 
     /// The web app itself, hosting the native bridge routes (Server
     /// Actions aren't callable from native, see app/api/portal/*) — a
@@ -30,7 +30,7 @@ enum Config {
     /// header when a redirect changes host, so every authenticated bridge call
     /// (menu, restaurant name, referrals, discovery) arrived unauthenticated
     /// and failed with 401. Pointing straight at www avoids the redirect.
-    static let apiBaseURL = URL(string: "https://www.minervaflow.app")!
+    static let apiBaseURL = URL(string: testOverride("MV_TEST_API_URL") ?? "https://www.minervaflow.app")!
 
     /// The address printed on QR codes, programmed on NFC tags and shared as
     /// referral links. It stays on the apex because that is the host declared
@@ -47,6 +47,10 @@ enum Config {
     /// Customer support address, shown in Aide and the owner Support section.
     static let supportEmail = "support@minervaflow.app"
 
+    /// PostHog public project token (write-only, safe to ship; same project as the web app).
+    static let posthogToken = "phc_BeCxC7r935Jgwmbw3oWz7iNZZGp6y4xbFkCoBqoy3t4j"
+    static let posthogHost = "https://us.i.posthog.com"
+
     /// Matches the CFBundleURLSchemes entry in project.yml — where
     /// ASWebAuthenticationSession hands control back to this app once
     /// Google/Facebook redirect the OAuth flow to Supabase and Supabase
@@ -57,17 +61,20 @@ enum Config {
     /// DSNs identify an ingest project; they are not authentication tokens.
     static let sentryDSN = "https://31c725e304838cdcd9923c71682ddfd8@o4512147373686784.ingest.us.sentry.io/4512147453116416"
 
+    private static func testOverride(_ name: String) -> String? {
+        #if DEBUG
+        guard ProcessInfo.processInfo.arguments.contains("-minervaUITestAuth") || ProcessInfo.processInfo.arguments.contains("-minervaUITestStaging") else { return nil }
+        return ProcessInfo.processInfo.environment[name]
+        #else
+        return nil
+        #endif
+    }
+
     #if DEBUG
-    /// A real customers row + linked auth user created for local testing
-    /// (see supabase/migrations' handle_new_user linking logic) — lets the
-    /// simulator/device skip the email round-trip while OTP delivery is
-    /// being debugged, without faking RLS: this still authenticates a real
-    /// Supabase session via password grant, so every screen behind it
-    /// exercises the actual RLS policies. Never compiled into a Release
-    /// build.
-    static let devTestEmail = "dev-test@minervaflow.app"
-    static let devTestPassword = "MinervaDevTest2026!"
+    static var devTestEmail: String { ProcessInfo.processInfo.environment["MV_TEST_EMAIL"] ?? "" }
+    static var devTestPassword: String { ProcessInfo.processInfo.environment["MV_TEST_PASSWORD"] ?? "" }
     #endif
+
 }
 
 enum SupportContact {

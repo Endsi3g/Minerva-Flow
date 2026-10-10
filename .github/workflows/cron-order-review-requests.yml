@@ -1,0 +1,18 @@
+name: Order review requests
+
+# See check-late-shifts.yml — moved off vercel.json's `crons` (Hobby plan cap).
+# Every 10 minutes: asks customers for a Google review 30 minutes after their
+# order was ready (see app/api/cron/order-review-requests/route.ts).
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call order-review-requests
+        run: |
+          curl -sf -X GET "https://minerva-flow.vercel.app/api/cron/order-review-requests" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

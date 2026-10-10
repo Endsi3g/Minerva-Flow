@@ -11,6 +11,7 @@ struct HomeView: View {
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
     @State private var showMyCard = false
     @State private var showRestaurantMap = false
+    @State private var showBrandLocations = false
     @State private var notificationDeniedAlert = false
     @State private var selectedOffer: Offer?
     @State private var birthdayOffer: Offer?
@@ -110,6 +111,12 @@ struct HomeView: View {
         .sheet(isPresented: $showMyCard) {
             MyCardView()
         }
+        .sheet(isPresented: $showBrandLocations) {
+            NavigationStack {
+                BrandLocationsView()
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button(isFrench ? "Fermer" : "Close") { showBrandLocations = false } } }
+            }
+        }
         .sheet(isPresented: $showRestaurantMap) {
             RestaurantMapView()
         }
@@ -136,6 +143,7 @@ struct HomeView: View {
     }
 
     private func tenantBrandHeader(_ branding: NativeTenantBranding) -> some View {
+        Button { showBrandLocations = true } label: {
         HStack(spacing: 10) {
             if let logoUrl = branding.logoUrl, let url = URL(string: logoUrl) {
                 AsyncImage(url: url) { image in
@@ -153,7 +161,7 @@ struct HomeView: View {
                     .background(MinervaColor.emerald.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(branding.brandName)
+                Text(supabase.restaurantName ?? branding.brandName)
                     .font(.mv(size: 14, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 Text(isFrench ? "Votre espace restaurant" : "Your restaurant space")
@@ -161,12 +169,13 @@ struct HomeView: View {
                     .foregroundStyle(MinervaColor.inkSoft)
             }
             Spacer()
-            Circle().fill(MinervaColor.emerald).frame(width: 7, height: 7)
+            Image(systemName: "chevron.down").font(.mv(size: 12, weight: .semibold)).foregroundStyle(MinervaColor.emeraldDark)
         }
         .padding(11)
         .background(MinervaColor.surface, in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(MinervaColor.border, lineWidth: 1))
         .accessibilityElement(children: .combine)
+        }.buttonStyle(.plain).accessibilityHint(isFrench ? "Voir les emplacements" : "See locations")
     }
 
     private func presentBirthdayOfferIfNeeded() {

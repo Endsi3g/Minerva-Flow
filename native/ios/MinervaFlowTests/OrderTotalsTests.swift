@@ -2,6 +2,23 @@ import XCTest
 @testable import MinervaFlow
 
 final class OrderTotalsTests: XCTestCase {
+    func testSavedCartNeverDropsAnUnavailableProductSilently() {
+        let item = makeItem(price: 3.99)
+        XCTAssertNil(resolveNativeCustomerCart(["missing": 1, item.id: 1], items: [item]))
+        XCTAssertNil(resolveNativeCustomerCart([item.id: 100], items: [item]))
+        XCTAssertEqual(resolveNativeCustomerCart([item.id: 2], items: [item])?.first?.unitPrice, 3.99)
+    }
+    func testMenuDecodesCustomerBridgeAndOwnerDatabaseNames() throws {
+        let customer = Data(#"{"id":"item","restaurantId":"r1","name":"Maggie Djondjon","price":1.99,"active":true,"imageUrls":[],"isOrderable":true,"priceOptions":[{"id":"format-6","label":"6","quantity":6,"price":3.99}]}"#.utf8)
+        let owner = Data(#"{"id":"item","restaurant_id":"r1","name":"Maggie Djondjon","price":1.99,"active":true,"image_urls":null,"is_orderable":true,"price_options":[{"id":"format-6","label":"6","quantity":6,"price":3.99}]}"#.utf8)
+        for data in [customer, owner] {
+            let item = try JSONDecoder().decode(NativeMenuItem.self, from: data)
+            XCTAssertEqual(item.restaurantId, "r1")
+            XCTAssertEqual(item.priceOptions?.first?.price, 3.99)
+            XCTAssertEqual(item.isOrderable, true)
+            XCTAssertEqual(item.imageUrls, [])
+        }
+    }
     private func makeItem(price: Double) -> NativeMenuItem {
         NativeMenuItem(
             id: UUID().uuidString,

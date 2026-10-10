@@ -229,6 +229,8 @@ struct PrivacyConsentView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @State private var isExportingData = false
     @State private var exportedDataFileURL: URL?
+    @State private var analyticsEnabled = Analytics.isEnabled
+    @State private var replayConsent = Analytics.sessionReplayConsent
 
     var body: some View {
         ScrollView {
@@ -236,6 +238,7 @@ struct PrivacyConsentView: View {
                 if let customer = supabase.customer {
                     consentSection(for: customer)
                 }
+                analyticsSection
                 exportSection
             }
             .padding(18)
@@ -243,6 +246,47 @@ struct PrivacyConsentView: View {
         .background(MinervaColor.cream.ignoresSafeArea())
         .navigationTitle("Confidentialité")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var analyticsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Statistiques d'usage")
+                .font(.mv(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Statistiques anonymes")
+                        .font(.mv(size: 13, weight: .medium))
+                        .foregroundStyle(MinervaColor.ink)
+                    Text("Aide Minerva Flow à repérer les écrans qui posent problème. Aucun courriel, nom ni téléphone n'est envoyé.")
+                        .font(.mv(size: 11))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Toggle("", isOn: $analyticsEnabled)
+                    .labelsHidden()
+                    .tint(MinervaColor.emerald)
+                    .onChange(of: analyticsEnabled) { _, value in Analytics.isEnabled = value }
+            }
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Enregistrer mes sessions")
+                        .font(.mv(size: 13, weight: .medium))
+                        .foregroundStyle(MinervaColor.ink)
+                    Text("Facultatif. Tous les textes et images sont masqués. Vous pouvez retirer votre accord à tout moment.")
+                        .font(.mv(size: 11))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Toggle("", isOn: $replayConsent)
+                    .labelsHidden()
+                    .tint(MinervaColor.emerald)
+                    .disabled(!analyticsEnabled)
+                    .onChange(of: replayConsent) { _, value in Analytics.sessionReplayConsent = value }
+            }
+        }
     }
 
     private func consentSection(for customer: Customer) -> some View {

@@ -51,8 +51,8 @@ export async function sendOrderReadyNotification(
     const payload = en
       ? { title: "Good news, your order is ready!", body: `Hey! ${restaurant.name} is waiting for you for pickup at the planned time.`, link }
       : { title: "Bonne nouvelle, votre commande est prête !", body: `Hey ! ${restaurant.name} vous attend pour la cueillette à l’heure prévue.`, link };
-    await sendPushToUsers([customer.userId], payload, restaurant.id);
-    deliveries.push("push");
+    const reached = await sendPushToUsers([customer.userId], payload, restaurant.id);
+    if (reached > 0) deliveries.push("push");
   }
 
   if (emailDelivery) {

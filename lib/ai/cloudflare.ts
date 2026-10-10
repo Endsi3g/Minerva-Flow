@@ -2,7 +2,9 @@
  * Cloudflare Workers AI & AI Gateway integration for Minerva Flow
  * Configured with Cloudflare Account ID: e4826a36912d92d343151792bb44fd46
  * Gateway ID: default
- * Models: workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast, @cf/moonshotai/kimi-k2.6
+ * Default model: workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast (proven in production).
+ * Gemma 3 is only published on Workers AI as @cf/google/gemma-3-12b-it (no 27b id was found), so it
+ * is not the default: switch only after checking the Cloudflare model catalog.
  */
 
 export const CLOUDFLARE_ACCOUNT_ID_DEFAULT = "e4826a36912d92d343151792bb44fd46";

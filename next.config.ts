@@ -6,6 +6,11 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 const sentryBuildAuthConfigured = Boolean(process.env.SENTRY_AUTH_TOKEN);
 
 const nextConfig: NextConfig = {
+  deploymentId:
+    process.env.VERCEL_DEPLOYMENT_ID ||
+    process.env.NEXT_PUBLIC_DEPLOYMENT_ID ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    undefined,
   devIndicators: false,
   async headers() {
     return [

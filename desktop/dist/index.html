@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minerva Flow</title>
+<style>
+  :root { --bg:#F5F1E6; --fg:#1B2620; --soft:#56645A; --accent:#0E5A40; --border:#E6E0D0; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#14170F; --fg:#F3F2EA; --soft:#B9C0B0; --accent:#4ADE9B; --border:#33392A; } }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--fg); font-family: "Plus Jakarta Sans", -apple-system, "Segoe UI", system-ui, sans-serif; display: grid; place-items: center; }
+  main { text-align: center; max-width: 360px; padding: 24px; }
+  h1 { font-family: "New York", "Playfair Display", Georgia, serif; font-size: 34px; margin: 0 0 12px; font-weight: 600; }
+  p { color: var(--soft); font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 20px; animation: spin .9s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  button { font: inherit; font-weight: 600; color: #fff; background: var(--accent); border: 0; border-radius: 999px; padding: 12px 22px; min-height: 44px; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div id="loading">
+    <div class="spinner" role="status" aria-label="Chargement"></div>
+    <h1>Minerva Flow</h1>
+    <p id="loadingText">Ouverture de votre espace…</p>
+  </div>
+  <div id="offline" hidden>
+    <h1>Connexion impossible</h1>
+    <p id="offlineText">Vérifiez votre connexion internet, puis réessayez.</p>
+    <button id="retry" type="button">Réessayer</button>
+  </div>
+</main>
+<script>
+  (function () {
+    var PORTAL = "https://www.minervaflow.app/?desktop=1";
+    var en = (navigator.language || "fr").toLowerCase().indexOf("en") === 0;
+    if (en) {
+      document.documentElement.lang = "en";
+      document.getElementById("loadingText").textContent = "Opening your workspace…";
+      document.querySelector("#offline h1").textContent = "Can't connect";
+      document.getElementById("offlineText").textContent = "Check your internet connection, then try again.";
+      document.getElementById("retry").textContent = "Try again";
+    }
+    function go() {
+      document.getElementById("offline").hidden = true;
+      document.getElementById("loading").hidden = false;
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, 8000);
+      fetch(PORTAL, { mode: "no-cors", signal: controller.signal })
+        .then(function () { clearTimeout(timer); window.location.replace(PORTAL); })
+        .catch(function () {
+          clearTimeout(timer);
+          document.getElementById("loading").hidden = true;
+          document.getElementById("offline").hidden = false;
+        });
+    }
+    document.getElementById("retry").addEventListener("click", go);
+    go();
+  })();
+</script>
+</body>
+</html>

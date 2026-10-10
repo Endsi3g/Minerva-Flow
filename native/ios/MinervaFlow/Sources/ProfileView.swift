@@ -37,6 +37,13 @@ struct ProfileView: View {
                             }
                             if let customer = supabase.customer {
                                 identityCard(for: customer)
+                                if supabase.isOwnerExperience {
+                                    CompteGroup {
+                                        Button { Task { await supabase.openOwnerWorkspace() } } label: {
+                                            CompteRowLabel(icon: "storefront", title: isFrench ? "Gérer mon établissement" : "Manage my restaurant", subtitle: isFrench ? "Votre espace du portail web" : "Your web portal workspace")
+                                        }.buttonStyle(.plain).accessibilityIdentifier("accountManageRestaurant")
+                                    }
+                                }
                                 accountSection
                                 recentActivity
                                 CompteGroup {
@@ -474,8 +481,8 @@ struct FlowAmbassadorMobileView: View {
                         Text(message).font(.mv(size: 12)).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
                     }
                     Text(isFrench
-                        ? "La commission correspond à 10 % de la première facture payée d’un client admissible. Elle devient payable après 30 jours. Les versements se gèrent sur le web et dépendent de la vérification de votre compte."
-                        : "Earn 10% of an eligible customer's first paid invoice. It becomes payable after 30 days. Payouts are managed on the web and depend on account verification.")
+                        ? "Votre rétribution est définie par le contrat convenu avec l’équipe Minerva Flow. Écrivez à flow@minervaflow.app pour la mettre en place. Les versements se gèrent sur le web."
+                        : "Your reward is set by the contract agreed with the Minerva Flow team. Email flow@minervaflow.app to set it up. Payouts are managed on the web.")
                         .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkFaint).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(18)

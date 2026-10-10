@@ -1,0 +1,18 @@
+name: Wallet balance sync
+
+# See check-late-shifts.yml — moved off vercel.json's `crons` (Hobby plan cap).
+# Every 10 minutes: updates the Google Wallet pass of customers whose points
+# just changed (see app/api/cron/wallet-sync/route.ts).
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call wallet-sync
+        run: |
+          curl -sf -X GET "https://minerva-flow.vercel.app/api/cron/wallet-sync" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

@@ -13,50 +13,52 @@ type Locale = "fr" | "en";
 
 const copy = {
   fr: {
-    title: "Conditions générales de vente et d’utilisation",
+    title: "Conditions d’utilisation",
     description:
-      "Conditions des abonnements Minerva Flow pour les restaurants : prix, essai, renouvellement, résiliation, taxes et remboursements.",
-    updated: "Dernière mise à jour : 6 octobre 2026",
+      "Conditions d’utilisation de Minerva Flow pour les restaurants : période de développement gratuite, rémunération à la performance, mesure, facturation, résiliation et taxes.",
+    updated: "Dernière mise à jour : 10 octobre 2026",
     supplier: "Minerva Technologies Inc. · Adresse postale",
     intro:
-      "Les présentes conditions encadrent les abonnements professionnels à Minerva Flow. En souscrivant au nom d’un restaurant ou d’une entreprise, vous confirmez être autorisé à l’engager. Le fournisseur du Service est Minerva Technologies Inc. (« Minerva »).",
+      "Les présentes conditions encadrent l’utilisation professionnelle de Minerva Flow. En ouvrant un compte au nom d’un restaurant ou d’une entreprise, vous confirmez être autorisé à l’engager. Le fournisseur du Service est Minerva Technologies Inc. (« Minerva »).",
     sections: [
       {
         title: "1. Service",
         paragraphs: [
-          "Minerva Flow est un service logiciel en ligne destiné aux restaurants et aux entreprises de restauration. Les fonctionnalités accessibles dépendent du forfait choisi et des services tiers connectés. Le détail de l’offre retenue est présenté avant la souscription.",
+          "Minerva Flow est un service logiciel en ligne destiné aux restaurants et aux entreprises de restauration. Les fonctionnalités accessibles dépendent des services tiers connectés (caisse, paiements, cartes de fidélité). L’offre qui s’applique à votre établissement vous est présentée par écrit avant toute facturation.",
         ],
       },
       {
-        title: "2. Prix et taxes",
+        title: "2. Rémunération à la performance",
         paragraphs: [
-          "Les prix sont en dollars canadiens (CAD), avant taxes. À titre de référence, le catalogue actuel indique Essentiel à 150 $ par mois ou 1 350 $ par année, et Croissance à 290 $ par mois ou 2 610 $ par année. Le forfait Marque blanche est offert à partir de 590 $ par mois sur devis. Le prix et la périodicité applicables à votre commande sont ceux affichés à la dernière étape de souscription ou inscrits dans votre devis accepté.",
-          "Les taxes applicables sont ajoutées au montant dû et calculées conformément aux lois applicables. Le total et les taxes sont présentés avant la confirmation du paiement. Si le prix d’un forfait change, le nouveau prix s’applique à un renouvellement futur après avis préalable; vous pouvez résilier avant sa prise d’effet.",
+          "Minerva Flow n’a pas de forfait ni d’abonnement fixe. Minerva est rémunérée uniquement par un pourcentage des revenus additionnels mesurés que le programme de fidélité génère pour votre établissement, selon le pourcentage et la méthode de mesure indiqués dans votre offre acceptée par écrit. S’il n’y a aucun revenu additionnel mesuré pour une période, aucun montant n’est dû pour cette période.",
+          "Aucun résultat n’est garanti. Les ordres de grandeur présentés dans nos documents (par exemple « jusqu’à 5 à 10 % de revenus selon le panier ») sont des estimations fondées sur des hypothèses; ils ne constituent ni une promesse ni une moyenne. Vos résultats dépendent notamment de votre clientèle, de votre panier moyen et de l’adoption du programme par vos clients.",
+          "Les montants sont en dollars canadiens (CAD), avant taxes. Les taxes applicables sont ajoutées conformément à la loi.",
         ],
       },
       {
-        title: "3. Essai gratuit et début de la facturation",
+        title: "3. Période de développement gratuite",
         paragraphs: [
-          "Les nouveaux abonnements admissibles comprennent un essai de 14 jours. La date de fin de l’essai, le forfait choisi et le montant qui sera facturé ensuite sont présentés lors de la souscription. Sauf résiliation avant la fin de l’essai, l’abonnement passe au forfait payant choisi et le paiement est demandé selon le moyen de paiement enregistré.",
+          "Pendant la période de développement, l’accès au Service est gratuit. Aucun moyen de paiement n’est demandé et aucune facturation ne commence automatiquement.",
+          "Avant toute première facturation, Minerva vous envoie un avis écrit d’au moins 30 jours qui précise le pourcentage, la méthode de mesure et la date de début. La facturation ne commence que si vous acceptez expressément l’offre; sans acceptation, le Service demeure gratuit ou prend fin, selon ce que Minerva vous aura indiqué dans l’avis.",
         ],
       },
       {
-        title: "4. Paiement et renouvellement",
+        title: "4. Mesure et facturation",
         paragraphs: [
-          "L’abonnement est facturé d’avance selon la périodicité choisie, mensuelle ou annuelle, et se renouvelle automatiquement pour une période équivalente jusqu’à sa résiliation. Les paiements et factures sont traités par Stripe ou par le fournisseur de paiement indiqué au moment de la commande. Vous autorisez les débits correspondant au forfait, aux taxes applicables et aux changements de forfait que vous avez confirmés.",
-          "Un changement de forfait ou de périodicité peut entraîner un ajustement au prorata; le montant applicable est indiqué dans la facturation associée au changement.",
+          "Les revenus additionnels sont mesurés à partir des données du Service (commandes, visites créditées, passages en caisse liés au programme) en comparant l’activité des clients membres à une base de référence décrite dans votre offre. Un relevé mensuel présente les chiffres utilisés et le calcul du montant dû.",
+          "Vous pouvez contester un relevé dans les 30 jours suivant sa réception; Minerva examine la contestation et corrige toute erreur. Les paiements et factures sont traités par le fournisseur de paiement indiqué dans votre offre. Vous autorisez uniquement les débits correspondant à un relevé que vous avez reçu.",
         ],
       },
       {
         title: "5. Résiliation",
         paragraphs: [
-          "Le propriétaire du compte peut demander la résiliation depuis les paramètres de facturation. Elle prend effet à la fin de la période déjà payée; l’accès au Service demeure disponible jusqu’à cette date. Pour éviter le prochain renouvellement, la demande doit être faite avant la date de renouvellement affichée dans le compte.",
+          "Vous pouvez mettre fin à l’utilisation du Service en tout temps, depuis les paramètres du compte ou par courriel à flow@minervaflow.app, sans pénalité ni frais de résiliation. La résiliation prend effet à la fin du mois en cours; les revenus additionnels mesurés jusqu’à cette date demeurent facturables selon le relevé correspondant.",
         ],
       },
       {
-        title: "6. Remboursements",
+        title: "6. Corrections et remboursements",
         paragraphs: [
-          "Après un débit, les sommes payées pour la période de facturation commencée ne sont pas remboursées et ne donnent pas lieu à un remboursement au prorata en cas de résiliation. Cette règle ne limite pas les droits, recours ou remboursements auxquels une personne peut avoir droit en vertu d’une disposition impérative de la loi, ni la correction d’un débit effectué par erreur.",
+          "Un montant facturé par erreur ou à la suite d’une mesure erronée est corrigé ou remboursé. Cette règle ne limite pas les droits, recours ou remboursements auxquels une personne peut avoir droit en vertu d’une disposition impérative de la loi.",
         ],
       },
       {
@@ -74,7 +76,7 @@ const copy = {
       {
         title: "9. Services tiers, disponibilité et contact",
         paragraphs: [
-          "Les intégrations (par exemple Stripe, Square et Google) restent soumises aux conditions et politiques de leurs fournisseurs. Minerva peut faire évoluer le Service et effectuer des interruptions de maintenance ou de sécurité. Pour toute question relative à un abonnement ou à ces conditions, écrivez à flow@minervaflow.app ou utilisez la page d’aide.",
+          "Les intégrations (par exemple Stripe, Square et Google) restent soumises aux conditions et politiques de leurs fournisseurs. Minerva peut faire évoluer le Service et effectuer des interruptions de maintenance ou de sécurité. Pour toute question relative à la facturation ou à ces conditions, écrivez à flow@minervaflow.app ou utilisez la page d’aide.",
         ],
       },
     ],
@@ -83,50 +85,52 @@ const copy = {
       "Les droits que la loi rend impératifs prévalent sur toute disposition contraire des présentes conditions.",
   },
   en: {
-    title: "Terms of Sale and Use",
+    title: "Terms of Use",
     description:
-      "Minerva Flow restaurant subscription terms: pricing, trial, renewals, cancellation, taxes, and refunds.",
-    updated: "Last updated: October 6, 2026",
+      "Minerva Flow terms of use for restaurants: free development period, performance-based fees, measurement, billing, cancellation, and taxes.",
+    updated: "Last updated: October 10, 2026",
     supplier: "Minerva Technologies Inc. · Mailing address",
     intro:
-      "These terms govern professional subscriptions to Minerva Flow. By subscribing on behalf of a restaurant or business, you confirm that you are authorized to bind it. The Service is provided by Minerva Technologies Inc. (“Minerva”).",
+      "These terms govern professional use of Minerva Flow. By opening an account on behalf of a restaurant or business, you confirm that you are authorized to bind it. The Service is provided by Minerva Technologies Inc. (“Minerva”).",
     sections: [
       {
         title: "1. Service",
         paragraphs: [
-          "Minerva Flow is an online software service for restaurants and food-service businesses. Available features depend on the selected plan and connected third-party services. The selected offer is described before you subscribe.",
+          "Minerva Flow is an online software service for restaurants and food-service businesses. Available features depend on the connected third-party services (point of sale, payments, loyalty cards). The offer that applies to your location is presented to you in writing before any billing.",
         ],
       },
       {
-        title: "2. Prices and taxes",
+        title: "2. Performance-based fees",
         paragraphs: [
-          "Prices are in Canadian dollars (CAD), before taxes. The current catalogue lists Essentiel at $150 per month or $1,350 per year, and Croissance at $290 per month or $2,610 per year. Marque blanche starts at $590 per month by quote. The price and billing interval for your order are those shown at the final subscription step or stated in your accepted quote.",
-          "Applicable taxes are added and calculated as required by law. The total and taxes are shown before payment is confirmed. If a plan price changes, the new price applies to a future renewal after prior notice; you may cancel before it takes effect.",
+          "Minerva Flow has no fixed plan or subscription. Minerva is paid only a percentage of the measured additional revenue the loyalty program generates for your location, at the percentage and under the measurement method set out in your offer accepted in writing. If no additional revenue is measured for a period, nothing is owed for that period.",
+          "No result is guaranteed. Orders of magnitude shown in our materials (for example “up to 5–10% additional revenue depending on basket size”) are estimates based on assumptions; they are neither a promise nor an average. Your results depend on factors such as your customers, your average basket, and how many customers adopt the program.",
+          "Amounts are in Canadian dollars (CAD), before taxes. Applicable taxes are added as required by law.",
         ],
       },
       {
-        title: "3. Free trial and start of billing",
+        title: "3. Free development period",
         paragraphs: [
-          "Eligible new subscriptions include a 14-day trial. The trial end date, selected plan, and amount to be charged afterward are shown when you subscribe. Unless you cancel before the trial ends, your subscription converts to the selected paid plan and payment is collected using the payment method on file.",
+          "During the development period, access to the Service is free. No payment method is requested and no billing starts automatically.",
+          "Before any first billing, Minerva sends you written notice at least 30 days in advance stating the percentage, the measurement method, and the start date. Billing starts only if you expressly accept the offer; without acceptance, the Service stays free or ends, as Minerva states in the notice.",
         ],
       },
       {
-        title: "4. Payment and renewal",
+        title: "4. Measurement and billing",
         paragraphs: [
-          "Your subscription is billed in advance at the selected monthly or annual interval and renews automatically for the same interval until cancelled. Payments and invoices are handled by Stripe or the payment provider identified at checkout. You authorize charges for the plan, applicable taxes, and plan changes you confirm.",
-          "A plan or billing-interval change may result in a prorated adjustment; the applicable amount is shown with the related billing change.",
+          "Additional revenue is measured from Service data (orders, credited visits, point-of-sale transactions linked to the program) by comparing the activity of member customers with a baseline described in your offer. A monthly statement shows the figures used and how the amount due is calculated.",
+          "You may dispute a statement within 30 days of receiving it; Minerva reviews the dispute and corrects any error. Payments and invoices are handled by the payment provider named in your offer. You authorize only charges that match a statement you have received.",
         ],
       },
       {
         title: "5. Cancellation",
         paragraphs: [
-          "The account owner may request cancellation from billing settings. Cancellation takes effect at the end of the period already paid for, and access remains available until then. To avoid the next renewal, submit the request before the renewal date shown in your account.",
+          "You may stop using the Service at any time, from account settings or by email to flow@minervaflow.app, with no penalty or cancellation fee. Cancellation takes effect at the end of the current month; additional revenue measured up to that date remains billable under the corresponding statement.",
         ],
       },
       {
-        title: "6. Refunds",
+        title: "6. Corrections and refunds",
         paragraphs: [
-          "After a charge, amounts paid for the billing period that has started are non-refundable and are not prorated when you cancel. This rule does not limit any mandatory statutory rights, remedies, or refunds, or the correction of an erroneous charge.",
+          "An amount billed in error or following an erroneous measurement is corrected or refunded. This rule does not limit any mandatory statutory rights, remedies, or refunds.",
         ],
       },
       {
@@ -144,7 +148,7 @@ const copy = {
       {
         title: "9. Third-party services, availability, and contact",
         paragraphs: [
-          "Integrations (for example, Stripe, Square, and Google) remain subject to their providers’ terms and policies. Minerva may update the Service and perform maintenance or security interruptions. For subscription or terms questions, email flow@minervaflow.app or visit the help page.",
+          "Integrations (for example, Stripe, Square, and Google) remain subject to their providers’ terms and policies. Minerva may update the Service and perform maintenance or security interruptions. For billing or terms questions, email flow@minervaflow.app or visit the help page.",
         ],
       },
     ],
@@ -196,7 +200,7 @@ export default async function TermsPage({
         <Link href="/" className="mb-8 flex items-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[17px] font-bold text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            <span className="italic text-mv-ink">Minerva Flow</span>
           </span>
         </Link>
 

@@ -2,12 +2,107 @@
 
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
-import type { ReactNode } from "react";
+import React, { Component, useSyncExternalStore, type ReactNode } from "react";
 
 const GrainGradient = dynamic(
   () => import("@paper-design/shaders-react").then((mod) => mod.GrainGradient),
   { ssr: false }
 );
+
+interface ErrorBoundaryProps {
+  fallback: ReactNode;
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ShaderErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    // Gracefully catch WebGL unsupported / context creation crashes without polluting PostHog
+    console.warn("[ShaderErrorBoundary] WebGL shader unavailable, using CSS fallback:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+let webglSupportCache: boolean | undefined;
+
+function checkWebGLSupport(): boolean {
+  if (typeof window === "undefined") return false;
+  if (webglSupportCache !== undefined) return webglSupportCache;
+  try {
+    const canvas = document.createElement("canvas");
+    webglSupportCache = Boolean(
+      window.WebGLRenderingContext &&
+        (canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
+    );
+  } catch {
+    webglSupportCache = false;
+  }
+  return webglSupportCache;
+}
+
+function CssGradientFallback() {
+  return (
+    <div
+      className="absolute inset-0 bg-mv-green-tint"
+      aria-hidden="true"
+      style={{
+        background:
+          "radial-gradient(ellipse at 85% 15%, rgba(223, 255, 95, 0.45) 0%, transparent 55%), radial-gradient(ellipse at 15% 85%, rgba(22, 127, 91, 0.35) 0%, transparent 60%), linear-gradient(135deg, #f5f1e6 0%, #dcece3 50%, #eef5f0 100%)",
+      }}
+    />
+  );
+}
+
+function SafeGrainGradient() {
+  // null on the server and during hydration (CSS fallback), then the real answer.
+  const supported = useSyncExternalStore(
+    () => () => {},
+    () => checkWebGLSupport(),
+    () => null,
+  );
+
+  if (supported === false || supported === null) {
+    return <CssGradientFallback />;
+  }
+
+  return (
+    <ShaderErrorBoundary fallback={<CssGradientFallback />}>
+      <GrainGradient
+        speed={0.6}
+        scale={1}
+        rotation={0}
+        offsetX={0}
+        offsetY={0}
+        softness={0.75}
+        intensity={0.45}
+        noise={0.06}
+        shape="corners"
+        frame={1200}
+        colors={["#f5f1e6", "#dcece3", "#dfff5f", "#167f5b"]}
+        colorBack="#eef5f000"
+        className="absolute inset-0"
+      />
+    </ShaderErrorBoundary>
+  );
+}
 import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/shell/Logo";
 import { StepIndicator } from "@/components/ui/onboarding";
@@ -72,21 +167,7 @@ export function AuthShell({
 
         {/* ── Visual side: light grain-gradient panel, mv-green/mv-lime tones ── */}
         <div className="relative hidden min-h-[640px] overflow-hidden rounded-3xl border border-mv-border bg-mv-green-tint lg:flex lg:min-h-0">
-          <GrainGradient
-            speed={0.6}
-            scale={1}
-            rotation={0}
-            offsetX={0}
-            offsetY={0}
-            softness={0.75}
-            intensity={0.45}
-            noise={0.06}
-            shape="corners"
-            frame={1200}
-            colors={["#f5f1e6", "#dcece3", "#dfff5f", "#167f5b"]}
-            colorBack="#eef5f000"
-            className="absolute inset-0"
-          />
+          <SafeGrainGradient />
           <div className="relative z-10 flex h-full w-full flex-col justify-between p-10 xl:p-14">
             <div />
             <AnimatePresence mode="wait" initial={false}>

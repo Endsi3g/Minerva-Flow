@@ -16,6 +16,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "motion/react";
+import type { HTMLMotionProps } from "motion/react";
 
 const stepIndicatorVariants = cva("flex items-center justify-center gap-2", {
   variants: {
@@ -116,6 +117,8 @@ export interface OnboardingContextValue {
   maxStepValue: number;
   canGoNext: boolean;
   canGoBack: boolean;
+  /** True when the user is on the last step of the sequence */
+  isLastStep: boolean;
   handleBack: () => void;
   handleNext: () => void;
   handleComplete: () => void;
@@ -144,6 +147,12 @@ export interface OnboardingRootProps
   defaultStepValue?: number;
   onStepValueChange?: (value: number) => void;
   totalSteps: number;
+  /**
+   * Custom step visit order. When provided, next/back navigate through this
+   * array rather than incrementing/decrementing numerically. Used for A/B
+   * tests that reorder wizard steps (e.g. [1, 4, 2, 3, 5]).
+   */
+  stepSequence?: number[];
   /** Max sub-step value for step 1 (e.g. feature count - 1). Default 0 = no sub-steps */
   maxStepValue?: number;
   onComplete?: () => void;
@@ -159,6 +168,7 @@ function OnboardingRoot({
   defaultStepValue = 0,
   onStepValueChange,
   totalSteps,
+  stepSequence,
   maxStepValue: controlledMaxStepValue = 0,
   onComplete,
   canGoNext: canGoNextFn,
@@ -182,27 +192,35 @@ function OnboardingRoot({
 
   const canGoNext = canGoNextFn ? canGoNextFn(currentStep, stepValue) : true;
 
-  const canGoBack = currentStep > 1 || stepValue > 0;
+  // When stepSequence is provided, navigate through the array instead of
+  // incrementing/decrementing numerically. Falls back to numeric order.
+  const seqIndex = stepSequence ? stepSequence.indexOf(currentStep) : currentStep - 1;
+  const firstStep = stepSequence ? stepSequence[0] : 1;
+  const prevStepInSeq = stepSequence ? stepSequence[seqIndex - 1] : currentStep - 1;
+  const nextStepInSeq = stepSequence ? stepSequence[seqIndex + 1] : currentStep + 1;
+  const isLastStep = stepSequence
+    ? seqIndex === stepSequence.length - 1
+    : currentStep === totalSteps;
+
+  const canGoBack = (stepSequence ? seqIndex > 0 : currentStep > 1) || stepValue > 0;
 
   const handleNext = useCallback(() => {
-    if (currentStep === 1 && stepValue < maxStepValue) {
+    if (currentStep === firstStep && stepValue < maxStepValue) {
       setStepValueState((prev) => prev + 1);
-    } else if (currentStep < totalSteps) {
+    } else if (nextStepInSeq !== undefined) {
       setStepValueState(0);
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStep(nextStepInSeq);
     }
-  }, [currentStep, stepValue, maxStepValue, totalSteps, setStepValueState, setCurrentStep]);
+  }, [currentStep, firstStep, stepValue, maxStepValue, nextStepInSeq, setStepValueState, setCurrentStep]);
 
   const handleBack = useCallback(() => {
-    if (currentStep === 1 && stepValue > 0) {
+    if (currentStep === firstStep && stepValue > 0) {
       setStepValueState((prev) => prev - 1);
-    } else if (currentStep === 2) {
-      setCurrentStep(1);
-      setStepValueState(maxStepValue);
-    } else if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
+    } else if (prevStepInSeq !== undefined) {
+      setCurrentStep(prevStepInSeq);
+      if (prevStepInSeq === firstStep) setStepValueState(maxStepValue);
     }
-  }, [currentStep, stepValue, maxStepValue, setStepValueState, setCurrentStep]);
+  }, [currentStep, firstStep, stepValue, maxStepValue, prevStepInSeq, setStepValueState, setCurrentStep]);
 
   const handleComplete = useCallback(() => {
     onComplete?.();
@@ -218,6 +236,7 @@ function OnboardingRoot({
       maxStepValue,
       canGoNext,
       canGoBack,
+      isLastStep,
       handleBack,
       handleNext,
       handleComplete,
@@ -232,6 +251,7 @@ function OnboardingRoot({
       maxStepValue,
       canGoNext,
       canGoBack,
+      isLastStep,
       handleBack,
       handleNext,
       handleComplete,
@@ -246,7 +266,7 @@ function OnboardingRoot({
           className
         )}
         data-slot="onboarding-root"
-        {...(props as any)}
+        {...props}
       >
         {children}
       </div>
@@ -258,7 +278,7 @@ function OnboardingRoot({
 // Step
 // ============================================================================
 
-export interface OnboardingStepProps extends React.ComponentPropsWithoutRef<"div"> {
+export interface OnboardingStepProps extends Omit<HTMLMotionProps<"div">, "ref"> {
   /** Step index (1-based) — content renders when currentStep matches */
   step: number;
 }
@@ -283,7 +303,7 @@ function OnboardingStep({ step, children, className, ...props }: OnboardingStepP
           className={cn(className)}
           data-slot="onboarding-step"
           data-state="active"
-          {...(props as any)}
+          {...props}
         >
           {children}
         </motion.div>
@@ -296,8 +316,10 @@ function OnboardingStep({ step, children, className, ...props }: OnboardingStepP
 // StepIndicator (connected)
 // ============================================================================
 
-export interface OnboardingStepIndicatorProps
-  extends Omit<React.ComponentProps<typeof StepIndicator>, "currentStep" | "totalSteps"> {}
+export type OnboardingStepIndicatorProps = Omit<
+  React.ComponentProps<typeof StepIndicator>,
+  "currentStep" | "totalSteps"
+>;
 
 function OnboardingStepIndicator(props: OnboardingStepIndicatorProps) {
   const { currentStep, totalSteps } = useOnboarding();
@@ -363,17 +385,15 @@ function OnboardingNavigation({
   ...props
 }: OnboardingNavigationProps) {
   const {
-    currentStep,
-    totalSteps,
     canGoNext: contextCanGoNext,
     canGoBack,
+    isLastStep,
     handleBack,
     handleNext,
     handleComplete,
   } = useOnboarding();
 
   const canGoNext = canGoNextOverride ?? contextCanGoNext;
-  const isLastStep = currentStep === totalSteps;
 
   if (children) {
     return (

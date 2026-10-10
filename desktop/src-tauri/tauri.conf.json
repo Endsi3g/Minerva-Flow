@@ -1,0 +1,61 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Minerva Flow",
+  "version": "0.2.0",
+  "identifier": "app.minervaflow.desktop",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Minerva Flow",
+        "width": 1360,
+        "height": 860,
+        "minWidth": 1024,
+        "minHeight": 680,
+        "center": true,
+        "backgroundColor": "#F5F1E6"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Business",
+    "shortDescription": "Gestion de votre restaurant : commandes, menu, inventaire, fidélité.",
+    "longDescription": "Minerva Flow pour ordinateur : le portail complet avec alertes de commande, impression de tickets et mode caisse plein écran.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFENkQxNDIzRjhFOTI2REEKUldUYUp1bjRJeFJ0cmZJSEtNQTlYWVV1eWZ3OUlJeVVYVjl2dUlWb01ZN2lqaGduN3NhUzJuTEIK",
+      "endpoints": [
+        "https://www.minervaflow.app/api/desktop/update"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

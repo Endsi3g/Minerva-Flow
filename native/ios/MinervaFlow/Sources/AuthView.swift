@@ -17,6 +17,9 @@ import Supabase
 /// their own inbox, and real tappable links to the actual legal pages
 /// instead of static unlinked text next to a checkbox.
 struct AuthView: View {
+    var restaurantName: String? = nil
+    var isOwnerLogin = false
+    var onBack: (() -> Void)? = nil
     @EnvironmentObject var supabase: SupabaseManager
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
 
@@ -27,6 +30,7 @@ struct AuthView: View {
     @State private var step: Step = .email
     @State private var acceptedTerms = false
     @State private var marketingOptIn = false
+    @State private var sessionReplayOptIn = false
     @State private var isBusy = false
     @State private var errorMessage: String?
     @State private var resendCooldown = 0
@@ -72,37 +76,38 @@ struct AuthView: View {
             MinervaColor.cream.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 32) {
-                    Spacer(minLength: 60)
-
-                    ZStack(alignment: .trailing) {
-                        HStack(spacing: 9) {
-                            Image("LogoMark")
-                                .resizable()
-                                .frame(width: 28, height: 28)
-                                .accessibilityHidden(true)
-                            Text("Minerva Flow")
-                                .font(MinervaFont.display(18, weight: .semibold))
-                                .italic(language == .fr)
-                                .foregroundStyle(MinervaColor.ink)
+                VStack(spacing: 24) {
+                    if let onBack {
+                        Button(action: onBack) {
+                            Label(language == .fr ? "Retour" : "Back", systemImage: "chevron.left")
+                                .font(.mv(size: 14, weight: .semibold))
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Minerva Flow")
+                    }
 
+                    HStack(spacing: 10) {
+                        Image("LogoMark")
+                            .resizable()
+                            .frame(width: 34, height: 34)
+                            .accessibilityHidden(true)
+                        Text("Minerva Flow")
+                            .font(.mv(size: 20, weight: .semibold))
+                            .foregroundStyle(MinervaColor.ink)
+                        Spacer(minLength: 8)
                         LanguageMenu(language: Binding(get: { language }, set: { storedLanguage = $0.rawValue }), tint: MinervaColor.emeraldDark)
                             .environment(\.colorScheme, .light)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .contain)
 
                     card
-                        // 80% of the screen width, per the design brief — capped
-                        // so it doesn't stretch absurdly wide on iPad.
-                        .frame(width: min(UIScreen.main.bounds.width * 0.8, 440))
 
                     Spacer(minLength: 60)
                 }
+                .padding(24)
+                .frame(maxWidth: 540)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: UIScreen.main.bounds.height - 100)
             }
             .scrollDismissesKeyboard(.interactively)
         }
@@ -142,22 +147,17 @@ struct AuthView: View {
 
     private var emailStep: some View {
         VStack(spacing: 16) {
-            VStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(greetingTitle)
-                    // Requested as "Inter Bold" specifically for this
-                    // title — Inter isn't bundled in the app (no other
-                    // screen uses it, see Theme.swift), so this uses the
-                    // system font at .bold instead of pulling in a new
-                    // typeface for one Text. Ask if the exact Inter
-                    // typeface matters and I'll bundle the real font file.
-                    .font(.mv(size: 21, weight: .bold))
+                    .font(MinervaFont.display(28, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 Text(greetingSubtitle)
-                    .font(.mv(size: 13))
+                    .font(.mv(size: 14))
                     .foregroundStyle(MinervaColor.inkSoft)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             oauthSection
 
@@ -170,12 +170,15 @@ struct AuthView: View {
                     .font(.mv(size: 11.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
                 TextField("", text: $email, prompt: Text("vous@exemple.com").foregroundStyle(MinervaColor.inkFaint))
+                    .accessibilityIdentifier("authEmail")
+                    .accessibilityLabel(language == .fr ? "Courriel" : "Email")
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .submitLabel(authMode == .code ? .go : .next)
                     .focused($focusedField, equals: .email)
+                    .onTapGesture { focusedField = .email }
                     .onSubmit {
                         if authMode == .code {
                             if canSubmit { Task { await primaryAction() } }
@@ -232,18 +235,7 @@ struct AuthView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: authMode)
         .animation(.easeInOut(duration: 0.2), value: passwordSubMode)
-        .onAppear {
-            // Firing the keyboard's own slide-up animation at the exact
-            // instant RootView's screen crossfade starts makes both
-            // animations fight each other — that fight is what reads as
-            // "the loading feels broken" after tapping Commencer/Se
-            // connecter, not an actual network delay (there isn't one on
-            // this screen). Waiting until the crossfade (0.35s) has
-            // resolved lets the keyboard animate on its own, cleanly.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                focusedField = .email
-            }
-        }
+
     }
 
     // MARK: - OAuth (Apple / Google)
@@ -456,6 +448,7 @@ struct AuthView: View {
             }
         } catch {
             oauthError = "La connexion a échoué. Réessayez."
+            Analytics.capture("auth_failed", ["method": provider == .apple ? "apple" : "google"])
         }
         oauthBusy = nil
     }
@@ -484,6 +477,8 @@ struct AuthView: View {
             }
 
             TextField("", text: $code, prompt: Text("123456").foregroundStyle(MinervaColor.inkFaint))
+                .accessibilityIdentifier("authEmailCode")
+                .accessibilityLabel(language == .fr ? "Code de vérification par courriel" : "Email verification code")
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
                 .font(.mv(size: 24, weight: .semibold, design: .monospaced))
@@ -615,6 +610,7 @@ struct AuthView: View {
     private var trimmedEmail: String { email.trimmingCharacters(in: .whitespaces) }
 
     private var greetingTitle: String {
+        if isOwnerLogin { return language == .fr ? "Gérer mon établissement" : "Manage my restaurant" }
         switch authMode {
         case .code: return language == .fr ? "Bienvenue" : "Welcome"
         case .password: return passwordSubMode == .login ? (language == .fr ? "Content de vous revoir" : "Welcome back") : (language == .fr ? "Créer votre compte" : "Create your account")
@@ -622,6 +618,8 @@ struct AuthView: View {
     }
 
     private var greetingSubtitle: String {
+        if isOwnerLogin { return language == .fr ? "Connectez-vous avec le compte de votre portail web. Seuls vos droits actifs ouvrent la gestion." : "Sign in with your web portal account. Management requires active permissions." }
+        if let restaurantName { return language == .fr ? "Votre compte chez \(restaurantName). Recevez un code par courriel pour continuer." : "Your account at \(restaurantName). Receive an email code to continue." }
         switch authMode {
         case .code: return language == .fr ? "Retrouvez vos points, vos récompenses et les offres de vos restaurants préférés." : "See your points, rewards, and offers from your favourite restaurants."
         case .password:
@@ -655,8 +653,13 @@ struct AuthView: View {
             consentRow(checked: $marketingOptIn) {
                 Text("J'aimerais recevoir des offres par courriel. Optionnel.")
             }
+            consentRow(checked: $sessionReplayOptIn, identifier: "sessionReplayConsent") {
+                Text(language == .fr
+                     ? "J'accepte que mes sessions dans l'app soient enregistrées (texte et images masqués) pour améliorer Minerva Flow. Optionnel, modifiable dans les paramètres."
+                     : "I agree to have my in-app sessions recorded (text and images masked) to improve Minerva Flow. Optional, changeable in settings.")
+            }
             HStack(alignment: .top, spacing: 9) {
-                consentCheckbox(checked: $acceptedTerms)
+                consentCheckbox(checked: $acceptedTerms, identifier: "acceptTerms")
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 3) {
                         Text("J'accepte les")
@@ -680,9 +683,9 @@ struct AuthView: View {
         }
     }
 
-    private func consentRow<Label: View>(checked: Binding<Bool>, @ViewBuilder label: () -> Label) -> some View {
+    private func consentRow<Label: View>(checked: Binding<Bool>, identifier: String = "marketingConsent", @ViewBuilder label: () -> Label) -> some View {
         HStack(alignment: .top, spacing: 9) {
-            consentCheckbox(checked: checked)
+            consentCheckbox(checked: checked, identifier: identifier)
 
             label()
                 .font(.mv(size: 11.5))
@@ -692,16 +695,18 @@ struct AuthView: View {
         }
     }
 
-    private func consentCheckbox(checked: Binding<Bool>) -> some View {
+    private func consentCheckbox(checked: Binding<Bool>, identifier: String) -> some View {
         Button {
             checked.wrappedValue.toggle()
         } label: {
             Image(systemName: checked.wrappedValue ? "checkmark.square.fill" : "square")
                 .font(.mv(size: 16))
                 .foregroundStyle(MinervaColor.emeraldDark)
+                .frame(width: 44, height: 44, alignment: .leading).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(checked.wrappedValue ? "Consentement accepté" : "Accepter le consentement")
+        .accessibilityIdentifier(identifier)
     }
 
     // MARK: - Actions
@@ -710,24 +715,30 @@ struct AuthView: View {
         errorMessage = nil
         isBusy = true
         defer { isBusy = false }
+        if needsConsent && step == .email && sessionReplayOptIn { Analytics.sessionReplayConsent = true }
         do {
             if step == .code {
                 try await supabase.verifyCode(email: trimmedEmail, code: code)
+                Analytics.capture("auth_succeeded", ["method": "email_code"])
                 return
             }
             switch authMode {
             case .code:
                 try await supabase.sendCode(email: trimmedEmail, marketingOptIn: marketingOptIn)
+                Analytics.capture("auth_code_sent")
                 withAnimation { step = .code }
             case .password:
                 if passwordSubMode == .login {
                     try await supabase.signInWithPassword(email: trimmedEmail, password: password)
+                    Analytics.capture("auth_succeeded", ["method": "password"])
                 } else {
                     try await supabase.signUpWithPassword(email: trimmedEmail, password: password, marketingOptIn: marketingOptIn)
+                    Analytics.capture("signup_submitted", ["method": "password"])
                 }
             }
         } catch {
             errorMessage = friendlyErrorMessage()
+            Analytics.capture("auth_failed", ["method": step == .code ? "email_code" : (authMode == .code ? "email_code_request" : "password"), "stage": step == .code ? "verify" : "submit"])
             if step == .code {
                 // A rejected code should be retyped, not silently
                 // re-verified against the same wrong digits.

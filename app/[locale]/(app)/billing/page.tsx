@@ -7,17 +7,13 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { AlertBanner } from "@/components/ui/AlertBanner";
-import { PricingTableFive } from "@/components/billingsdk/pricing-table-five";
 import { CancelSubscriptionCard } from "@/components/billingsdk/cancel-subscription-card";
 import { InvoiceHistory } from "@/components/billingsdk/invoice-history";
-import { ProrationPreview } from "@/components/billingsdk/proration-preview";
 import { Modal } from "@/components/ui/Modal";
 import { EditorialLoadingState } from "@/components/ui/EditorialLoadingState";
 import {
-  createCheckoutSessionAction,
   createBillingPortalSessionAction,
   getBillingStatusAction,
-  changePlanAction,
   cancelSubscriptionAction,
   resumeSubscriptionAction,
   listInvoicesAction,
@@ -25,13 +21,13 @@ import {
   type InvoiceListItem,
 } from "./actions";
 import { plans as billingSdkPlans } from "@/lib/billingsdk-config";
-import { PLANS, isSelfServeTier, type SelfServePlanTier, type BillingInterval } from "@/lib/billing/plans";
+import { PLANS } from "@/lib/billing/plans";
 import { formatDate } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Stripe } from "@/components/ui/BrandIcons";
 import { toast } from "sonner";
-import { CheckCircle2, Sparkles, Zap, Cpu, ArrowUpRight } from "lucide-react";
-import { PLAN_NAMES, PLAN_AI_QUOTAS, type PlanTier } from "@/lib/ai/quotas";
+import { CheckCircle2, Sparkles } from "lucide-react";
+import { type PlanTier } from "@/lib/ai/quotas";
 
 function buildINCLUDED_FEATURES(t: (key: string) => string) {
   return [
@@ -84,7 +80,6 @@ export default function BillingPage() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reason, setReason] = useState<CancellationReason>("too_expensive");
   const [feedback, setFeedback] = useState("");
-  const [switchTarget, setSwitchTarget] = useState<{ tier: SelfServePlanTier; interval: BillingInterval } | null>(null);
 
   function refresh() {
     getBillingStatusAction().then(setStatus);
@@ -98,45 +93,7 @@ export default function BillingPage() {
     if (status?.subscription) {
       listInvoicesAction().then(setInvoices);
     }
-  }, [status?.subscription?.stripeCustomerId]);
-
-  async function handleSelectPlan(planId: string, interval: BillingInterval) {
-    if (planId === "marque_blanche") {
-      window.location.href =
-        "mailto:ventes@minervaflow.app?subject=" + encodeURIComponent("Minerva Flow — forfait Marque blanche");
-      return;
-    }
-    if (!isSelfServeTier(planId)) return;
-
-    setLoading(true);
-    try {
-      // Already subscribed (Essentiel <-> Croissance) — switch in place with
-      // proration instead of starting a second Checkout session.
-      if (status?.subscription) {
-        setSwitchTarget({ tier: planId, interval });
-        return;
-      }
-      const url = await createCheckoutSessionAction(planId, interval);
-      if (url) window.location.href = url;
-      else toast.error(t("billingIsNotSet"));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleConfirmSwitch() {
-    if (!switchTarget) return;
-    setLoading(true);
-    const res = await changePlanAction(switchTarget.tier, switchTarget.interval);
-    setLoading(false);
-    setSwitchTarget(null);
-    if (res.ok) {
-      toast.success(t("yourPlanWasUpdated"));
-      refresh();
-    } else {
-      toast.error(res.error ?? t("thePlanChangeFailed"));
-    }
-  }
+  }, [status?.subscription]);
 
   async function handleManage() {
     setLoading(true);
@@ -180,12 +137,7 @@ export default function BillingPage() {
     }
   }
 
-  const aiUsage = status?.aiUsage;
-  const planTier = (aiUsage?.planTier ?? "essentiel") as PlanTier;
-  const quota = aiUsage?.monthlyQuota ?? PLAN_AI_QUOTAS.essentiel;
-  const used = aiUsage?.tokensUsed ?? 0;
-  const percentUsed = Math.min(100, Math.round((used / Math.max(1, quota)) * 100));
-  const currentPlanDef = PLANS[planTier];
+  const planTier = (status?.aiUsage?.planTier ?? "essentiel") as PlanTier;
 
   return (
     <div className="mv-billing-scope space-y-6">
@@ -220,26 +172,6 @@ export default function BillingPage() {
           }
         >
           {t("accessEndsOn", { date: formatDate(status.subscription.currentPeriodEnd.slice(0, 10), locale) })}
-        </AlertBanner>
-      )}
-
-      {aiUsage && aiUsage.isExceeded && (
-        <AlertBanner
-          tone="error"
-          title="Quota Flow AI atteint"
-          action={
-            <Button size="sm" variant="secondary" onClick={() => document.getElementById("mv-pricing")?.scrollIntoView({ behavior: "smooth" })}>
-              {t("upgradeYourPlan")}
-            </Button>
-          }
-        >
-          {t("yourMonthlyFlowAi")}
-          renouvellement.
-        </AlertBanner>
-      )}
-      {aiUsage && !aiUsage.isExceeded && percentUsed >= 80 && (
-        <AlertBanner tone="warning" title={t("flowAiQuotaAlmost")}>
-          {t("usedPercentOfQuota", { pct: percentUsed })}
         </AlertBanner>
       )}
 
@@ -282,7 +214,7 @@ export default function BillingPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Stripe width={16} height={16} />
-                  <span className="text-[13.5px] font-medium text-mv-ink">Plan {PLAN_NAMES[planTier]}</span>
+                  <span className="text-[13.5px] font-medium text-mv-ink">{t("customOfferPlanLabel")}</span>
                 </div>
                 <Badge tone={statusTone[status.subscription.status] ?? "neutral"}>
                   {buildStatusLabel(t)[status.subscription.status] ?? status.subscription.status}
@@ -322,163 +254,47 @@ export default function BillingPage() {
               </p>
               <Button
                 className="w-full"
-                onClick={() => document.getElementById("mv-pricing")?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() => {
+                  window.location.href = "mailto:ventes@minervaflow.app?subject=" + encodeURIComponent("Minerva Flow — mon offre");
+                }}
               >
-                {t("seePlans")}
+                {t("customOfferCta")}
               </Button>
             </div>
           )}
         </Card>
 
-        {/* AI Quota & Token Consumption Card */}
+        {/* Performance-based offer: no fixed price, set per establishment */}
         <Card>
-          <CardHeader eyebrow="Intelligence Artificielle" title="Consommation Tokens IA" />
-
+          <CardHeader eyebrow={t("customOfferEyebrow")} title={t("customOfferTitle")} />
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
-                  <Cpu size={15} />
+            <p className="text-[13px] leading-relaxed text-mv-ink-soft">{t("customOfferBody")}</p>
+            <div className="space-y-2">
+              {[t("customOfferPoint1"), t("customOfferPoint2"), t("customOfferPoint3")].map((point) => (
+                <div key={point} className="flex items-start gap-2">
+                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-mv-green-dark" />
+                  <span className="text-[12.5px] text-mv-ink-soft">{point}</span>
                 </div>
-                <span className="text-[13px] font-bold text-mv-ink">Gemini 3.7 Flash</span>
-              </div>
-              <Badge tone={percentUsed >= 90 ? "red" : percentUsed >= 70 ? "amber" : "green"}>
-                {t("percentUsed", { pct: percentUsed })}
-              </Badge>
+              ))}
             </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="font-medium text-mv-ink">{used.toLocaleString("fr-FR")} tokens</span>
-                <span className="text-mv-ink-soft">Quota: {quota.toLocaleString("fr-FR")} tokens/mois</span>
-              </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-mv-cream-soft border border-mv-border">
-                <div
-                  className={`h-full transition-all duration-500 rounded-full ${
-                    percentUsed >= 90 ? "bg-mv-red" : percentUsed >= 70 ? "bg-mv-amber" : "bg-mv-green-dark"
-                  }`}
-                  style={{ width: `${percentUsed}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-mv-border space-y-2">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                {t("aiQuotasIncludedPer")}
-              </p>
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                {(["essentiel", "croissance", "marque_blanche"] as const).map((tier) => (
-                  <div
-                    key={tier}
-                    className={`p-2 rounded-xl border ${planTier === tier ? "border-mv-green bg-mv-green-tint/30 font-bold" : "border-mv-border bg-mv-surface"}`}
-                  >
-                    <p className="text-mv-ink">{PLAN_NAMES[tier]}</p>
-                    <p className="text-mv-ink-soft text-[12px]">
-                      {(PLAN_AI_QUOTAS[tier] / 1000).toLocaleString("fr-FR")}k / mois
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {status?.subscription && (
-              <div className="pt-1">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full text-xs font-semibold gap-1.5"
-                  onClick={() => document.getElementById("mv-pricing")?.scrollIntoView({ behavior: "smooth" })}
-                  disabled={loading}
-                >
-                  <Zap size={13} className="text-mv-amber" />
-                  <span>{t("changePlan")}</span>
-                  <ArrowUpRight size={13} />
-                </Button>
-              </div>
-            )}
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                window.location.href = "mailto:ventes@minervaflow.app?subject=" + encodeURIComponent("Minerva Flow — mon offre");
+              }}
+            >
+              {t("customOfferCta")}
+            </Button>
           </div>
         </Card>
       </div>
-
-      {status?.configured && (
-        <div id="mv-pricing">
-          <PricingTableFive
-            plans={billingSdkPlans}
-            theme="classic"
-            title={status.subscription ? t("changePlan") : t("chooseYourPlan")}
-            description={t("twoClearValuePropositions")}
-            onPlanSelect={handleSelectPlan}
-          />
-        </div>
-      )}
-
-      {status?.configured && !status.subscription && (
-        <div className="mx-auto max-w-4xl w-full">
-          <Card>
-            <CardHeader eyebrow={t("offerEyebrow")} title={t("gotAPromoCode")} />
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
-                <Sparkles size={16} />
-              </div>
-              <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
-                {t.rich("promoBody", { strong: (chunks) => <strong className="font-semibold text-mv-ink">{chunks}</strong> })}
-              </p>
-            </div>
-          </Card>
-        </div>
-      )}
 
       {status?.subscription && invoices && invoices.length > 0 && (
         <div className="mx-auto max-w-4xl w-full">
           <InvoiceHistory invoices={invoices} />
         </div>
       )}
-
-      {/* Plan switch — proration preview before confirming */}
-      <Modal
-        open={Boolean(switchTarget)}
-        onClose={() => setSwitchTarget(null)}
-        title={t("confirmPlanChange")}
-        width={720}
-      >
-        {switchTarget && status?.subscription && (
-          <ProrationPreview
-            currentPlan={{
-              plan: {
-                id: currentPlanDef.tier,
-                title: currentPlanDef.name,
-                description: currentPlanDef.description,
-                monthlyPrice: String(currentPlanDef.monthlyPriceCad ?? 0),
-                yearlyPrice: String(currentPlanDef.yearlyPriceCad ?? 0),
-                currency: "$",
-                buttonText: "",
-                features: [],
-              },
-              type: (status.subscription.billingInterval ?? "monthly") as "monthly" | "yearly",
-              nextBillingDate: status.subscription.currentPeriodEnd ?? "",
-              paymentMethod: "",
-              status: "active",
-            }}
-            newPlan={{
-              id: switchTarget.tier,
-              title: PLANS[switchTarget.tier].name,
-              description: PLANS[switchTarget.tier].description,
-              monthlyPrice: String(PLANS[switchTarget.tier].monthlyPriceCad ?? 0),
-              yearlyPrice: String(PLANS[switchTarget.tier].yearlyPriceCad ?? 0),
-              currency: "$",
-              buttonText: "",
-              features: [],
-            }}
-            billingCycle={switchTarget.interval}
-            effectiveDate="immediately"
-            theme="minimal"
-            confirmText={loading ? t("confirming") : t("confirmTheChange")}
-            cancelText="Annuler"
-            onConfirm={handleConfirmSwitch}
-            onCancel={() => setSwitchTarget(null)}
-          />
-        )}
-      </Modal>
 
       {/* Step 1: exit reason (kept simple/native — the SDK dialog below owns the retention warning + final confirm) */}
       <Modal

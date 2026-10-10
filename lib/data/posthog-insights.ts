@@ -181,3 +181,80 @@ export async function getRetentionCohorts(): Promise<RetentionCohort[] | null> {
     };
   });
 }
+
+export type OnboardingFunnelStep = {
+  step: number;
+  name: string;
+  label: string;
+  count: number;
+  conversionFromFirst: number;
+  conversionFromPrev: number;
+  dropoffRate: number;
+};
+
+export type OnboardingFunnelData = {
+  totalStarted: number;
+  totalCompleted: number;
+  overallConversionRate: number;
+  steps: OnboardingFunnelStep[];
+};
+
+/**
+ * 5-screen onboarding funnel. Counts distinct PEOPLE (not events: going back
+ * and forth, or the server and the browser both reporting completion, would
+ * otherwise inflate it) and groups by `visual_position`, the screen's place
+ * in the order the person actually saw. Screens 1 (profile) and 5 (launch)
+ * are fixed; screens 2 to 4 are qualification, program and offer in the
+ * `classic` order, or offer, qualification and program in `offer-first`
+ * (A/B flag `onboarding-step-order`).
+ */
+export async function getOnboardingFunnel(days = 30): Promise<OnboardingFunnelData | null> {
+  const result = await runHogQL(`
+    SELECT
+      uniqIf(person_id, event = 'onboarding_step_viewed' AND JSONExtractInt(properties, 'visual_position') = 1) AS step_1_viewed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 1) AS step_1_completed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 2) AS step_2_completed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 3) AS step_3_completed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 4) AS step_4_completed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 5) AS step_5_completed,
+      uniqIf(person_id, event = 'onboarding_completed') AS completed
+    FROM events
+    WHERE timestamp >= now() - INTERVAL ${days} DAY
+  `);
+  if (!result || !result.results[0]) return null;
+
+  const [s1v, s1c, s2c, s3c, s4c, s5c, completed] = result.results[0].map(Number);
+  const base = Math.max(s1v, s1c, 1);
+
+  const rawSteps = [
+    { step: 1, name: "profil_etablissement", label: "Écran 1 · Profil établissement", count: s1c },
+    { step: 2, name: "ecran_2", label: "Écran 2 · Qualification ou offre", count: s2c },
+    { step: 3, name: "ecran_3", label: "Écran 3 · Programme, qualification ou offre", count: s3c },
+    { step: 4, name: "ecran_4", label: "Écran 4 · Offre ou programme", count: s4c },
+    { step: 5, name: "lancement_final", label: "Écran 5 · Lancement", count: s5c },
+    { step: 6, name: "onboarding_completed", label: "Complété (Compte Actif)", count: completed },
+  ];
+
+  const steps: OnboardingFunnelStep[] = rawSteps.map((s, idx) => {
+    const prevCount = idx === 0 ? base : rawSteps[idx - 1].count;
+    const convFromFirst = base > 0 ? Math.round((s.count / base) * 1000) / 10 : 0;
+    const convFromPrev = prevCount > 0 ? Math.min(100, Math.round((s.count / prevCount) * 1000) / 10) : 0;
+    const dropoff = Math.max(0, Math.round((100 - convFromPrev) * 10) / 10);
+    return {
+      step: s.step,
+      name: s.name,
+      label: s.label,
+      count: s.count,
+      conversionFromFirst: convFromFirst,
+      conversionFromPrev: convFromPrev,
+      dropoffRate: dropoff,
+    };
+  });
+
+  return {
+    totalStarted: base,
+    totalCompleted: completed,
+    overallConversionRate: base > 0 ? Math.round((completed / base) * 1000) / 10 : 0,
+    steps,
+  };
+}

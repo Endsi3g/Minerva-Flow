@@ -571,3 +571,39 @@ body {
     min-height: 44px;
   }
 }
+
+/* Desktop app mode (Tauri shell, see components/desktop/DesktopMode.tsx):
+   same navigation as the mobile app (floating bottom tab bar, no side
+   rail), a quieter top bar, and content held to 1280px. */
+html[data-desktop="1"] .mv-shell-sidebar,
+html[data-desktop="1"] .mv-shell-sidebar-toggle {
+  display: none !important;
+}
+html[data-desktop="1"] .mv-shell-header {
+  border-bottom-color: transparent;
+  background: var(--color-mv-cream);
+}
+html[data-desktop="1"] .mv-shell-main {
+  padding-inline: 32px;
+  padding-bottom: 112px !important;
+  scrollbar-width: thin;
+}
+html[data-desktop="1"] .mv-shell-main > div {
+  max-width: 1280px;
+}
+html[data-desktop="1"] nav.mv-tabbar {
+  display: flex !important;
+  left: 50%;
+  right: auto;
+  bottom: 16px;
+  width: min(640px, calc(100% - 32px));
+  height: 64px;
+  padding-bottom: 0;
+  transform: translateX(-50%);
+  border: 1px solid var(--color-mv-border);
+  border-radius: 24px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.08);
+}
+html[data-desktop="1"] {
+  overscroll-behavior: none;
+}

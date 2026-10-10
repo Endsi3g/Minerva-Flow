@@ -207,10 +207,10 @@ struct AmbassadorHubView: View {
                 .foregroundStyle(MinervaColor.inkFaint)
             step(1, isFrench ? "Partagez votre lien" : "Share your link",
                  isFrench ? "Recommandez Minerva Flow à un restaurant ou un café que vous connaissez." : "Recommend Minerva Flow to a restaurant or café you know.")
-            step(2, isFrench ? "Ils s'abonnent" : "They subscribe",
-                 isFrench ? "Votre recommandation compte quand l'établissement paie sa première facture." : "Your recommendation counts once the venue pays its first invoice.")
+            step(2, isFrench ? "Ils adoptent Minerva Flow" : "They adopt Minerva Flow",
+                 isFrench ? "Votre recommandation compte quand l'établissement crée son compte avec votre lien." : "Your recommendation counts once the venue signs up with your link.")
             step(3, isFrench ? "Vous êtes récompensé" : "You are rewarded",
-                 isFrench ? "Vous touchez 10 % de cette première facture, payable après 30 jours." : "You earn 10% of that first invoice, payable after 30 days.")
+                 isFrench ? "Selon votre contrat avec l'équipe Minerva Flow. Écrivez-nous pour le mettre en place." : "As set by your contract with the Minerva Flow team. Email us to set it up.")
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

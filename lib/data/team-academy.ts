@@ -1,4 +1,3 @@
-import { ANNUAL_DISCOUNT_RATE, PLANS } from "@/lib/billing/plans";
 
 /**
  * Académie — formation interne (équipe + ambassadeurs). Une seule source de
@@ -33,7 +32,6 @@ export type AcademyPage = {
   sections: AcademySection[];
 };
 
-const cad = (value: number | null) => (value === null ? "sur devis" : `${value} $ CA`);
 
 const PRODUCT_PAGE: AcademyPage = {
   slug: "produit",
@@ -61,20 +59,20 @@ const PRODUCT_PAGE: AcademyPage = {
     },
     {
       id: "forfaits",
-      title: "Forfaits et prix",
-      intro: `Prix publics en dollars canadiens, par mois. Facturation annuelle : ${Math.round(ANNUAL_DISCOUNT_RATE * 100)} % de moins. Essai propriétaire : 14 jours.`,
+      title: "Modèle à la performance",
+      intro: "Aucun forfait ni prix publié. Minerva est rémunérée par un pourcentage des revenus additionnels mesurés, convenu par écrit avec chaque restaurant.",
       items: [
-        { text: `${PLANS.essentiel.name} — ${cad(PLANS.essentiel.monthlyPriceCad)} : ${PLANS.essentiel.description.toLowerCase()}.`, tag: "vérifié" },
-        { text: `${PLANS.croissance.name} — ${cad(PLANS.croissance.monthlyPriceCad)} : ${PLANS.croissance.description.toLowerCase()} (fidélité, campagnes, parrainage, Flow AI).`, tag: "vérifié" },
-        { text: `${PLANS.marque_blanche.name} — ${cad(PLANS.marque_blanche.monthlyPriceCad)} : ${PLANS.marque_blanche.description.toLowerCase()}.`, tag: "vérifié" },
+        { text: "Période de développement : accès gratuit, sans carte de crédit. Avant toute facturation, un avis écrit d’au moins 30 jours et l’acceptation expresse du restaurant.", tag: "vérifié" },
+        { text: "S’il n’y a aucun revenu additionnel mesuré pour un mois, rien n’est dû.", tag: "vérifié" },
+        { text: "Ne jamais promettre un résultat : dire « jusqu’à 5 à 10 % de revenus selon le panier », jamais une moyenne.", tag: "vérifié" },
       ],
     },
     {
       id: "ambassadeurs",
       title: "Programme ambassadeur",
       items: [
-        { text: "Commission de 10 % sur la première facture d’abonnement payée d’un restaurant recommandé via votre lien.", tag: "vérifié" },
-        { text: "Elle devient payable après 30 jours, sous réserve d’annulation ou de remboursement ; versement par Stripe après vérification d’identité.", tag: "vérifié" },
+        { text: "Rétribution fixée par contrat simple convenu avec l’équipe avant l’activation du lien : l’ambassadeur écrit à flow@minervaflow.app, on convient des conditions, il signe, son lien est activé.", tag: "vérifié" },
+        { text: "Les modalités de versement figurent dans le contrat. Ne jamais promettre un pourcentage ou un montant avant la signature.", tag: "vérifié" },
         { text: "Contenu (UGC) : seuls les restaurants qui ont accepté de participer peuvent apparaître ; chaque publication est vérifiée avant réutilisation et doit mentionner votre relation commerciale (#MinervaFlow).", tag: "vérifié" },
       ],
     },
@@ -137,7 +135,7 @@ const GTM_PAGE: AcademyPage = {
         { text: "Preuve : aucun résultat mesuré chez un restaurant payant. Priorité n° 1 : trois pilotes suivis de bout en bout, Mains Magique en premier.", tag: "vérifié" },
         { text: "Délai : configuration guidée d’environ 15 minutes.", tag: "à confirmer" },
         { text: "Effort : un QR (puis un chevalet NFC) et la caisse connectée si elle est compatible.", tag: "vérifié" },
-        { text: "Entrée : essai de 14 jours, sans carte de crédit.", tag: "vérifié" },
+        { text: "Entrée : accès gratuit pendant le développement, sans carte de crédit.", tag: "vérifié" },
         { text: "Deux chevalets NFC offerts à l’activation : idée non produite, coût et logistique à chiffrer.", tag: "à confirmer" },
       ],
     },
@@ -146,7 +144,7 @@ const GTM_PAGE: AcademyPage = {
       title: "Les canaux",
       items: [
         { text: "Terrain : visite en heures creuses (14 h 30 à 16 h 30) avec une démo personnalisée sur le téléphone du gérant.", tag: "hypothèse" },
-        { text: "Ambassadeurs de la restauration (barmans, chefs, consultants, fournisseurs) : 10 % de la première facture.", tag: "vérifié" },
+        { text: "Ambassadeurs de la restauration (barmans, chefs, consultants, fournisseurs) : rétribution convenue par contrat.", tag: "vérifié" },
         { text: "Contenu : nos marques personnelles aujourd’hui, des vidéos produit à partir de 2027.", tag: "cible" },
         { text: "Incubateurs et financement gouvernemental pour accélérer.", tag: "cible" },
       ],
@@ -177,7 +175,7 @@ const GTM_PAGE: AcademyPage = {
       teamOnly: true,
       items: [
         { text: "Coût d’acquisition visé : moins de 120 $ CA.", tag: "cible" },
-        { text: "Valeur sur 24 mois visée : plus de 2 400 $ CA (un abonnement Profit Core à 150 $ par mois représente 3 600 $ sur 24 mois).", tag: "cible" },
+        { text: "Valeur sur 24 mois visée : plus de 2 400 $ CA.", tag: "cible" },
         { text: "Rapport valeur/coût visé : plus de 15 pour 1.", tag: "cible" },
       ],
       note: {

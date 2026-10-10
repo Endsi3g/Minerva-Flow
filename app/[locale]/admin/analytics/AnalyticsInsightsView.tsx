@@ -20,6 +20,7 @@ import type {
   BreakdownRow,
   HeatmapCell,
   RetentionCohort,
+  OnboardingFunnelData,
 } from "@/lib/data/posthog-insights";
 
 const DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -171,6 +172,58 @@ function HourlyHeatmap({ cells }: { cells: HeatmapCell[] }) {
   );
 }
 
+function OnboardingFunnelCard({ funnel }: { funnel: OnboardingFunnelData }) {
+  return (
+    <Card>
+      <CardHeader
+        title="Entonnoir d'onboarding"
+        description="Parcours de création de compte restaurateur (30 derniers jours), de l'étape 1 à la finalisation."
+      />
+      <div className="mb-5 flex flex-wrap items-center gap-6 border-b border-mv-border-soft pb-4">
+        <div>
+          <span className="text-[11.5px] uppercase tracking-wider text-mv-ink-faint">Démarrés</span>
+          <p className="font-display text-[20px] font-medium text-mv-ink">{funnel.totalStarted}</p>
+        </div>
+        <div>
+          <span className="text-[11.5px] uppercase tracking-wider text-mv-ink-faint">Complétés</span>
+          <p className="font-display text-[20px] font-medium text-mv-green">{funnel.totalCompleted}</p>
+        </div>
+        <div>
+          <span className="text-[11.5px] uppercase tracking-wider text-mv-ink-faint">Taux de conversion global</span>
+          <p className="font-display text-[20px] font-medium text-mv-ink">{funnel.overallConversionRate}%</p>
+        </div>
+      </div>
+
+      <div className="space-y-3.5">
+        {funnel.steps.map((s) => (
+          <div key={s.name} className="space-y-1.5">
+            <div className="flex items-center justify-between text-[12.5px]">
+              <span className="font-medium text-mv-ink">{s.label}</span>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-mv-ink-soft">{s.count}</span>
+                <span className="rounded bg-mv-green-tint px-1.5 py-0.5 font-mono text-[11px] font-semibold text-mv-green-dark">
+                  {s.conversionFromFirst}%
+                </span>
+                {s.dropoffRate > 0 && s.step > 1 && (
+                  <span className="rounded bg-rose-50 px-1.5 py-0.5 font-mono text-[11px] text-rose-700">
+                    -{s.dropoffRate}% déperdition
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-mv-cream-soft">
+              <div
+                className="h-full rounded-full bg-mv-green transition-all duration-300"
+                style={{ width: `${Math.max(4, s.conversionFromFirst)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function AnalyticsInsightsView({
   overview,
   countries,
@@ -178,6 +231,7 @@ export function AnalyticsInsightsView({
   channels,
   retention,
   heatmap,
+  onboardingFunnel,
 }: {
   overview: TrafficOverview | null;
   countries: BreakdownRow[] | null;
@@ -185,6 +239,7 @@ export function AnalyticsInsightsView({
   channels: BreakdownRow[] | null;
   retention: RetentionCohort[] | null;
   heatmap: HeatmapCell[] | null;
+  onboardingFunnel?: OnboardingFunnelData | null;
 }) {
   return (
     <div className="space-y-4">
@@ -222,6 +277,15 @@ export function AnalyticsInsightsView({
             <TrafficTrendChart data={overview.visitorsSeries} />
           </Card>
         </>
+      )}
+
+      {onboardingFunnel ? (
+        <OnboardingFunnelCard funnel={onboardingFunnel} />
+      ) : (
+        <Card>
+          <CardHeader title="Entonnoir d'onboarding" />
+          <Unavailable label="Entonnoir d'onboarding" />
+        </Card>
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

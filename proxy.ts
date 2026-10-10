@@ -55,6 +55,7 @@ export async function proxy(request: NextRequest) {
     "/customer-sign-up",
     "/customer-join",
     "/app-support",
+    "/download",
   ];
   // skipTrailingSlashRedirect (next.config.ts) means "/login" and "/login/"
   // are both live, distinct paths — strip the trailing slash before matching
@@ -70,6 +71,7 @@ export async function proxy(request: NextRequest) {
     pathWithoutLocale.startsWith("/h/") ||
     pathWithoutLocale.startsWith("/e/") ||
     pathWithoutLocale.startsWith("/legal/") ||
+    pathWithoutLocale.startsWith("/download/") ||
     // Team and ambassador sign-in must be reachable before any session exists.
     pathWithoutLocale === "/equipe/connexion" ||
     pathWithoutLocale === "/equipe/connexion/" ||

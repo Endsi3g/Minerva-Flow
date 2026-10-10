@@ -38,6 +38,11 @@ function emailShell(
 }
 
 const AUTH_ACTION_COPY: Record<string, { subject: string; body: string; cta: string }> = {
+  magiclink: {
+    subject: "Votre connexion Minerva Flow",
+    body: "Utilisez ce lien pour vous connecter à votre compte. Si vous ne l’avez pas demandé, ignorez ce courriel.",
+    cta: "Me connecter",
+  },
   signup: {
     subject: "Confirmez votre compte Minerva Flow",
     body: "Bienvenue — confirmez votre adresse pour activer votre compte.",
@@ -427,7 +432,7 @@ export async function sendFlowAmbassadorEmail(input: {
     ? {
         subject: `Une commission Minerva Flow est en attente · ${commission}`,
         heading: "Une commission vient d’être enregistrée",
-        body: `Votre recommandation a généré une commission de <strong>${escapeHtml(commission)}</strong> (10 % de la première facture payée). Elle devient payable après le délai de 30 jours, à partir du <strong>${escapeHtml(payableDate)}</strong>.`,
+        body: `Votre recommandation a généré une commission de <strong>${escapeHtml(commission)}</strong> (selon les conditions de votre contrat). Elle devient payable à partir du <strong>${escapeHtml(payableDate)}</strong>.`,
       }
     : input.kind === "payout"
     ? {
