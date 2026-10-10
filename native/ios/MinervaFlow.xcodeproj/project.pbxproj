@@ -77,6 +77,7 @@
 		CAA23FFC5163988353E01A6B /* OwnerNFCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B1569E775588C2FD619D005 /* OwnerNFCView.swift */; };
 		CAFBB02D7DDD8E9207AF10E1 /* WebPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574318127126383937A04DB7 /* WebPageView.swift */; };
 		CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D58EE17A9A62B1893F865891 /* RadialGauge.swift */; };
+		CFFBFB6199229B29D2D2192D /* BottomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DD4195058E28201E851A8F /* BottomTabBar.swift */; };
 		D03E6A4E03EF6FCB2ECFF994 /* OwnerUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F711B3EFAD45C54F77276B73 /* OwnerUI.swift */; };
 		D37C99DF54E6BC1811605CD3 /* NativeWorkspaceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F54E93F6D89A3488F41D0F /* NativeWorkspaceUITests.swift */; };
 		D8CE2BE3E4EDB81DAEEAFA1A /* AppLanguagePreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188BEA08FC8C7C1C007C557 /* AppLanguagePreferenceTests.swift */; };
@@ -201,6 +202,7 @@
 		ADC8BCCB0E5CF9A11888A9CC /* BrandLocationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandLocationsView.swift; sourceTree = "<group>"; };
 		AF27DE9A4FC86CD170C6592A /* PointsHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsHistoryView.swift; sourceTree = "<group>"; };
 		B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyTierTests.swift; sourceTree = "<group>"; };
+		B6DD4195058E28201E851A8F /* BottomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomTabBar.swift; sourceTree = "<group>"; };
 		B7A2751C1C420892B62F811B /* OwnerLoyaltyScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerLoyaltyScreen.swift; sourceTree = "<group>"; };
 		B8ABC1E0681608032F18B9B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BD642FEDFC828B61E3677A56 /* NativeChangelogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeChangelogView.swift; sourceTree = "<group>"; };
@@ -330,6 +332,7 @@
 				42673197942F95CE65959FCA /* AppLog.swift */,
 				02F66981C3B41C8B5FD69ECE /* AuthView.swift */,
 				48489698C6B750A6E75FEFEE /* BiometricLock.swift */,
+				B6DD4195058E28201E851A8F /* BottomTabBar.swift */,
 				ADC8BCCB0E5CF9A11888A9CC /* BrandLocationsView.swift */,
 				5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */,
 				5EBA8589A571864AC1ADFC08 /* ClientUpdatesView.swift */,
@@ -689,6 +692,7 @@
 				FF3391041F1589D1059B7FE7 /* AppleSignInCoordinator.swift in Sources */,
 				EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */,
 				9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */,
+				CFFBFB6199229B29D2D2192D /* BottomTabBar.swift in Sources */,
 				5643F61017A3F0DBA40C7ED1 /* BrandLocationsView.swift in Sources */,
 				8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */,
 				7E6EA215C8AADB301D1A1B10 /* ClientUpdatesView.swift in Sources */,

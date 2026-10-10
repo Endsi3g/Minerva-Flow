@@ -35,20 +35,26 @@ struct OwnerMainTabView: View {
         .fullScreenCover(isPresented: $showWebSetup) { OwnerWebSetupNotice { showWebSetup = false } }
     }
 
-    /// Same bottom tab bar on iPhone and iPad (no side rail): one navigation
-    /// structure across devices.
+    /// Bottom tab bar on iPhone (system) and iPad (floating, since iPadOS pins
+    /// the system bar to the top): one navigation structure across devices.
     @ViewBuilder private var tabContainer: some View {
         if #available(iOS 18.0, *) {
             tabView.tabViewStyle(.tabBarOnly)
+                .bottomTabBar(barItems, selection: $selection)
         } else {
-            tabView
+            tabView.bottomTabBar(barItems, selection: $selection)
         }
+    }
+
+    private var barItems: [BottomTabItem<Int>] {
+        tabs.map { BottomTabItem(tag: $0.tag, title: $0.title, icon: $0.icon, badge: $0.tag == 1 ? pendingOrderCount : 0) }
     }
 
     private var tabView: some View {
         TabView(selection: $selection) {
             ForEach(tabs, id: \.tag) { tab in
                 content(for: tab.tag)
+                    .hidesSystemTabBarOnRegular()
                     .tabItem { Label(tab.title, systemImage: tab.icon) }
                     .badge(tab.tag == 1 ? pendingOrderCount : 0)
                     .tag(tab.tag)

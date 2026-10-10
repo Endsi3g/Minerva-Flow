@@ -36,34 +36,48 @@ struct MainTabView: View {
         .sheet(isPresented: $showScanner) { ScannerTabView() }
     }
 
-    /// Same bottom tab bar on iPhone and iPad (no side rail).
+    /// System bar on iPhone; floating bottom bar on iPad (iPadOS pins the system one to the top).
     @ViewBuilder private var tabContainer: some View {
         if #available(iOS 18.0, *) {
             tabView.tabViewStyle(.tabBarOnly)
+                .bottomTabBar(barItems, selection: $selection)
         } else {
-            tabView
+            tabView.bottomTabBar(barItems, selection: $selection)
         }
+    }
+
+    private var barItems: [BottomTabItem<AppTab>] {
+        [BottomTabItem(tag: .home, title: isFrench ? "Accueil" : "Home", icon: "house.fill"),
+         BottomTabItem(tag: .order, title: "Menu", icon: "fork.knife"),
+         BottomTabItem(tag: .orders, title: isFrench ? "Commandes" : "Orders", icon: "bag.fill"),
+         BottomTabItem(tag: .rewards, title: isFrench ? "Fidélité" : "Loyalty", icon: "heart.fill"),
+         BottomTabItem(tag: .profile, title: isFrench ? "Compte" : "Account", icon: "person.crop.circle.fill")]
     }
 
     private var tabView: some View {
         TabView(selection: $selection) {
             HomeView()
+                .hidesSystemTabBarOnRegular()
                 .tabItem { Label(isFrench ? "Accueil" : "Home", systemImage: "house.fill") }
                 .tag(AppTab.home)
 
             MenuView()
+                .hidesSystemTabBarOnRegular()
                 .tabItem { Label("Menu", systemImage: "fork.knife") }
                 .tag(AppTab.order)
 
             NavigationStack { OrderHistoryView() }
+                .hidesSystemTabBarOnRegular()
                 .tabItem { Label(isFrench ? "Commandes" : "Orders", systemImage: "bag.fill") }
                 .tag(AppTab.orders)
 
             RewardsView()
+                .hidesSystemTabBarOnRegular()
                 .tabItem { Label(isFrench ? "Fidélité" : "Loyalty", systemImage: "heart.fill") }
                 .tag(AppTab.rewards)
 
             ProfileView()
+                .hidesSystemTabBarOnRegular()
                 .tabItem { Label(isFrench ? "Compte" : "Account", systemImage: "person.crop.circle.fill") }
                 .tag(AppTab.profile)
         }
