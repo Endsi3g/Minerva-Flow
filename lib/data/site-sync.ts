@@ -96,7 +96,16 @@ export async function updatePublicSiteShowcase(
 ): Promise<PublicSiteShowcase | null> {
   const admin = createAdminClient();
 
-  const updateRow: Record<string, any> = {
+  const updateRow: {
+    restaurant_id: string;
+    updated_at: string;
+    is_open_now?: boolean;
+    hours_notice?: string | null;
+    active_promo_title?: string | null;
+    active_promo_text?: string | null;
+    active_promo_badge?: string | null;
+    featured_menu_items?: FeaturedMenuItem[];
+  } = {
     restaurant_id: restaurantId,
     updated_at: new Date().toISOString(),
   };

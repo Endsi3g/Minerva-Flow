@@ -43,7 +43,7 @@ function releaseScreenshotUrl(value: unknown): string | null {
 /**
  * Called by .github/workflows/publish-release.yml on every GitHub release
  * publish — turns the release into a changelog entry and fans it out via
- * announceChangelogEntry (in-app/push notification + email campaign),
+ * announceChangelogEntry (email campaign only),
  * replacing the manual "publish from admin" step that previously had to
  * follow every release by hand.
  */
@@ -69,9 +69,17 @@ export async function POST(req: Request) {
   });
   if (!entry) return NextResponse.json({ error: "Échec de création de l'entrée" }, { status: 500 });
 
-  await announceChangelogEntry(entry);
+  const announcement = await announceChangelogEntry(entry, { emailOnly: true });
 
   revalidatePath("/changelog");
   revalidatePath("/admin/changelog");
+  if (!announcement.ok) {
+    // The entry already exists. Do not blindly replay this publication to
+    // retry an uncertain campaign; inspect the provider's delivery first.
+    return NextResponse.json({
+      error: "Entrée créée, mais l'envoi du courriel n'est pas confirmé; vérifier la campagne avant toute reprise",
+      id: entry.id,
+    }, { status: 502 });
+  }
   return NextResponse.json({ ok: true, id: entry.id });
 }

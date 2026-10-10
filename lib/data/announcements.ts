@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { PlatformAnnouncement, PlatformSurveyResponse } from "@/lib/types";
+import type { PlatformAnnouncement } from "@/lib/types";
 
 export async function getActiveAnnouncements(): Promise<PlatformAnnouncement[]> {
   const supabase = await createClient();

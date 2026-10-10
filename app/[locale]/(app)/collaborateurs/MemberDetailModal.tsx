@@ -31,12 +31,10 @@ export function MemberDetailModal({
   restaurantId = "",
   member,
   onClose,
-  open,
 }: {
   restaurantId?: string;
   member: TeamMember | null;
   onClose: () => void;
-  open?: boolean;
 }) {
   const locale = useLocale();
   const [activity, setActivity] = useState<ActivityLogEntry[]>([]);

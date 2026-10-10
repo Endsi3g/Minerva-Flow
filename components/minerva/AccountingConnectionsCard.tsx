@@ -1,5 +1,7 @@
 "use client";
 
+import { FullPageLink } from "@/components/ui/FullPageLink";
+
 
 import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
@@ -150,14 +152,14 @@ export function AccountingConnectionsCard() {
                         <Check size={12} /> Actif
                       </span>
                     ) : hasError ? (
-                      <a
+                      <FullPageLink
                         href="/api/oauth/quickbooks"
                         className="rounded-lg bg-mv-red px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-mv-red/90"
                       >
                         Reconnecter
-                      </a>
+                      </FullPageLink>
                     ) : (
-                      <a
+                      <FullPageLink
                         href={qbConfigured ? "/api/oauth/quickbooks" : undefined}
                         aria-disabled={!qbConfigured}
                         className={
@@ -167,7 +169,7 @@ export function AccountingConnectionsCard() {
                         }
                       >
                         Connecter
-                      </a>
+                      </FullPageLink>
                     )}
                   </div>
                 </div>

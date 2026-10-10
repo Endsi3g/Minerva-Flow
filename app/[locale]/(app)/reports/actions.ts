@@ -96,7 +96,7 @@ export async function publishReportAction(
   conversationId: string,
   title: string,
   type: string,
-  data: any
+  data: unknown
 ): Promise<{ success: boolean; reportId?: string }> {
   const restaurantId = await getCurrentRestaurantId();
   if (!restaurantId) return { success: false };
@@ -111,7 +111,10 @@ export async function publishReportAction(
       message_id: null, // detached from any message
       type,
       title,
-      data: { ...data, isPublished: true },
+      data: {
+        ...(typeof data === "object" && data !== null && !Array.isArray(data) ? data : { value: data }),
+        isPublished: true,
+      },
     })
     .select("id")
     .single();

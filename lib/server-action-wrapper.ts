@@ -5,6 +5,8 @@ export type SafeResult<T> =
   | { ok: true; data: T; error?: never; code?: never }
   | { ok: false; error: string; code?: string; data?: never };
 
+type ActionResult<T> = [T] extends [{ ok: boolean }] ? T : SafeResult<T>;
+
 export interface SafeActionOptions {
   actionName?: string;
   isExpectedError?: (err: unknown) => boolean;
@@ -25,11 +27,9 @@ export function createSafeAction<TArgs extends unknown[], TReturn>(
   actionFn: (...args: TArgs) => Promise<TReturn>,
   options?: SafeActionOptions
 ) {
-  return async (...args: TArgs): Promise<
-    [TReturn] extends [{ ok: boolean }] ? TReturn : SafeResult<TReturn>
-  > => {
+  return async (...args: TArgs): Promise<ActionResult<TReturn>> => {
     try {
-      return (await actionFn(...args)) as any;
+      return (await actionFn(...args)) as ActionResult<TReturn>;
     } catch (err: unknown) {
       // 1. Rethrow Next.js internal control-flow exceptions (redirects, notFound)
       const message = (err instanceof Error ? err.message : String(err)).toLowerCase();
@@ -74,7 +74,7 @@ export function createSafeAction<TArgs extends unknown[], TReturn>(
         ok: false,
         error: userMessage,
         code: errorCode,
-      } as any;
+      } as ActionResult<TReturn>;
     }
   };
 }

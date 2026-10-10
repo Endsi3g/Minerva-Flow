@@ -4,14 +4,16 @@ vi.mock("server-only", () => ({}));
 import { isIgnorableError, notifyCriticalError } from "@/lib/alerts/error-notifier";
 import { createSafeAction } from "@/lib/server-action-wrapper";
 
+function errorWithDigest(message: string, digest: string): Error & { digest: string } {
+  return Object.assign(new Error(message), { digest });
+}
+
 describe("isIgnorableError", () => {
   it("filters out Next.js NEXT_REDIRECT and NEXT_NOT_FOUND digests", () => {
-    const redirectErr = new Error("NEXT_REDIRECT;replace;/login;307;");
-    (redirectErr as any).digest = "NEXT_REDIRECT;replace;/login;307;";
+    const redirectErr = errorWithDigest("NEXT_REDIRECT;replace;/login;307;", "NEXT_REDIRECT;replace;/login;307;");
     expect(isIgnorableError(redirectErr)).toBe(true);
 
-    const notFoundErr = new Error("NEXT_NOT_FOUND");
-    (notFoundErr as any).digest = "NEXT_NOT_FOUND";
+    const notFoundErr = errorWithDigest("NEXT_NOT_FOUND", "NEXT_NOT_FOUND");
     expect(isIgnorableError(notFoundErr)).toBe(true);
   });
 
@@ -45,8 +47,8 @@ describe("notifyCriticalError deduplication", () => {
   it("suppresses repeated duplicate error fingerprints within suppression window", async () => {
     const uniqueError = new Error(`Unique test error ${Date.now()}`);
     
-    // First call
-    const first = await notifyCriticalError({
+    // First call primes the deduplication window.
+    await notifyCriticalError({
       error: uniqueError,
       source: "server_action",
     });
@@ -63,8 +65,7 @@ describe("notifyCriticalError deduplication", () => {
   });
 
   it("ignores benign errors without sending email", async () => {
-    const benign = new Error("NEXT_REDIRECT");
-    (benign as any).digest = "NEXT_REDIRECT";
+    const benign = errorWithDigest("NEXT_REDIRECT", "NEXT_REDIRECT");
 
     const result = await notifyCriticalError({ error: benign });
     expect(result.sent).toBe(false);
@@ -95,8 +96,7 @@ describe("createSafeAction defensive wrapper", () => {
 
   it("rethrows Next.js redirects so navigation flows normally", async () => {
     const redirectingAction = createSafeAction(async () => {
-      const redirectErr = new Error("NEXT_REDIRECT");
-      (redirectErr as any).digest = "NEXT_REDIRECT;replace;/dashboard;307;";
+      const redirectErr = errorWithDigest("NEXT_REDIRECT", "NEXT_REDIRECT;replace;/dashboard;307;");
       throw redirectErr;
     });
 

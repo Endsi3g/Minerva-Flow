@@ -124,7 +124,7 @@ export function CampaignsView({
           (channelFilter === "all" || c.channel === channelFilter) &&
           (!search.trim() || `${c.name} ${c.channel} ${typeLabel[c.type]}`.toLocaleLowerCase(intlLocale(locale)).includes(search.trim().toLocaleLowerCase(intlLocale(locale))))
       ),
-    [campaigns, statusFilter, channelFilter, search]
+    [campaigns, statusFilter, channelFilter, search, locale]
   );
 
   const selected: Campaign | undefined = campaigns.find((c) => c.id === selectedId);

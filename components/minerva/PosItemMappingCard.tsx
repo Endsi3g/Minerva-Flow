@@ -2,13 +2,12 @@
 
 
 import { useTranslations, useLocale } from "next-intl";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Square, Clover, Toast } from "@/components/ui/BrandIcons";
 import {
-  Link2,
   Unlink,
   Plus,
   RefreshCw,
@@ -17,7 +16,6 @@ import {
   AlertTriangle,
   Store,
   Sparkles,
-  ArrowRight,
 } from "lucide-react";
 import {
   getPosItemMappingsAction,
@@ -98,7 +96,7 @@ export function PosItemMappingCard({
     }
   }
 
-  async function loadMappings() {
+  const loadMappings = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getPosItemMappingsAction(restaurantId);
@@ -112,11 +110,11 @@ export function PosItemMappingCard({
     } finally {
       setLoading(false);
     }
-  }
+  }, [restaurantId]);
 
   useEffect(() => {
     loadMappings();
-  }, [restaurantId]);
+  }, [loadMappings]);
 
   const unmappedCount = useMemo(
     () => mappings.filter((m) => !m.menuItemId).length,

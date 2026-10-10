@@ -2,6 +2,9 @@
 -- reception have been verified. No payment endpoints are used by this queue.
 begin;
 
+-- orders.via_pos_sync is declared by 0117/0128 but is absent from production; the
+-- trigger below reads it, so it must exist before the trigger is created.
+alter table public.orders add column if not exists via_pos_sync boolean not null default false;
 alter table public.order_items add column if not exists price_option_id text;
 alter table public.order_items add column if not exists price_option_label text;
 alter table public.orders add column if not exists clover_acceptance_user_id uuid references auth.users(id);
@@ -294,7 +297,7 @@ begin
        or not exists (
          select 1 from menu_items mi
          where mi.id = v_item.menu_item_id and mi.restaurant_id = p_restaurant_id
-           and mi.active = true and mi.is_draft = false and (
+           and mi.active = true and mi.is_draft = false and mi.is_orderable = true and (
              (v_item.price_option_id is null and jsonb_array_length(mi.price_options) = 0 and mi.price = v_item.unit_price)
              or (v_item.price_option_id is not null and exists (
                select 1 from jsonb_array_elements(mi.price_options) as option_row

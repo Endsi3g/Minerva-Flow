@@ -2,6 +2,7 @@
 
 
 import { useTranslations, useLocale } from "next-intl";
+import { CloverOrderSetup } from "./CloverOrderSetup";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
@@ -309,7 +310,7 @@ function ConnectRow({
 
 export function PosConnectionsCard() {
   const t = useTranslations("posConnections");
-  const { restaurantId } = useApp();
+  const { restaurantId, role } = useApp();
   const [status, setStatus] = useState<{ configured: PosProviderConfigured; connections: PosConnection[] } | null>(
     null
   );
@@ -358,6 +359,7 @@ export function PosConnectionsCard() {
           onSynced={refresh}
         />
       </div>
+      {restaurantId && ["owner","manager"].includes(role) && connectionFor("clover")?.status === "connecte" && <CloverOrderSetup key={restaurantId} restaurantId={restaurantId} />}
     </Card>
   );
 }

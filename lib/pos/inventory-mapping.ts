@@ -1,3 +1,4 @@
+import { firstJoinedRow } from "@/lib/data/first-joined-row";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getValidCloverAccessToken, fetchCloverCatalogItems } from "./clover";
@@ -51,22 +52,25 @@ export async function getPosInventoryMappings(restaurantId: string, provider?: C
   const { data, error } = await query.order("external_item_name", { ascending: true });
   if (error || !data) return [];
 
-  return (data as any[]).map((row) => ({
+  return data.map((row) => {
+    const item = firstJoinedRow(row.inventory_items);
+    return {
     id: row.id,
     restaurantId: row.restaurant_id,
     provider: row.provider,
     externalItemId: row.external_item_id,
     externalItemName: row.external_item_name,
     inventoryItemId: row.inventory_item_id,
-    inventoryItem: row.inventory_items
+    inventoryItem: item
       ? {
-          id: row.inventory_items.id,
-          name: row.inventory_items.name,
-          unit: row.inventory_items.unit,
-          quantityOnHand: row.inventory_items.quantity_on_hand,
+          id: item.id,
+          name: item.name,
+          unit: item.unit,
+          quantityOnHand: item.quantity_on_hand,
         }
       : null,
-  }));
+    };
+  });
 }
 
 /** Links (or unlinks, with inventoryItemId=null) a POS catalog item to a Minerva Flow inventory item — creates the mapping row if none exists yet for that external item. */

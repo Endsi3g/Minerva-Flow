@@ -3,7 +3,6 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Switch } from "@/components/ui/Switch";
 import { CurrentUserAvatar } from "@/components/minerva/CurrentUserAvatar";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import { FlowBars } from "@/components/charts/FlowBars";

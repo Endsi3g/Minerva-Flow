@@ -1,5 +1,7 @@
 "use client";
 
+import { FullPageLink } from "@/components/ui/FullPageLink";
+
 
 import { useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
@@ -46,7 +48,7 @@ function ConnectRow({
           Connecté
         </Badge>
       ) : (
-        <a
+        <FullPageLink
           href={configured ? `/api/oauth/${provider}` : undefined}
           aria-disabled={!configured}
           className={
@@ -56,7 +58,7 @@ function ConnectRow({
           }
         >
           Connecter
-        </a>
+        </FullPageLink>
       )}
     </div>
   );
@@ -149,7 +151,7 @@ export function InstagramCard() {
               Connecté
             </Badge>
           ) : (
-            <a
+            <FullPageLink
               href={status.instagramConfigured ? "/api/oauth/instagram?mode=direct" : undefined}
               aria-disabled={!status.instagramConfigured}
               className={
@@ -159,18 +161,18 @@ export function InstagramCard() {
               }
             >
               {t("connectWithInstagram")}
-            </a>
+            </FullPageLink>
           )}
         </div>
 
         {!instagramConnection && status.instagramConfigured && (
           <div className="pt-1 text-center sm:text-right">
-            <a
+            <FullPageLink
               href="/api/oauth/instagram?mode=facebook"
               className="text-[12px] text-mv-ink-faint transition-colors hover:text-mv-green-dark hover:underline"
             >
               Vous gérez aussi des publicités Meta Ads ? Connecter via Facebook →
-            </a>
+            </FullPageLink>
           </div>
         )}
 

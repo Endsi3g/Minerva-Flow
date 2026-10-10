@@ -41,6 +41,8 @@ export function GoogleConnectModal({
   function handleConnect() {
     const params = new URLSearchParams();
     selected.forEach((f) => params.append("feature", f));
+    // OAuth starts with a server redirect, so this must navigate the whole document.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = `/api/oauth/google-workspace?${params.toString()}`;
   }
 

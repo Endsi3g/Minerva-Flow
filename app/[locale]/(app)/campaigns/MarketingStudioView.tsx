@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
+import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { Badge } from "@/components/ui/Badge";
 import { Link } from "@/i18n/navigation";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
@@ -19,27 +19,17 @@ import { Instagram } from "@/components/ui/BrandIcons";
 import {
   Sparkles,
   Download,
-  Share2,
   Camera,
   Copy,
   Check,
   Palette,
-  Type,
-  Tag,
   MessageSquare,
-  Zap,
   Sliders,
   Image as ImageIcon,
   Smartphone,
-  Send,
-  Calendar,
   Eye,
   Loader2,
   Link2,
-  Star,
-  Award,
-  Gift,
-  Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -145,7 +135,6 @@ export function MarketingStudioView() {
   const [itemDesc, setItemDesc] = useState(MENU_PRESETS[0].desc);
   const [selectedSticker, setSelectedSticker] = useState(STICKER_BADGES[0]);
   const [ctaText, setCtaText] = useState("Lien en Bio · Commande Directe 0%");
-  const [fontStyle, setFontStyle] = useState<"display" | "sans" | "serif">("display");
 
   // Re-engagement automation — reflects the real retention engine
   // (lib/engine/retention.ts + the daily /api/cron/retention-engine job),

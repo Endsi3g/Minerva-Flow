@@ -13,12 +13,11 @@ import { InviteWorkspaceMemberModal } from "@/components/forms/InviteWorkspaceMe
 import { MemberDetailModal } from "./MemberDetailModal";
 import { TeamChatView } from "@/components/collaborateurs/TeamChatView";
 import { getTeamMessages } from "@/lib/data/team-chat";
-import { updateMemberRoleAction, removeMemberAction } from "./actions";
-import { listWorkspaceInvitesAction } from "../workspace/actions";
+import type { TeamChatMessage } from "@/lib/types";
+import { removeMemberAction } from "./actions";
 import { useApp, roleLabels } from "@/lib/app-context";
-import { formatRelativeTime, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import posthog from "posthog-js";
-import type { WorkspaceInviteListEntry } from "@/lib/data/workspace-invites";
 import type { Restaurant, Role, TeamMember } from "@/lib/types";
 import {
   Plus,
@@ -26,7 +25,6 @@ import {
   MessageSquare,
   ChevronRight,
   Trash2,
-  X,
 } from "lucide-react";
 
 const roleTone: Record<Role, "green" | "lime" | "amber"> = {
@@ -56,40 +54,19 @@ export function CollaborateursView({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<TeamMember | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [invites, setInvites] = useState<WorkspaceInviteListEntry[]>([]);
 
   const canManage =
     Boolean(restaurantId) &&
     Boolean(workspaceId) &&
     (role === "owner" || role === "manager");
 
-  const [initialChatMessages, setInitialChatMessages] = useState<any[]>([]);
+  const [initialChatMessages, setInitialChatMessages] = useState<TeamChatMessage[]>([]);
 
   useEffect(() => {
     if (restaurantId) {
       getTeamMessages(restaurantId, "general").then(setInitialChatMessages);
     }
   }, [restaurantId]);
-
-  function refreshInvites() {
-    if (!restaurantId || !workspaceId || !canManage) return;
-    listWorkspaceInvitesAction(workspaceId).then((all) =>
-      setInvites(all.filter((inv) => inv.restaurantIds.includes(restaurantId)))
-    );
-  }
-
-  useEffect(refreshInvites, [restaurantId, workspaceId, canManage]);
-
-  function handleRoleChange(member: TeamMember, next: Role) {
-    if (!restaurantId || !member.membershipId) return;
-    setPendingId(member.id);
-    startTransition(async () => {
-      await updateMemberRoleAction(restaurantId, member.membershipId!, next);
-      posthog.capture("member_role_changed", { previous_role: member.role, new_role: next });
-      setPendingId(null);
-      router.refresh();
-    });
-  }
 
   function handleRemove(member: TeamMember) {
     if (!restaurantId || !member.membershipId) return;
@@ -241,18 +218,15 @@ export function CollaborateursView({
       {inviteOpen && workspaceId && restaurantId && (
         <InviteWorkspaceMemberModal
           workspaceId={workspaceId}
-          currentRestaurantId={restaurantId}
           restaurants={restaurants}
           open={inviteOpen}
           onClose={() => setInviteOpen(false)}
-          onSuccess={refreshInvites}
         />
       )}
 
       {selected && (
         <MemberDetailModal
           member={selected}
-          open={Boolean(selected)}
           onClose={() => setSelected(null)}
         />
       )}

@@ -1,3 +1,4 @@
+import { firstJoinedRow } from "@/lib/data/first-joined-row";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PosProvider } from "@/lib/data/pos-connections";
@@ -71,7 +72,9 @@ export async function getPosItemMappings(
 
   if (error || !data) return [];
 
-  return (data as any[]).map((row) => ({
+  return data.map((row) => {
+    const item = firstJoinedRow(row.menu_items);
+    return {
     id: row.id,
     restaurantId: row.restaurant_id,
     provider: row.provider,
@@ -81,15 +84,16 @@ export async function getPosItemMappings(
     autoMatched: row.auto_matched,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    menuItem: row.menu_items
+    menuItem: item
       ? {
-          id: row.menu_items.id,
-          name: row.menu_items.name,
-          price: row.menu_items.price,
-          category: row.menu_items.category,
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          category: item.category,
         }
       : null,
-  }));
+    };
+  });
 }
 
 /**

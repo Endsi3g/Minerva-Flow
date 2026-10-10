@@ -309,7 +309,7 @@ export function InventaireView({
 
   const lowStockItems = useMemo(
     () => items.filter((i) => stockStatus(i, t).tone === "amber" || stockStatus(i, t).tone === "red"),
-    [items]
+    [items, t]
   );
 
   const estimatedRestockCost = useMemo(

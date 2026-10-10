@@ -21,6 +21,7 @@ import type { Restaurant } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
 import { LocateFixed, Navigation, ChevronRight, X, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { useLocalStorageBoolean } from "@/hooks/use-local-storage-state";
 
 function RestaurantMarker({
   restaurant,
@@ -116,16 +117,11 @@ function GlobalStatsCard({
   avgDelta: number;
 }) {
   const locale = useLocale();
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    setDismissed(localStorage.getItem(GLOBAL_STATS_DISMISS_KEY) === "1");
-  }, []);
+  const [dismissed, setDismissed] = useLocalStorageBoolean(GLOBAL_STATS_DISMISS_KEY, true);
 
   if (dismissed) return null;
 
   function handleDismiss() {
-    localStorage.setItem(GLOBAL_STATS_DISMISS_KEY, "1");
     setDismissed(true);
   }
 

@@ -3,6 +3,7 @@
 
 import { useTranslations } from "next-intl";
 import { useCurrentRestaurant } from "@/lib/app-context";
+import { useLocalStorageBoolean } from "@/hooks/use-local-storage-state";
 import { getStartupProgressAction } from "@/app/[locale]/(app)/overview/actions";
 import { cn } from "@/lib/utils";
 import { Check, ChevronDown, Building2, MapPin, Plug, CalendarPlus, UserPlus, Sparkles, UtensilsCrossed, QrCode } from "lucide-react";
@@ -33,13 +34,13 @@ export function StartupChecklist() {
     customerCount: number;
   } | null>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const [dismissedForGood, setDismissedForGood] = useState(true);
+  const dismissKey = restaurant ? STORAGE_PREFIX + restaurant.id : STORAGE_PREFIX + "pending";
+  const [dismissedForGood] = useLocalStorageBoolean(dismissKey, true);
 
   useEffect(() => {
     if (!restaurant) return;
     getStartupProgressAction(restaurant.id).then(setProgress);
-    setDismissedForGood(localStorage.getItem(STORAGE_PREFIX + restaurant.id) === "1");
-  }, [restaurant?.id]);
+  }, [restaurant]);
 
   if (!restaurant || !progress || dismissedForGood) return null;
 

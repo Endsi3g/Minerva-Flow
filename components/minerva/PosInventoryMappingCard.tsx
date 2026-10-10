@@ -2,12 +2,12 @@
 
 
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Square, Clover } from "@/components/ui/BrandIcons";
-import { Unlink, RefreshCw, Search, Check, AlertTriangle, Store } from "lucide-react";
+import { Unlink, RefreshCw, Search, Check, AlertTriangle } from "lucide-react";
 import {
   browseCatalogForLinkingAction,
   getPosInventoryMappingsAction,
@@ -60,17 +60,22 @@ export function PosInventoryMappingCard({
   connectedProviders: CatalogPosProvider[];
 }) {
   const t = useTranslations("posInventoryMapping");
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [catalog, setCatalog] = useState<{ key: string; rows: Row[] } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const providerKey = `${restaurantId}:${connectedProviders.join(",")}`;
+  const rows = useMemo(() => catalog?.key === providerKey ? catalog.rows : [], [catalog, providerKey]);
+  const loading = refreshing || (connectedProviders.length > 0 && catalog?.key !== providerKey);
+  const setRows = (update: Row[] | ((previous: Row[]) => Row[])) => {
+    setCatalog((current) => ({ key: providerKey, rows: typeof update === "function"
+      ? update(current?.key === providerKey ? current.rows : []) : update }));
+  };
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "unlinked" | "linked">("all");
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
   const [resyncing, setResyncing] = useState(false);
 
-  async function load() {
-    setLoading(true);
-    try {
+  const fetchRows = useCallback(async (): Promise<Row[]> => {
       const [mappingLists, browseLists] = await Promise.all([
         Promise.all(connectedProviders.map((p) => getPosInventoryMappingsAction(restaurantId, p))),
         Promise.all(connectedProviders.map((p) => browseCatalogForLinkingAction(restaurantId, p))),
@@ -98,20 +103,34 @@ export function PosInventoryMappingCard({
         }
       });
 
-      setRows(nextRows);
-      if (nextRows.some((r) => !r.mapping?.inventoryItemId)) setFilterStatus("unlinked");
-    } catch (err) {
-      console.error("Failed to load POS inventory catalog:", err);
-    } finally {
-      setLoading(false);
-    }
+      return nextRows;
+  }, [restaurantId, connectedProviders, inventoryItems]);
+
+  async function load() {
+    setRefreshing(true);
+    try {
+      const next = await fetchRows();
+      setRows(next);
+      if (next.some((row) => !row.mapping?.inventoryItemId)) setFilterStatus("unlinked");
+    } catch (error) {
+      console.error("Failed to load POS inventory catalog:", error);
+    } finally { setRefreshing(false); }
   }
 
   useEffect(() => {
-    if (connectedProviders.length > 0) load();
-    else setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantId, connectedProviders.join(",")]);
+    if (connectedProviders.length === 0) return;
+    let active = true;
+    void fetchRows().then((next) => {
+      if (!active) return;
+      setCatalog({ key: providerKey, rows: next });
+      if (next.some((row) => !row.mapping?.inventoryItemId)) setFilterStatus("unlinked");
+    }).catch((error) => {
+      if (!active) return;
+      console.error("Failed to load POS inventory catalog:", error);
+      setCatalog({ key: providerKey, rows: [] });
+    });
+    return () => { active = false; };
+  }, [fetchRows, providerKey, connectedProviders.length]);
 
   const linkedCount = useMemo(() => rows.filter((r) => r.mapping?.inventoryItemId).length, [rows]);
   const unlinkedCount = rows.length - linkedCount;

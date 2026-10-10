@@ -84,7 +84,11 @@ export default async function ReportsIndexPage() {
     .is("message_id", null);
 
   const dynamicReports = (customArtifacts ?? [])
-    .filter((a) => a.data && (a.data as any).isPublished === true)
+    .filter((artifact) => {
+      const data = artifact.data;
+      return typeof data === "object" && data !== null && !Array.isArray(data) &&
+        (data as { isPublished?: unknown }).isPublished === true;
+    })
     .map((a) => ({
       id: a.id,
       title: a.title,

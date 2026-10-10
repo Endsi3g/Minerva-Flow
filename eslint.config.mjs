@@ -12,6 +12,15 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated or vendored artifacts are not application source. ESLint's
+    // default file discovery otherwise scans stale bundles and local builds.
+    ".vercel/**",
+    ".ds-sync/**",
+    "ds-bundle/**",
+    ".design-sync/**",
+    "test-results/**",
+    "coverage/**",
+    ".verify-artifacts/**",
   ]),
 ]);
 

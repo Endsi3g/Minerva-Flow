@@ -39,7 +39,7 @@ export function useTeamPresence(
       supabase.removeChannel(channel);
       setOnlineIds(new Set());
     };
-  }, [restaurantId, authUser?.id]);
+  }, [restaurantId, authUser]);
 
   // Derived rather than reset via effect: masks any stale state the moment
   // the preconditions no longer hold, without a synchronous setState in the

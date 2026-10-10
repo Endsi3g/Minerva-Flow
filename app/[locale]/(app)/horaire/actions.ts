@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  getShiftSchedulesForWeek,
   getShiftSchedulesForRange,
   getUpcomingShiftsForEmployee,
   createShiftSchedule,
@@ -12,7 +11,7 @@ import {
   type ShiftScheduleInput,
   type ShiftScheduleUpdateInput,
 } from "@/lib/data/shift-schedules";
-import { notifyRestaurant, broadcastNotification } from "@/lib/data/notifications";
+import { broadcastNotification } from "@/lib/data/notifications";
 import { getEmployees, getEmployeeById } from "@/lib/data/employees";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getGoogleConnection } from "@/lib/data/google-connections";
@@ -53,10 +52,10 @@ export async function createShiftScheduleAction(
   const shift = await createShiftSchedule(restaurantId, input);
   if (shift) {
     revalidatePath("/horaire");
-    
+
     // Find employee linked user ID
     const employee = await getEmployeeById(input.employeeId);
-    
+
     // Find all active members who are not owners
     const admin = createAdminClient();
     const { data } = await admin
@@ -72,7 +71,7 @@ export async function createShiftScheduleAction(
         recipientIds.add(m.user_id);
       }
     }
-    
+
     // Also notify the scheduled employee specifically, if they are linked
     if (employee?.linkedUserId) {
       recipientIds.add(employee.linkedUserId);

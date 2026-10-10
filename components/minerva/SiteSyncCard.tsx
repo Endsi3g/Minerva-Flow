@@ -8,16 +8,15 @@ import { Badge } from "@/components/ui/Badge";
 import { Field, Input } from "@/components/minerva/FormField";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Globe, RefreshCw, CheckCircle2, Clock, Megaphone, Utensils, ArrowUpRight } from "lucide-react";
+import { Globe, RefreshCw, CheckCircle2, Clock, Megaphone, ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { PublicSiteShowcase } from "@/lib/data/site-sync";
 
 export function SiteSyncCard({
   initialShowcase,
-  restaurantId,
 }: {
   initialShowcase: PublicSiteShowcase;
-  restaurantId: string;
+  restaurantId?: string;
 }) {
   const t = useTranslations("siteSync");
   const [isPending, startTransition] = useTransition();

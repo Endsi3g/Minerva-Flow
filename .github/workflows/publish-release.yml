@@ -2,7 +2,7 @@ name: Publish release to changelog
 
 # Fires whenever a GitHub release is published (see the standing release
 # workflow: gh release create after a green-CI merge) and turns it into a
-# changelog entry + notification/email campaign automatically — see
+# changelog entry + email campaign automatically (no in-app/push) — see
 # app/api/system/publish-release/route.ts. Replaces the manual "publish
 # from admin" step that used to have to follow every release by hand.
 on:
@@ -11,6 +11,9 @@ on:
 
 jobs:
   announce:
+    # Release candidates are source snapshots, not validated product updates.
+    # Publishing them must not call Production or notify restaurant members.
+    if: ${{ github.event.release.prerelease == false && github.event.release.draft == false }}
     runs-on: ubuntu-latest
     steps:
       - name: Notify app of new release

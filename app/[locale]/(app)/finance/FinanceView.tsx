@@ -34,9 +34,6 @@ import { toast } from "sonner";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
 import { computeLaborCostPct, sumLaborCost, LABOR_COST_TARGET_PCT } from "@/lib/engine/labor-cost";
 import type {
-  Connection,
-  ConnectionStatus,
-  ConnectionType,
   ExpenseCategory,
   FinancialTransaction,
   FlowLine,
@@ -47,13 +44,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ArrowRight,
-  Landmark,
-  CreditCard,
-  Bike,
-  Mail,
-  CalendarCheck2,
   Plus,
-  RefreshCw,
   Search,
   Download,
   ReceiptText,
@@ -61,24 +52,11 @@ import {
   Pencil,
   Users,
   Target,
+  Landmark,
 } from "lucide-react";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
-
-const typeIcon: Record<ConnectionType, typeof Landmark> = {
-  banque: Landmark,
-  pos: CreditCard,
-  livraison: Bike,
-  email: Mail,
-  reservation: CalendarCheck2,
-};
-
-const statusTone: Record<ConnectionStatus, "green" | "red" | "amber"> = {
-  connecte: "green",
-  erreur: "red",
-  attente: "amber",
-};
 
 /** Groups transactions by category into the {label, amount, pct} shape FlowBars expects. */
 function computeFlowLines(
@@ -517,6 +495,7 @@ function NewTransactionModal({
   onCreated,
 }: {
   expenseCategories: ExpenseCategory[];
+  connections?: import("@/lib/types").Connection[];
   open: boolean;
   onClose: () => void;
   onCreated: (t: FinancialTransaction) => void;
@@ -602,6 +581,7 @@ function TransactionsTab({
 }: {
   transactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
+  connections?: import("@/lib/types").Connection[];
 }) {
   const locale = useLocale();
   const t = useTranslations("finance");
@@ -935,13 +915,12 @@ function CategoriesTab({ expenseCategories }: { expenseCategories: ExpenseCatego
 export function FinanceView({
   transactions,
   expenseCategories,
-  connections,
   serviceDays,
   breakEven,
 }: {
   transactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
-  connections: Connection[];
+  connections?: import("@/lib/types").Connection[];
   serviceDays: ServiceDay[];
   breakEven: BreakEvenAssumptions;
 }) {

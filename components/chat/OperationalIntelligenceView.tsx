@@ -4,18 +4,10 @@
 import { useLocale } from "next-intl";
 import React from "react";
 import {
-  BarChart3,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle2,
   Sparkles,
-  ArrowUpRight,
-  ArrowDownRight,
   DollarSign,
   Users,
   Utensils,
-  Calendar,
-  Layers,
 } from "lucide-react";
 import { FlowAiHeaderNav } from "@/components/chat/FlowAiHeaderNav";
 import { FlowAiActionCard, FlowAiActionPayload } from "@/components/chat/FlowAiActionBar";
@@ -30,7 +22,6 @@ export function OperationalIntelligenceView({
   primeCostRatio,
   foodCostRatio,
   laborCostRatio,
-  alertsCount,
   recommendations,
 }: {
   restaurantId: string;
@@ -39,7 +30,7 @@ export function OperationalIntelligenceView({
   primeCostRatio: number;
   foodCostRatio: number;
   laborCostRatio: number;
-  alertsCount: number;
+  alertsCount?: number;
   recommendations: Array<{
     title: string;
     description: string;

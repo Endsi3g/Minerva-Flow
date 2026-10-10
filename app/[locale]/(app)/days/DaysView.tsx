@@ -85,7 +85,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
     const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
     const full = formatDateFull(iso, locale);
     return full.charAt(0).toUpperCase() + full.slice(full.indexOf(" ") + 1);
-  }, [now]);
+  }, [now, locale]);
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, boolean> = {};
@@ -442,6 +442,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
       )}
 
       <AddServiceDayModal
+        key={`${open || Boolean(editingDay)}:${editingDay?.id ?? "new"}`}
         open={open || Boolean(editingDay)}
         onClose={() => {
           setOpen(false);

@@ -29,11 +29,22 @@ export function ReferralModal({
   };
   const [data, setData] = useState<ReferralModalData | null>(null);
   const [copied, setCopied] = useState(false);
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  const requestKey = `${restaurantId}:${open}`;
+  if (loadedFor !== requestKey) {
+    setLoadedFor(requestKey);
+    setData(null);
+  }
 
   useEffect(() => {
     if (!open) return;
-    setData(null);
-    getReferralModalDataAction(restaurantId).then(setData);
+    let active = true;
+    getReferralModalDataAction(restaurantId).then((next) => {
+      if (active) setData(next);
+    }).catch(() => {
+      if (active) setData({ code: null, pendingCount: 0, activeCount: 0, freeMonthsApplied: 0 });
+    });
+    return () => { active = false; };
   }, [open, restaurantId]);
 
   const link = data?.code

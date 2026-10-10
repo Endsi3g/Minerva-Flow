@@ -25,6 +25,7 @@ import { getPosItemMappings, upsertPosItemMapping, type PosItemMapping } from "@
 import type { PosProvider } from "@/lib/data/pos-connections";
 import {
   pushMenuItemToConnectedProviders,
+  pushMenuItemToProvider,
   deleteMenuItemFromConnectedProviders,
   getConnectedCatalogProviders,
   reconcileMenuItemsForProvider,
@@ -85,18 +86,26 @@ export async function deleteMenuItemAction(restaurantId: string, id: string): Pr
 
 /** "Resynchroniser tout" — pushes every menu item to every connected Clover/Square account, then pulls back any remote-side changes. */
 export async function resyncMenuToPosAction(restaurantId: string): Promise<{ providers: number; pushed: number; pulled: number }> {
+  const membership = await getCurrentMembership();
+  if (membership?.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return { providers: 0, pushed: 0, pulled: 0 };
+  }
   const providers = await getConnectedCatalogProviders(restaurantId);
   if (providers.length === 0) return { providers: 0, pushed: 0, pulled: 0 };
 
   const items = await getMenuItems(restaurantId);
+  let pushed = 0;
   for (const item of items) {
-    await pushMenuItemToConnectedProviders(restaurantId, item).catch(() => {});
+    const results = await Promise.all(providers.map((provider) =>
+      pushMenuItemToProvider(restaurantId, provider, item).catch(() => false)
+    ));
+    pushed += results.filter(Boolean).length;
   }
 
-  const pushed = items.length * providers.length;
   let pulled = 0;
   for (const provider of providers) {
     const result = await reconcileMenuItemsForProvider(restaurantId, provider);
+    pushed += result.pushed;
     pulled += result.pulled;
   }
   revalidatePath("/menu");

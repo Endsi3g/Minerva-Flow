@@ -17,7 +17,6 @@ import type {
   ChatProjectFolder,
 } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
-import { getSpecialistById } from "@/lib/ai/specialists";
 import { DEFAULT_DOSSIERS } from "@/lib/ai/dossier-types";
 import {
   executeTogglePinAction,
@@ -62,8 +61,6 @@ export function AssistantChatView({
   conversationId,
   conversations: initialConversations,
   initialMessages,
-  initialArtifact,
-  defaultContext,
   initialAgentId = "general",
   initialActiveDossiers = ["menu", "finance", "loyalty", "operations"],
   projectFolders: initialProjectFolders = [],
@@ -103,7 +100,7 @@ export function AssistantChatView({
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(true);
   const [selectedModel, setSelectedModel] = useState("Gemini 3.7");
 
-  const [agentId, setAgentId] = useState(initialAgentId);
+  const [agentId] = useState(initialAgentId);
   const [activeDossiers, setActiveDossiers] = useState<string[]>(initialActiveDossiers);
 
   // Dialogs

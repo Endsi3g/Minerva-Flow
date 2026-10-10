@@ -25,7 +25,7 @@ const severityTranslationKey: Record<Incident["severity"], "severityLow" | "seve
 
 export function IncidentsView({ initialIncidents }: { initialIncidents: Incident[] }) {
   const t = useTranslations("admin.incidents");
-  const [incidents, setIncidents] = useState(initialIncidents);
+  const incidents = initialIncidents;
   const [formOpen, setFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

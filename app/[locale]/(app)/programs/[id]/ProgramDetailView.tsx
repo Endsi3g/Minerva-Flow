@@ -10,20 +10,11 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, Customer, FinancialTransaction, Program, ProgramStatus, ProgramType, ServiceDay } from "@/lib/types";
 import {
   ArrowLeft,
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  Percent,
   Receipt,
   Megaphone,
   CalendarCheck,
   Users,
-  Sparkles,
-  MessageSquare,
   ArrowUpRight,
-  ShieldCheck,
-  Clock,
-  CheckCircle2,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useApp } from "@/lib/app-context";

@@ -19,8 +19,6 @@ export function InviteWorkspaceMemberModal({
   onClose,
   workspaceId,
   restaurants,
-  currentRestaurantId,
-  onSuccess,
 }: {
   open: boolean;
   onClose: () => void;

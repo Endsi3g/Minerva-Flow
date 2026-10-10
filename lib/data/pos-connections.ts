@@ -59,21 +59,25 @@ export async function savePosConnectionTokens(
 ): Promise<void> {
   const admin = createAdminClient();
 
-  const { data: accessTokenId } = await admin.rpc("store_vault_secret", {
+  const { data: accessTokenId, error: accessTokenError } = await admin.rpc("store_vault_secret", {
     secret: tokens.accessToken,
     secret_name: `${provider}_access_${restaurantId}_${Date.now()}`,
   });
+  if (accessTokenError || typeof accessTokenId !== "string" || !accessTokenId) {
+    throw new Error("pos_access_token_storage_failed");
+  }
 
   let refreshTokenId: string | null = null;
   if (tokens.refreshToken) {
-    const { data } = await admin.rpc("store_vault_secret", {
+    const { data, error } = await admin.rpc("store_vault_secret", {
       secret: tokens.refreshToken,
       secret_name: `${provider}_refresh_${restaurantId}_${Date.now()}`,
     });
-    refreshTokenId = data ?? null;
+    if (error || typeof data !== "string" || !data) throw new Error("pos_refresh_token_storage_failed");
+    refreshTokenId = data;
   }
 
-  await admin.from("pos_connections").upsert(
+  const { error: connectionError } = await admin.from("pos_connections").upsert(
     {
       restaurant_id: restaurantId,
       provider,
@@ -85,6 +89,7 @@ export async function savePosConnectionTokens(
     },
     { onConflict: "restaurant_id,provider" }
   );
+  if (connectionError) throw new Error("pos_connection_storage_failed");
 }
 
 /**
@@ -97,19 +102,19 @@ export async function getPosTokens(
   provider: PosProvider
 ): Promise<{ accessToken: string; refreshToken: string | null; expiresAt: string | null; externalAccountId: string | null } | null> {
   const admin = createAdminClient();
-  const { data: connection } = await admin
+  const { data: connection, error: connectionError } = await admin
     .from("pos_connections")
-    .select("access_token_id, refresh_token_id, expires_at, external_account_id")
+    .select("access_token_id, refresh_token_id, expires_at, external_account_id, status")
     .eq("restaurant_id", restaurantId)
     .eq("provider", provider)
     .maybeSingle();
 
-  if (!connection?.access_token_id) return null;
+  if (connectionError || !connection?.access_token_id || (provider === "clover" && connection.status !== "connecte")) return null;
 
-  const { data: accessToken } = await admin.rpc("read_vault_secret", {
+  const { data: accessToken, error: accessTokenError } = await admin.rpc("read_vault_secret", {
     secret_id: connection.access_token_id,
   });
-  if (!accessToken) return null;
+  if (accessTokenError || typeof accessToken !== "string" || !accessToken.trim()) return null;
 
   let refreshToken: string | null = null;
   if (connection.refresh_token_id) {

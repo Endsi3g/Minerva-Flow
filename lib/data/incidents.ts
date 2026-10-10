@@ -1,4 +1,4 @@
-import type { IncidentReport, IncidentPriority, IncidentStatus, IncidentSource } from "@/lib/types";
+import type { IncidentReport, IncidentPriority, IncidentSource } from "@/lib/types";
 
 export type IncidentSeverity = "faible" | "moyenne" | "critique";
 

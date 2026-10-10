@@ -14,12 +14,7 @@ import {
   Megaphone,
   UtensilsCrossed,
   CheckCircle2,
-  Clock,
-  TrendingUp,
-  Receipt,
   UserCheck,
-  ShieldCheck,
-  AlertTriangle,
 } from "lucide-react";
 
 function buildSourceLabel(t: (key: string) => string): Record<ServiceSource, string> {
@@ -56,7 +51,7 @@ function buildAnomalyBadge(t: (key: string) => string): Record<NonNullable<Anoma
 function calculateShiftHours(startTime: string, endTime: string): number {
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
-  let startMinutes = sh * 60 + (sm || 0);
+  const startMinutes = sh * 60 + (sm || 0);
   let endMinutes = eh * 60 + (em || 0);
   if (endMinutes < startMinutes) endMinutes += 24 * 60; // overnight shift
   return Math.max(0, (endMinutes - startMinutes) / 60);

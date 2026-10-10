@@ -1,3 +1,4 @@
+import { excludeCloverExportedTickets } from "./clover-import-dedup";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PosProvider } from "@/lib/data/pos-connections";
 import { resolvePosItemMapping } from "./item-mapping";
@@ -24,6 +25,9 @@ export type PosTicket = {
   customerPhone?: string;
   customerEmail?: string;
   externalCustomerId?: string;
+  clover?: { merchantId: string; environment: "sandbox" | "production"; minervaOrderId?: string };
+  posEmployeeId?: string;
+  posEmployeeName?: string;
   lineItems: PosTicketLineItem[];
 };
 
@@ -48,6 +52,7 @@ export async function ingestPosTickets(
   provider: TicketIngestionProvider,
   tickets: PosTicket[]
 ): Promise<IngestionResult> {
+  if (provider === "clover") tickets = await excludeCloverExportedTickets(restaurantId, tickets);
   const admin = createAdminClient();
   let ingestedCount = 0;
   let skippedDuplicateCount = 0;
@@ -161,6 +166,7 @@ export async function ingestPosTickets(
         payment_method: provider,
         pos_provider: provider,
         external_order_id: ticket.externalOrderId,
+        ...(provider === "clover" ? { clover_employee_id: ticket.posEmployeeId ?? null, clover_employee_name: ticket.posEmployeeName ?? null } : {}),
         created_at: ticket.closedAt,
       })
       .select("id")

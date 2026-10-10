@@ -8,6 +8,8 @@ import { isOrderPaymentUnresolved } from "@/lib/orders/payment-gate";
 import type { Order, OrderItem, OrderStatus, OrderPaymentStatus, OrderFulfillmentMode, OrderSource } from "@/lib/types";
 
 type OrderRow = {
+  clover_employee_id?: string | null;
+  clover_employee_name?: string | null;
   id: string;
   restaurant_id: string;
   status: OrderStatus;
@@ -74,6 +76,8 @@ function resolveOrderSource(row: OrderRow): OrderSource {
 
 function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
   return {
+    cloverEmployeeId: row.clover_employee_id ?? null,
+    cloverEmployeeName: row.clover_employee_name ?? null,
     id: row.id,
     restaurantId: row.restaurant_id,
     status: row.status,
@@ -247,8 +251,11 @@ export async function getOrdersForDay(restaurantId: string, dayStart: string, da
       orderRows.map((o) => o.id)
     );
 
+  const { data: exports } = await supabase.from("clover_order_exports").select("order_id,status")
+    .eq("restaurant_id",restaurantId).in("order_id",orderRows.map(o => o.id));
+  const exportStatuses = new Map(((exports ?? []) as { order_id: string; status: string }[]).map(e => [e.order_id,e.status]));
   const itemRows = (items as OrderItemRow[]) ?? [];
-  return orderRows.map((row) => mapOrder(row, itemRows));
+  return orderRows.map((row) => ({ ...mapOrder(row, itemRows), cloverExportStatus: exportStatuses.get(row.id) ?? null }));
 }
 
 const PREP_GATED_STATUSES: OrderStatus[] = ["en_preparation", "prete", "servie"];

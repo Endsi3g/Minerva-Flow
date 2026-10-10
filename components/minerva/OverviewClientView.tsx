@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { MiniSparkline } from "@/components/charts/MiniSparkline";
 import { MonthCalendar } from "@/components/charts/MonthCalendar";
@@ -15,7 +14,6 @@ import { LiveAlertsPanel } from "@/components/minerva/LiveAlertsPanel";
 import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel";
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
-import { HelperTooltip } from "@/components/ui/HelperTooltip";
 import { cn, formatCurrency, formatDateFull } from "@/lib/utils";
 import {
   CalendarCheck2,
@@ -23,19 +21,11 @@ import {
   ArrowRight,
   SlidersHorizontal,
   Target,
-  CheckCircle2,
   Users,
   Heart,
   DollarSign,
-  TrendingUp,
   Repeat,
-  UtensilsCrossed,
-  Cake,
-  Activity,
   ShieldCheck,
-  AlertTriangle,
-  HelpCircle,
-  Clock,
   ArrowUpRight,
   ArrowDownRight,
   ChevronDown,
@@ -74,11 +64,8 @@ export function OverviewClientView({
   onboardingReadiness,
   greeting,
   firstName,
-  monthMarge,
-  monthMargeIsEstimated,
   todayLabel,
   revTrend,
-  margTrend,
   serviceDays,
   joursSparkData,
   activeCampaignsCount,
@@ -90,9 +77,6 @@ export function OverviewClientView({
   laborCost,
   incrementalRetentionRevenue,
   monthRevenue,
-  isLtvFocusedRole,
-  ltvImpact,
-  menuHealth,
   loyaltyHealth,
 }: {
   restaurantId: string;
@@ -140,7 +124,7 @@ export function OverviewClientView({
     const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
     const full = formatDateFull(iso, locale);
     return full.charAt(0).toUpperCase() + full.slice(full.indexOf(" ") + 1);
-  }, [now]);
+  }, [now, locale]);
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, boolean> = {};
@@ -171,14 +155,12 @@ export function OverviewClientView({
   })();
   const matchedToday = serviceDays.find((d) => d.date === todayDateStr);
   const todayRevenue = matchedToday ? matchedToday.revenue : (serviceDays[0]?.revenue ?? 0);
-  const foodCostPct = kpiComparisons?.foodCost.currentPct ?? 29.5;
-  const grossMarginPct = Math.round((100 - foodCostPct) * 10) / 10;
   const laborPct = laborCost?.pct ?? kpiComparisons?.laborCost.currentPct ?? null;
   const retentionSales = incrementalRetentionRevenue ?? 0;
 
   return (
     <div className="space-y-6">
-      <LiveKpiSync restaurantId={restaurantId} />
+      <LiveKpiSync />
 
       {/* Page Header */}
       <PageHeader
