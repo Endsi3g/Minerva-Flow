@@ -5,7 +5,7 @@ import { mapCustomer, mapTransaction, type CustomerRow, type LoyaltyTransactionR
 import { getInactiveCustomers, getUpcomingBirthdays, getDriftingHighValueCustomers } from "@/lib/engine/retention";
 import { sendRetentionNudge, type RetentionTrigger } from "@/lib/retention/send";
 import type { Customer } from "@/lib/types";
-import { isFrequentEligible, isWithinSendingHours } from "@/lib/retention/frequent";
+import { isFrequentEligible } from "@/lib/retention/frequent";
 
 type Trigger = RetentionTrigger;
 

@@ -7,6 +7,7 @@ import {
 } from "@/app/[locale]/m/[token]/push-actions";
 import { Bell, BellOff } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePushBrowserSupport } from "@/hooks/use-browser-capabilities";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -25,42 +26,51 @@ type PushState = "unsupported" | "not_configured" | "denied" | "subscribed" | "a
  * entry, and wired to the public route group's server actions.
  */
 export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
-  const [state, setState] = useState<PushState>("available");
+  const pushSupported = usePushBrowserSupport();
+  const [configuredState, setConfiguredState] = useState<PushState>("available");
+  const state: PushState = pushSupported ? configuredState : "unsupported";
   const [busy, setBusy] = useState(false);
 
   async function refreshState() {
-    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setState("unsupported");
-      return;
-    }
+    if (!pushSupported) return;
     try {
       const configured = await isPushConfiguredAction();
-      if (!configured) {
-        setState("not_configured");
-        return;
-      }
-      if (Notification.permission === "denied") {
-        setState("denied");
-        return;
-      }
+      if (!configured) return setConfiguredState("not_configured");
+      if (Notification.permission === "denied") return setConfiguredState("denied");
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      setState(subscription ? "subscribed" : "available");
+      setConfiguredState(subscription ? "subscribed" : "available");
     } catch {
-      setState("error");
+      setConfiguredState("error");
     }
   }
 
   useEffect(() => {
-    refreshState();
-  }, []);
+    if (!pushSupported) return;
+    let active = true;
+    async function readState() {
+      try {
+        const configured = await isPushConfiguredAction();
+        if (!active) return;
+        if (!configured) return setConfiguredState("not_configured");
+        if (Notification.permission === "denied") return setConfiguredState("denied");
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (active) setConfiguredState(subscription ? "subscribed" : "available");
+      } catch {
+        if (active) setConfiguredState("error");
+      }
+    }
+    void readState();
+    return () => { active = false; };
+  }, [pushSupported]);
 
   async function handleSubscribe() {
     setBusy(true);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setState(permission === "denied" ? "denied" : "available");
+        setConfiguredState(permission === "denied" ? "denied" : "available");
         return;
       }
 
@@ -77,7 +87,7 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
       if (!subscription) {
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         if (!vapidKey) {
-          setState("not_configured");
+          setConfiguredState("not_configured");
           return;
         }
         const subscribeOptions = {
@@ -104,12 +114,12 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
         // Server never recorded it — drop the local subscription too so the
         // browser and server agree, and the user can just retry the button.
         await subscription.unsubscribe().catch(() => {});
-        setState("available");
+        setConfiguredState("available");
         return;
       }
-      setState("subscribed");
+      setConfiguredState("subscribed");
     } catch {
-      setState("error");
+      setConfiguredState("error");
     } finally {
       setBusy(false);
     }
@@ -124,9 +134,9 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
         await unsubscribeFromPushAction(subscription.endpoint);
         await subscription.unsubscribe();
       }
-      setState("available");
+      setConfiguredState("available");
     } catch {
-      setState("error");
+      setConfiguredState("error");
     } finally {
       setBusy(false);
     }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useClientHydrated } from "@/hooks/use-local-storage-state";
 import { createPortal } from "react-dom";
 import { X, ZoomIn } from "lucide-react";
 
@@ -15,11 +16,7 @@ export function ImageLightboxModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useClientHydrated();
 
   useEffect(() => {
     if (!isOpen) return;

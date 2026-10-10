@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useClientHydrated } from "@/hooks/use-local-storage-state";
 import { createPortal } from "react-dom";
-import { X, Play, AlertCircle } from "lucide-react";
+import { X, Play } from "lucide-react";
 
 function getEmbedUrl(url: string): { type: "youtube" | "vimeo" | "native"; embedUrl: string } {
   const trimmed = url.trim();
@@ -41,12 +42,8 @@ export function VideoPlayerModal({
   open?: boolean;
   onClose: () => void;
 }) {
-  const [mounted, setMounted] = useState(false);
   const visible = open ?? isOpen ?? false;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useClientHydrated();
 
   useEffect(() => {
     if (!visible) return;

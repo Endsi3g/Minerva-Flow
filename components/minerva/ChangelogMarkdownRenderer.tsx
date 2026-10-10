@@ -40,7 +40,7 @@ export function formatInlineText(text: string) {
       return (
         <Link
           key={idx}
-          href={href as any}
+          href={href}
           target={isExternal ? "_blank" : undefined}
           rel={isExternal ? "noopener noreferrer" : undefined}
           className="mx-0.5 inline-flex items-center gap-0.5 font-semibold text-mv-green-dark hover:underline"

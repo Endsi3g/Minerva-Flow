@@ -1,3 +1,6 @@
+import { createAdminClient } from "@/lib/supabase/admin";
+import { cloverEnvironment } from "./config";
+import { excludeCloverExportedTickets } from "./clover-import-dedup";
 import { getValidSquareAccessToken, fetchSquareDailyTickets } from "@/lib/pos/square";
 import { getValidLightspeedAccessToken, fetchLightspeedDailySales } from "@/lib/pos/lightspeed";
 import { getValidCloverAccessToken, fetchCloverDailyTickets } from "@/lib/pos/clover";
@@ -49,12 +52,17 @@ export async function syncCloverSalesForDate(restaurantId: string, date: string)
   if (!tokenInfo || !tokenInfo.accessToken || !tokenInfo.merchantId) return { status: "no_token" };
 
   const timeZone = await getRestaurantTimezoneAdmin(restaurantId);
-  const tickets = await fetchCloverDailyTickets(
+  const settings = await createAdminClient().from("clover_order_settings").select("employee_attribution")
+    .eq("restaurant_id",restaurantId).eq("merchant_id",tokenInfo.merchantId).eq("environment",cloverEnvironment()).maybeSingle();
+  if (settings.error) throw new Error("clover_settings_read_failed");
+  const rawTickets = await fetchCloverDailyTickets(
     tokenInfo.accessToken,
     tokenInfo.merchantId,
     date,
-    timeZone
+    timeZone,
+    settings.data?.employee_attribution === true,
   );
+  const tickets = await excludeCloverExportedTickets(restaurantId, rawTickets);
   await ingestPosTickets(restaurantId, "clover", tickets);
 
   const revenue = Math.round(tickets.reduce((sum, t) => sum + t.subtotal, 0) * 100) / 100;

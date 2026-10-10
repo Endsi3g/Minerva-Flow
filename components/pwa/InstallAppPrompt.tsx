@@ -2,7 +2,8 @@
 
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { useLocalStorageBoolean } from "@/hooks/use-local-storage-state";
 import { Share, SquarePlus, X, Smartphone } from "lucide-react";
 
 const DISMISS_KEY = "mv-install-prompt-dismissed";
@@ -21,33 +22,35 @@ type BeforeInstallPromptEvent = Event & {
  */
 export function InstallAppPrompt() {
   const t = useTranslations("installPrompt");
-  const [visible, setVisible] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const [dismissed, setDismissed] = useLocalStorageBoolean(DISMISS_KEY, true, "1", "session");
+  const standalone = useSyncExternalStore(
+    () => () => {},
+    () => window.matchMedia("(display-mode: standalone)").matches,
+    () => true
+  );
+  const isIOS = useSyncExternalStore(
+    () => () => {},
+    () => /iPad|iPhone|iPod/.test(navigator.userAgent),
+    () => false
+  );
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) return;
     if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
 
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(ios);
 
     function onBeforeInstallPrompt(e: Event) {
       e.preventDefault();
       setInstallEvent(e as BeforeInstallPromptEvent);
-      setVisible(true);
     }
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-    // iOS never fires beforeinstallprompt — show the manual instructions.
-    if (ios) setVisible(true);
-
     return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
   }, []);
 
   function handleDismiss() {
-    sessionStorage.setItem(DISMISS_KEY, "1");
-    setVisible(false);
+    setDismissed(true);
   }
 
   async function handleInstall() {
@@ -55,10 +58,10 @@ export function InstallAppPrompt() {
     await installEvent.prompt();
     await installEvent.userChoice;
     setInstallEvent(null);
-    setVisible(false);
+    setDismissed(true);
   }
 
-  if (!visible) return null;
+  if (dismissed || standalone || (!isIOS && !installEvent)) return null;
 
   return (
     <div className="mb-5 rounded-xl border border-mv-lime-dark/30 bg-mv-lime-tint px-4 py-3">

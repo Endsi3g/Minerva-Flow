@@ -40,28 +40,29 @@ export function DeliveryTrackerCard({
   origin: { lng: number; lat: number };
   destination: { lng: number; lat: number };
 }) {
-  const [route, setRoute] = useState<OsrmRouteData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [routeResult, setRouteResult] = useState<{ key: string; route: OsrmRouteData | null } | null>(null);
+  const requestKey = `${origin.lng},${origin.lat}:${destination.lng},${destination.lat}`;
+  const route = routeResult?.key === requestKey ? routeResult.route : null;
+  const loading = routeResult?.key !== requestKey;
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetch(buildRouteUrl(origin, destination))
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;
         const r = data?.routes?.[0];
         if (r?.geometry?.coordinates) {
-          setRoute({ coordinates: r.geometry.coordinates, duration: r.duration, distance: r.distance });
+          setRouteResult({ key: requestKey, route: { coordinates: r.geometry.coordinates, duration: r.duration, distance: r.distance } });
         }
       })
       .catch(() => {})
-      .finally(() => !cancelled && setLoading(false));
+      .finally(() => !cancelled && setRouteResult((current) => current?.key === requestKey ? current : { key: requestKey, route: null }));
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin.lng, origin.lat, destination.lng, destination.lat]);
+  }, [origin.lng, origin.lat, destination.lng, destination.lat, requestKey]);
 
   const center = useMemo(
     (): [number, number] => [(origin.lng + destination.lng) / 2, (origin.lat + destination.lat) / 2],

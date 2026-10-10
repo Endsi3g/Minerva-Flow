@@ -1,0 +1,203 @@
+{
+  "appName": "Minerva Flow",
+  "publisher": "Minerva Technologies Inc.",
+  "appType": "Web / REST client",
+  "market": "Canada",
+  "website": "https://www.minervaflow.app",
+  "oauthLaunchPath": "/api/oauth/clover",
+  "oauthCallback": "https://www.minervaflow.app/api/oauth/clover/callback",
+  "webhookUrl": "https://www.minervaflow.app/api/webhooks/clover",
+  "supportUrl": "https://www.minervaflow.app/fr/support",
+  "supportEmail": "flow@minervaflow.app",
+  "supportPhone": "+15144515232",
+  "privacyUrl": "https://www.minervaflow.app/fr/legal/privacy",
+  "termsUrl": "https://www.minervaflow.app/fr/legal/terms",
+  "initialPermissions": [
+    {
+      "permission": "Read merchant",
+      "reason": "Vérifier le marchand autorisé et rattacher sa connexion au bon restaurant."
+    },
+    {
+      "permission": "Read order",
+      "reason": "Importer les commandes payées, leurs articles et montants dans l’historique et les rapports du restaurant; reconnaître les ventes déjà synchronisées par leur identifiant Clover."
+    },
+    {
+      "permission": "Read inventory",
+      "reason": "Lire les produits, prix et stocks pour importer le catalogue en brouillons inactifs et associer les articles existants."
+    }
+  ],
+  "optionalPermission": {
+    "permission": "Write inventory",
+    "userRequested": true,
+    "reason": "Créer, modifier ou retirer les produits Clover associés au menu et mettre à jour leurs stocks à la demande d’un propriétaire ou gestionnaire du restaurant. Les brouillons avec prix non confirmés sont exclus des exports.",
+    "activation": "Requires real merchant authorization, OAuth renewal and sandbox verification"
+  },
+  "webhookSubscriptions": [
+    "Orders"
+  ],
+  "environmentVariables": [
+    "CLOVER_APP_ID",
+    "CLOVER_APP_SECRET",
+    "CLOVER_ENVIRONMENT=production",
+    "CLOVER_WEBHOOK_AUTH_CODE"
+  ],
+  "status": "App exists; permission editor observed; reasons not yet entered and Save not verified; merchant connection not verified",
+  "secretHandling": "Enregistrer les secrets uniquement dans Vercel; ne pas les coller dans le chat.",
+  "distribution": "Public app",
+  "supportedLanguages": [
+    "fr-CA",
+    "en-CA"
+  ],
+  "defaultOAuthResponse": "Code",
+  "manualEntryByUser": true,
+  "copyReadyDocument": "docs/engineering/CLOVER_CHAMPS_A_SAISIR.md",
+  "pricing": "Awaiting user decision",
+  "supportHours": "Awaiting user decision",
+  "observedPermissions": {
+    "observedAt": "2026-10-09T14:15:55.969018+00:00",
+    "surface": "Safari read-only accessibility tree",
+    "appName": "Minerva Flow - Loyalty & Rewards Apps",
+    "appCreated": true,
+    "screen": "Edit Requested Permissions",
+    "read": [
+      "Customers",
+      "Employees",
+      "Inventory",
+      "Merchant",
+      "Orders",
+      "Payments"
+    ],
+    "write": [
+      "Customers",
+      "Inventory",
+      "Orders",
+      "Payments"
+    ],
+    "ecommerce": true,
+    "reasonFieldsEmpty": true,
+    "saveNotVerified": true,
+    "merchantConnectionVerified": false
+  },
+  "unimplementedObservedPermissions": [
+    "Read customers",
+    "Write customers",
+    "Read payments",
+    "Write payments",
+    "Ecommerce"
+  ],
+  "orderExport": {
+    "priority": "Next after merchant connection",
+    "trigger": "Owner acceptance",
+    "declinedOrdersExported": false,
+    "implementationStatus": "Implemented locally; migrations 0181 and 0182 applied and recorded in Staging; not deployed or live-validated",
+    "preparedReasons": "docs/engineering/CLOVER_COMMANDES_ET_PAIEMENTS.md",
+    "automaticCancellation": "Requested; unpaid-only implementation gated by real sandbox validation; no refunds",
+    "durableQueue": "clover_order_exports; persisted send intent, lease CAS, merchant/environment binding and uncertain-response reconciliation",
+    "activationFlag": "CLOVER_ORDER_EXPORT_VALIDATED=1 only after real merchant validation",
+    "scheduler": "Protected cron endpoint implemented; schedule not registered in vercel.json"
+  },
+  "onlinePayments": {
+    "priority": "Implementation requested now; blocked on real merchant provisioning",
+    "launchPaymentMode": "Pay at receipt only",
+    "implementationStatus": "Not implemented or activated; no Clover connections in Staging or Production",
+    "requestedFlow": "Pre-authorize at checkout; capture after authorized owner or manager acceptance",
+    "restaurantDecline": "Release uncaptured authorization; automatically refund captured funds",
+    "permissionJustifications": "docs/engineering/CLOVER_CHAMPS_A_SAISIR.md",
+    "provisioningCheckedAt": "2026-10-09T15:34:00Z",
+    "composioConnection": "No active Clover connection",
+    "stagingConnections": 0,
+    "productionConnections": 0,
+    "userProvisioningStatus": "User does not yet have the merchant connection; finish Clover developer app configuration first",
+    "orderAssociationBlocker": "Documented order-pay schema lacks capture; charge pre-authorization creates a Clover order. Validate one linked order before implementation and activation.",
+    "livePaymentTests": "Not performed"
+  },
+  "verification": {
+    "unitTests": 537,
+    "unitTestFiles": 94,
+    "targetedCloverTests": 53,
+    "typescript": "passed",
+    "eslintChangedFiles": "passed",
+    "liveMerchantTest": "BLOCKED — no active Clover merchant connection",
+    "productionDeployment": "not performed",
+    "targetedCloverTestsNote": "Initial three-file run before added dedup and owner-settings suites; all now included in 537-test final run",
+    "build": "passed",
+    "stageMigrations": [
+      "0181",
+      "0182"
+    ],
+    "stageEnabledRestaurants": 0,
+    "stageQueuedExports": 0,
+    "stageFixturesRemaining": 0,
+    "newPreviewDeployment": "not performed"
+  },
+  "employeeAttribution": {
+    "userRequested": true,
+    "permission": "Read employees",
+    "implementation": "Targeted referenced employee reads, persistence and owner web display; per-restaurant setting",
+    "liveValidated": false
+  },
+  "oauthHardening": {
+    "status": "Existing integration fixes implemented and verified locally; not deployed or live-validated",
+    "testedAt": "2026-10-09T15:49:51Z",
+    "signedStateBinding": "Initiating verified user, restaurant, Clover provider and environment; active management rights rechecked on return and before persistence",
+    "merchantValidation": "Returned merchant identifier must match; bounded no-store requests, redirects forbidden",
+    "tokenExchange": "Single POST on Clover API host; no legacy GET fallback or automatic replay",
+    "expiredTokens": "Rejected, including when a refresh token exists; reconnect required until durable refresh is implemented",
+    "persistence": "Vault and connection errors reported; secrets and row not yet persisted in one atomic transaction",
+    "targetedTests": 77,
+    "fullUnitTests": 605,
+    "fullUnitTestFiles": 98,
+    "typescript": "passed",
+    "eslintChangedFiles": "passed — 11 files",
+    "newBuild": "not run",
+    "remoteMutations": "none",
+    "report": "docs/releases/CLOVER_OAUTH_FOUNDATION_2026-10-09.md"
+  },
+  "sourceRelease": {
+    "version": "2.52.0-rc.2",
+    "tag": "v2.52.0-rc.2",
+    "branch": "release/clover-2.52.0-rc.2",
+    "status": "Prerelease source candidate; not a Production or store deployment",
+    "isolatedVerification": {
+      "cloverTestsPassed": 150,
+      "cloverTestFiles": 10,
+      "fullUnitTestsPassed": 574,
+      "fullUnitTestsFailed": 0,
+      "fullUnitTestFiles": 91,
+      "baselineFailures": "Resolved: eight stale postal-address assertions aligned with the already-confirmed Lberge address; no production template change",
+      "typescript": "passed",
+      "eslintSelectedSourceFiles": "passed — 32 files",
+      "build": "passed — Webpack exit 0, 308 pages, 4 GiB Node heap",
+      "eslintChangedFiles": "passed — six changed TypeScript files",
+      "eslintGlobal": {
+        "status": "failed",
+        "errors": 201,
+        "warnings": 216,
+        "changedFiles": "zero diagnostics"
+      }
+    },
+    "announcementWorkflow": "Prereleases and drafts skip announce job",
+    "releaseNotes": "docs/releases/RELEASE_2.52.0-rc.2.md",
+    "announcement": "Email only after validated Production deployment; prereleases still skip announce. Failed campaign reported, not silently accepted.",
+    "safariReview": "Developer dashboard DRAFT; setup items incomplete; Android & Web differs from intended Web integration; no connected browser for edits"
+  },
+  "qualityCandidate": {
+    "branch": "fix/release-quality-2.52.0",
+    "baseRelease": "v2.52.0-rc.2",
+    "globalLint": {
+      "errors": 0,
+      "warnings": 0,
+      "ciBlocking": true
+    },
+    "unitTests": {
+      "passed": 592,
+      "failed": 0,
+      "files": 93
+    },
+    "newFocusedTests": 18,
+    "build": "Webpack passed, 308 pages, 4 GiB Node heap",
+    "production": "Not deployed; real merchant and critical journey validation remain required",
+    "browserDiagnosis": "Chrome installed/running, native host valid, required browser extension missing in active profile",
+    "externalCloverWrites": 0
+  }
+}

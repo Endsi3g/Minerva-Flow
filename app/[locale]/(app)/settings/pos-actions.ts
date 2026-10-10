@@ -106,10 +106,19 @@ export async function connectCloverWithTokenAction(
     return { success: false, error: validation.error ?? "Validation Clover échouée" };
   }
 
-  await savePosConnectionTokens(membership.restaurantId, "clover", {
-    accessToken: cleanToken,
-    externalAccountId: cleanMid,
-  });
+  const currentMembership = await getCurrentMembership();
+  if (!currentMembership || currentMembership.restaurantId !== membership.restaurantId || !["owner", "manager"].includes(currentMembership.role)) {
+    return { success: false, error: "Non autorisé" };
+  }
+
+  try {
+    await savePosConnectionTokens(membership.restaurantId, "clover", {
+      accessToken: cleanToken,
+      externalAccountId: cleanMid,
+    });
+  } catch {
+    return { success: false, error: "Impossible d’enregistrer la connexion Clover. Réessayez la connexion." };
+  }
 
   // Background backfill
   backfillPosHistory("clover", membership.restaurantId).catch((err) => {

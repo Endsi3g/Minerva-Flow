@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDropzone, type FileError, type FileRejection } from "react-dropzone";
+import { normalizeFileCount } from "@/hooks/normalize-file-count";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -33,7 +34,8 @@ const useSupabaseUpload = (options: UseSupabaseUploadOptions) => {
     upsert = false,
   } = options;
 
-  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [rawFiles, setFiles] = useState<FileWithPreview[]>([]);
+  const files = useMemo(() => normalizeFileCount(rawFiles, maxFiles), [rawFiles, maxFiles]);
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
   const [successes, setSuccesses] = useState<string[]>([]);
@@ -110,22 +112,6 @@ const useSupabaseUpload = (options: UseSupabaseUploadOptions) => {
     setLoading(false);
   }, [files, path, bucketName, errors, successes, cacheControl, upsert]);
 
-  useEffect(() => {
-    if (files.length === 0) {
-      setErrors([]);
-    }
-    if (files.length <= maxFiles) {
-      let changed = false;
-      const newFiles = files.map((file) => {
-        if (file.errors.some((e) => e.code === "too-many-files")) {
-          file.errors = file.errors.filter((e) => e.code !== "too-many-files");
-          changed = true;
-        }
-        return file;
-      });
-      if (changed) setFiles(newFiles);
-    }
-  }, [files.length, setFiles, maxFiles, files]);
 
   return {
     files,
@@ -133,7 +119,7 @@ const useSupabaseUpload = (options: UseSupabaseUploadOptions) => {
     successes,
     isSuccess,
     loading,
-    errors,
+    errors: files.length === 0 ? [] : errors,
     setErrors,
     onUpload,
     maxFileSize,

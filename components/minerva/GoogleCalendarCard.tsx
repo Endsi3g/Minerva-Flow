@@ -1,5 +1,7 @@
 "use client";
 
+import { FullPageLink } from "@/components/ui/FullPageLink";
+
 
 import { intlLocale } from "@/lib/format-locale";
 import { useLocale } from "next-intl";
@@ -55,12 +57,12 @@ export function GoogleCalendarCard() {
         description="Voyez vos événements à venir directement dans Flow — vous seul y avez accès."
       />
       {!connected ? (
-        <a
+        <FullPageLink
           href="/api/oauth/google-calendar"
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-mv-ink px-3 py-2 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-ink/90"
         >
           <GoogleCalendar width={14} height={14} /> Connecter mon Google Calendar
-        </a>
+        </FullPageLink>
       ) : (
         <div>
           <div className="mb-3 flex items-center justify-between">

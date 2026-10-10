@@ -26,11 +26,7 @@ jobs:
         run: npx tsc --noEmit -p .
 
       - name: Lint
-        run: npm run lint
-        # Non-blocking for now: 92 pre-existing lint errors predate this
-        # workflow (react-hooks/set-state-in-effect across hooks/, etc.).
-        # Flip this to blocking once that debt is cleaned up separately.
-        continue-on-error: true
+        run: npm run lint -- --max-warnings=0
 
       - name: Unit tests
         run: npm run test

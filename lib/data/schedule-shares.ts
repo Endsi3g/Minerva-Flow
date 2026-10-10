@@ -34,15 +34,13 @@ export async function createScheduleShare(
 
   const token = randomUUID().replace(/-/g, "");
   const admin = createAdminClient();
-  const insertPayload: Record<string, any> = {
+  const insertPayload = {
     restaurant_id: restaurantId,
     employee_id: employeeId,
     token,
     snapshot,
+    ...(creatorId ? { created_by: creatorId } : {}),
   };
-  if (creatorId) {
-    insertPayload.created_by = creatorId;
-  }
 
   const { error } = await admin.from("schedule_shares").insert(insertPayload);
   if (error) {

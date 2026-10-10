@@ -7,7 +7,6 @@ import {
   CheckSquare,
   FileText,
   Check,
-  ArrowRight,
   Sparkles,
   AlertCircle,
   Loader2,

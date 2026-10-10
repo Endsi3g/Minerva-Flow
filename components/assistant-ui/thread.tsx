@@ -17,20 +17,16 @@ import {
   Bot,
   ArrowUp,
   Square,
-  Paperclip,
   Copy,
   Check,
   RotateCcw,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
-  PackageCheck,
-  UtensilsCrossed,
   BarChart3,
   ArrowDown,
   Sparkles,
   ExternalLink,
-  Clock,
   Plus,
   FileText,
   Mic,
@@ -46,6 +42,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+type SpeechResultEvent = { results: ArrayLike<ArrayLike<{ transcript: string }>> };
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: SpeechResultEvent) => void) | null;
+  start: () => void;
+};
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function buildPROMPT_CHIPS(t: (key: string) => string) {
   return [
@@ -121,7 +130,7 @@ export function Thread({
 
               {/* Dynamic greeting & context subtitle */}
               <h1 className="text-2xl sm:text-3xl font-black text-[#26251e] tracking-tight">
-                {greeting}
+                {greeting}, {userName}
               </h1>
               <p className="text-sm text-[#7a7a76] font-medium mt-1 mb-8">
                 {t("yourRestaurantSpaceIs")}
@@ -416,9 +425,11 @@ function MultifunctionComposer({
 
   const toggleListening = () => {
     if (typeof window === "undefined") return;
-    const SpeechRecognition =
-      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition ||
-      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).webkitSpeechRecognition;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    const SpeechRecognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       toast.error(t("voiceRecognitionIsNot"));
@@ -431,14 +442,14 @@ function MultifunctionComposer({
     }
 
     try {
-      const recognition = new SpeechRecognition();
+      const recognition = new (SpeechRecognition as SpeechRecognitionConstructor)();
       recognition.lang = "fr-FR";
       recognition.continuous = false;
       recognition.interimResults = false;
       recognition.onstart = () => setIsListening(true);
       recognition.onend = () => setIsListening(false);
       recognition.onerror = () => setIsListening(false);
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         if (transcript) {
           const current = aui.composer.getState().text || "";

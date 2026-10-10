@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 describe("StaleDeploymentReloader detection logic", () => {
   function isStaleActionError(value: unknown): boolean {

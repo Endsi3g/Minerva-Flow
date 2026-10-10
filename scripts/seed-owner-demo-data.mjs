@@ -65,17 +65,7 @@ function toDateStr(d) {
   return d.toISOString().slice(0, 10);
 }
 
-const FIRST_NAMES = [
-  "Mathieu", "Sophie", "Alexandre", "Camille", "Félix", "Laurie",
-  "Gabriel", "Chloé", "Émilie", "Antoine", "Rosalie", "Jean-Philippe",
-  "Marc-André", "Sandrine", "Nicolas", "David", "Gabrielle", "Maxime"
-];
 
-const LAST_NAMES = [
-  "Tremblay", "Gagnon", "Roy", "Côté", "Bouchard", "Gauthier",
-  "Morin", "Lavoie", "Fortin", "Gagné", "Bélanger", "Pelletier",
-  "Lévesque", "Bergeron", "Cloutier"
-];
 
 const SUPPLIER_TEMPLATES = [
   {

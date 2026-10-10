@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 /**
  * Wraps the browser's native Web Speech API (no external service, no API
@@ -8,7 +8,11 @@ import { useEffect, useRef, useState } from "react";
  * hide/disable the mic button when isSupported is false.
  */
 export function useSpeechRecognition({ lang = "fr-CA" }: { lang?: string } = {}) {
-  const [isSupported, setIsSupported] = useState(false);
+  const isSupported = useSyncExternalStore(
+    () => () => {},
+    () => Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition),
+    () => false
+  );
   const [isListening, setIsListening] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -16,7 +20,6 @@ export function useSpeechRecognition({ lang = "fr-CA" }: { lang?: string } = {})
 
   useEffect(() => {
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    setIsSupported(Boolean(SR));
     if (!SR) return;
 
     const recognition = new SR();

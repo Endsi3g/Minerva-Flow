@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDropzone, type FileError, type FileRejection } from "react-dropzone";
+import { normalizeFileCount } from "@/hooks/normalize-file-count";
 import { parseServiceDaysCsv } from "@/lib/csv-service-days";
 import { importServiceDaysAction } from "@/app/[locale]/(app)/days/actions";
 
@@ -24,7 +25,8 @@ type UseCsvServiceDaysImportOptions = {
 export function useCsvServiceDaysImport(options: UseCsvServiceDaysImportOptions = {}) {
   const { maxFiles = 1, maxFileSize = 5 * 1000 * 1000, onImported } = options;
 
-  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [rawFiles, setFiles] = useState<FileWithPreview[]>([]);
+  const files = useMemo(() => normalizeFileCount(rawFiles, maxFiles), [rawFiles, maxFiles]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
   const [successes, setSuccesses] = useState<string[]>([]);
@@ -53,7 +55,7 @@ export function useCsvServiceDaysImport(options: UseCsvServiceDaysImportOptions 
 
       setFiles([...files, ...validFiles, ...invalidFiles]);
     },
-    [files]
+    [files, setFiles]
   );
 
   const dropzoneProps = useDropzone({
@@ -104,22 +106,6 @@ export function useCsvServiceDaysImport(options: UseCsvServiceDaysImportOptions 
     setLoading(false);
   }, [files, successes, onImported]);
 
-  useEffect(() => {
-    if (files.length === 0) {
-      setErrors([]);
-    }
-    if (files.length <= maxFiles) {
-      let changed = false;
-      const newFiles = files.map((file) => {
-        if (file.errors.some((e) => e.code === "too-many-files")) {
-          file.errors = file.errors.filter((e) => e.code !== "too-many-files");
-          changed = true;
-        }
-        return file;
-      });
-      if (changed) setFiles(newFiles);
-    }
-  }, [files, files.length, maxFiles]);
 
   return {
     files,
@@ -127,7 +113,7 @@ export function useCsvServiceDaysImport(options: UseCsvServiceDaysImportOptions 
     successes,
     isSuccess,
     loading,
-    errors,
+    errors: files.length === 0 ? [] : errors,
     setErrors,
     onUpload,
     maxFileSize,

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getCustomers } from "@/lib/data/customers";
 import { getRestaurant } from "@/lib/data/restaurants";

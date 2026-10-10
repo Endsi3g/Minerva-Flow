@@ -21,7 +21,7 @@ const categoryTone: Record<ChangelogCategory, "green" | "amber" | "neutral"> = {
 
 export function ChangelogAdminView({ initialEntries }: { initialEntries: ChangelogEntry[] }) {
   const t = useTranslations("admin.changelog");
-  const [entries, setEntries] = useState(initialEntries);
+  const entries = initialEntries;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);

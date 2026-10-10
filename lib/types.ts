@@ -814,6 +814,9 @@ export type OrderItem = {
 };
 
 export type Order = {
+  cloverExportStatus?: string | null;
+  cloverEmployeeId?: string | null;
+  cloverEmployeeName?: string | null;
   id: string;
   restaurantId: string;
   status: OrderStatus;

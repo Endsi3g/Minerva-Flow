@@ -16,13 +16,11 @@ export type PresenceMember = {
  * is replicated). First use of Supabase Realtime in the codebase.
  */
 export function useChatPresence(restaurantId: string, authUser: AuthUser | null): PresenceMember[] {
-  const [members, setMembers] = useState<PresenceMember[]>([]);
+  const [presence, setPresence] = useState<{ key: string; members: PresenceMember[] } | null>(null);
 
   useEffect(() => {
-    if (!restaurantId || !authUser) {
-      setMembers([]);
-      return;
-    }
+    if (!restaurantId || !authUser) return;
+    const presenceKey = `${restaurantId}:${authUser.id}`;
 
     const supabase = createClient();
     const channel = supabase.channel(`presence:restaurant:${restaurantId}:assistant`, {
@@ -39,7 +37,7 @@ export function useChatPresence(restaurantId: string, authUser: AuthUser | null)
             name: presences[0]?.name ?? "—",
             avatarUrl: presences[0]?.avatarUrl ?? null,
           }));
-        setMembers(others);
+        setPresence({ key: presenceKey, members: others });
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -51,7 +49,8 @@ export function useChatPresence(restaurantId: string, authUser: AuthUser | null)
       channel.untrack();
       supabase.removeChannel(channel);
     };
-  }, [restaurantId, authUser?.id, authUser?.fullName, authUser?.avatarUrl]);
+  }, [restaurantId, authUser]);
 
-  return members;
+  const currentKey = authUser ? `${restaurantId}:${authUser.id}` : null;
+  return currentKey && presence?.key === currentKey ? presence.members : [];
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDropzone, type FileError, type FileRejection } from "react-dropzone";
+import { normalizeFileCount } from "@/hooks/normalize-file-count";
 import { parseTransactionsCsv } from "@/lib/csv-transactions";
 import { importTransactionsAction } from "@/app/[locale]/(app)/finance/actions";
 
@@ -25,7 +26,8 @@ type UseCsvTransactionImportOptions = {
 export function useCsvTransactionImport(options: UseCsvTransactionImportOptions = {}) {
   const { maxFiles = 1, maxFileSize = 5 * 1000 * 1000, onImported } = options;
 
-  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [rawFiles, setFiles] = useState<FileWithPreview[]>([]);
+  const files = useMemo(() => normalizeFileCount(rawFiles, maxFiles), [rawFiles, maxFiles]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ name: string; message: string }[]>([]);
   const [successes, setSuccesses] = useState<string[]>([]);
@@ -54,7 +56,7 @@ export function useCsvTransactionImport(options: UseCsvTransactionImportOptions 
 
       setFiles([...files, ...validFiles, ...invalidFiles]);
     },
-    [files]
+    [files, setFiles]
   );
 
   const dropzoneProps = useDropzone({
@@ -105,22 +107,6 @@ export function useCsvTransactionImport(options: UseCsvTransactionImportOptions 
     setLoading(false);
   }, [files, successes, onImported]);
 
-  useEffect(() => {
-    if (files.length === 0) {
-      setErrors([]);
-    }
-    if (files.length <= maxFiles) {
-      let changed = false;
-      const newFiles = files.map((file) => {
-        if (file.errors.some((e) => e.code === "too-many-files")) {
-          file.errors = file.errors.filter((e) => e.code !== "too-many-files");
-          changed = true;
-        }
-        return file;
-      });
-      if (changed) setFiles(newFiles);
-    }
-  }, [files, files.length, maxFiles]);
 
   return {
     files,
@@ -128,7 +114,7 @@ export function useCsvTransactionImport(options: UseCsvTransactionImportOptions 
     successes,
     isSuccess,
     loading,
-    errors,
+    errors: files.length === 0 ? [] : errors,
     setErrors,
     onUpload,
     maxFileSize,

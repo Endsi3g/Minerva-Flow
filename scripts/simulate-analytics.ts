@@ -186,7 +186,7 @@ async function sendVercelAnalyticsBeacon(
   }
 }
 
-async function simulateSessionForDate(targetTimestamp: number, visitorIndex: number) {
+async function simulateSessionForDate(targetTimestamp: number) {
   const uniqueVisitorId = randomUUID();
   const clientIp = generateRandomIP();
   const profile = getRandomElement(DEVICE_PROFILES);
@@ -256,7 +256,7 @@ async function generateHistorical14DaysTraffic(profile: TrafficProfileConfig) {
       const minuteOffset = Math.floor(Math.random() * 60);
       const visitorTimestamp = dayDate.getTime() + (hourOffset * 3600 + minuteOffset * 60) * 1000;
 
-      await simulateSessionForDate(visitorTimestamp, v);
+      await simulateSessionForDate(visitorTimestamp);
     }
   }
 
@@ -288,7 +288,7 @@ async function startContinuousDaemon(profile: TrafficProfileConfig) {
     console.log(
       `\n🟢 [Visite En Direct #${liveSessionCount}] Profil: ${profile.key} (${multiplier}x affluence jour) - Simulation en cours...`
     );
-    await simulateSessionForDate(now, liveSessionCount);
+    await simulateSessionForDate(now);
 
     const delayRange = profile.maxLoopDelayMs - profile.minLoopDelayMs;
     const delayMs = profile.minLoopDelayMs + Math.floor(Math.random() * Math.max(1, delayRange));

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPosConnections } from "@/lib/data/pos-connections";
+import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import {
   getValidCloverAccessToken,
   upsertCloverCatalogItem,
@@ -22,6 +23,8 @@ export type CatalogPosProvider = "clover" | "square";
 
 /** Restaurant's actively-connected Clover/Square connections — the providers menu/inventory push targets. */
 export async function getConnectedCatalogProviders(restaurantId: string): Promise<CatalogPosProvider[]> {
+  const membership = await getCurrentMembership();
+  if (membership?.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) return [];
   const connections = await getPosConnections(restaurantId);
   return connections
     .filter((c) => (c.provider === "clover" || c.provider === "square") && c.status === "connecte")
@@ -63,7 +66,13 @@ export async function pushMenuItemToProvider(
   provider: CatalogPosProvider,
   menuItem: MenuItem
 ): Promise<boolean> {
+  if (menuItem.restaurantId !== restaurantId) return false;
   const admin = createAdminClient();
+  // Draft prices are technical placeholders, not prices approved for the POS.
+  // Read the persisted flag: cron reconciliation also calls this helper.
+  const { data: publication, error: publicationError } = await admin.from("menu_items")
+    .select("is_draft").eq("restaurant_id", restaurantId).eq("id", menuItem.id).maybeSingle();
+  if (publicationError || !publication || publication.is_draft !== false) return false;
   const existing = await findMenuMapping(admin, restaurantId, provider, menuItem.id);
 
   try {
@@ -263,7 +272,7 @@ export async function reconcileMenuItemsForProvider(restaurantId: string, provid
 
   const { data: menuItemRows } = await admin
     .from("menu_items")
-    .select("id, name, price, food_cost, units_sold, active, description, image_url, image_urls, video_url, category, restaurant_id, created_at, updated_at")
+    .select("id, name, price, food_cost, units_sold, active, is_draft, description, image_url, image_urls, video_url, category, restaurant_id, created_at, updated_at")
     .eq("restaurant_id", restaurantId)
     .in("id", linkedMappings.map((m) => m.menu_item_id));
   const menuItemById = new Map((menuItemRows ?? []).map((r) => [r.id as string, r]));
@@ -271,7 +280,7 @@ export async function reconcileMenuItemsForProvider(restaurantId: string, provid
   for (const mapping of linkedMappings) {
     const remote = remoteById.get(mapping.external_item_id);
     const local = menuItemById.get(mapping.menu_item_id);
-    if (!remote || !local) continue;
+    if (!remote || !local || local.is_draft !== false) continue;
 
     const remoteUpdatedAt = "modifiedTime" in remote ? remote.modifiedTime : remote.updatedAt;
     const localUpdatedAt = new Date(local.updated_at as string).getTime();

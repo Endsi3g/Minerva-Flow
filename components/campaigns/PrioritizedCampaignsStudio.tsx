@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Card, CardHeader } from "@/components/minerva/PageCard";
+import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Select } from "@/components/minerva/FormField";
+import { Input, Select } from "@/components/minerva/FormField";
 import { toast } from "sonner";
 import {
   Sparkles,
@@ -12,11 +12,7 @@ import {
   Zap,
   Clock,
   Send,
-  Users,
-  AlertCircle,
-  CheckCircle2,
   Calendar,
-  Layers,
   Flame,
   Coffee,
   Gift,

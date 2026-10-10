@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   Folder,
-  FolderOpen,
   CheckSquare,
   Square,
   Plus,
@@ -14,11 +13,8 @@ import {
   HeartHandshake,
   Users,
   FolderArchive,
-  Info,
-  FileText,
-  Sparkles,
 } from "lucide-react";
-import { DEFAULT_DOSSIERS, type DossierSlug } from "@/lib/ai/dossier-types";
+import { DEFAULT_DOSSIERS } from "@/lib/ai/dossier-types";
 import { executeUpdateDossiersAction } from "@/app/[locale]/(chat)/assistant/flow-ai-actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/Button";
@@ -35,12 +31,11 @@ const ICONS_MAP: Record<string, React.ReactNode> = {
 
 export function FlowAiDossiersDrawer({
   conversationId,
-  restaurantId,
   initialActiveDossiers,
   onDossiersChange,
 }: {
   conversationId: string;
-  restaurantId: string;
+  restaurantId?: string;
   initialActiveDossiers?: string[];
   onDossiersChange?: (dossiers: string[]) => void;
 }) {

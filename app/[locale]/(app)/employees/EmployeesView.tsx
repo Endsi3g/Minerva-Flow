@@ -498,19 +498,28 @@ export function EmployeeDetail({
   const tr = useTranslations("employees.reviewForm");
   const [shifts, setShifts] = useState<EmployeeShift[]>([]);
   const [reviews, setReviews] = useState<EmployeeReview[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadedForEmployeeId, setLoadedForEmployeeId] = useState<string | null>(null);
+  const loading = loadedForEmployeeId !== employee.id;
   const [inviteOpen, setInviteOpen] = useState(false);
   const [clockPending, setClockPending] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
+    let active = true;
     Promise.all([getEmployeeShiftsAction(employee.id), getEmployeeReviewsAction(employee.id)]).then(
       ([s, r]) => {
+        if (!active) return;
         setShifts(s);
         setReviews(r);
-        setLoading(false);
+        setLoadedForEmployeeId(employee.id);
       }
-    );
+    ).catch((error: unknown) => {
+      if (!active) return;
+      console.error("Failed to load employee detail:", error);
+      setShifts([]);
+      setReviews([]);
+      setLoadedForEmployeeId(employee.id);
+    });
+    return () => { active = false; };
   }, [employee.id]);
 
   const totalHours = shifts.reduce((sum, s) => sum + s.hoursWorked, 0);

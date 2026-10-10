@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Search, X, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Search, X, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 export type FilterCategory = {

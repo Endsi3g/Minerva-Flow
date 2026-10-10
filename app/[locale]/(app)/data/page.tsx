@@ -42,7 +42,7 @@ export default async function DataPage() {
   }
 
   const historyFrom = isoDaysAgo(30);
-  const inThirtyDays = new Date(Date.now() + 30 * 86_400_000).toISOString();
+  const inThirtyDays = isoDaysAgo(-30);
 
   const [revenueByRestaurant, transactions, employees, programs, members, purchaseOrders, upcomingReservations] =
     await Promise.all([

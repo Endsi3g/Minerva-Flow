@@ -23,12 +23,6 @@ export default function GlobalError({
       <head>
         <title>Incident temporaire — Minerva Flow</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body
         style={{
@@ -154,6 +148,8 @@ export default function GlobalError({
 
             <button
               onClick={() => {
+                // A full document navigation is required to recover from the global error boundary.
+                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
                 window.location.href = "/";
               }}
               style={{

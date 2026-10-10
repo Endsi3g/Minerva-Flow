@@ -2,11 +2,12 @@
 
 
 import { useTranslations } from "next-intl";
+import { useCallback, useMemo } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Eye, EyeOff, LayoutGrid, RotateCcw } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Eye, EyeOff, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 
 export type WidgetItem = {
   id: string;
@@ -95,34 +96,33 @@ const STORAGE_KEY = "mv-overview-widget-visibility";
 
 export function useWidgetVisibility() {
   const t = useTranslations("widgetManager");
-  const [visibleWidgets, setVisibleWidgets] = useState<Record<string, boolean>>(() => {
+  const defaults = useMemo(() => {
     return buildOVERVIEW_WIDGETS(t).reduce((acc, w) => {
       acc[w.id] = w.defaultVisible;
       return acc;
     }, {} as Record<string, boolean>);
-  });
-
-  useEffect(() => {
+  }, [t]);
+  const parseSaved = useCallback((raw: string | null) => {
+    if (!raw) return defaults;
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setVisibleWidgets(JSON.parse(saved));
-      }
+      const parsed: unknown = JSON.parse(raw);
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return defaults;
+      return Object.fromEntries(
+        Object.entries(parsed).filter((entry): entry is [string, boolean] => typeof entry[1] === "boolean")
+      );
     } catch {
-      // Ignore fallback
+      return defaults;
     }
-  }, []);
+  }, [defaults]);
+  const [visibleWidgets, setVisibleWidgets] = useLocalStorageState(
+    STORAGE_KEY,
+    defaults,
+    parseSaved,
+    (value) => JSON.stringify(value)
+  );
 
   function toggleWidget(id: string) {
-    setVisibleWidgets((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignore
-      }
-      return next;
-    });
+    setVisibleWidgets({ ...visibleWidgets, [id]: !visibleWidgets[id] });
   }
 
   function resetWidgets() {
@@ -131,11 +131,6 @@ export function useWidgetVisibility() {
       return acc;
     }, {} as Record<string, boolean>);
     setVisibleWidgets(defaults);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-    } catch {
-      // Ignore
-    }
     toast.success(t("allWidgetsAreShown"));
   }
 

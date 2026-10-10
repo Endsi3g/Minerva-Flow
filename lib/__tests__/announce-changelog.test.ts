@@ -22,7 +22,10 @@ const entry = (audience: ChangelogEntry["audience"]): ChangelogEntry => ({
 });
 
 describe("announceChangelogEntry", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.sendChangelogCampaignEmail.mockResolvedValue({ ok: true });
+  });
 
   it("never pushes or emails restaurants for a client-only entry", async () => {
     await announceChangelogEntry(entry("client"));
@@ -34,5 +37,19 @@ describe("announceChangelogEntry", () => {
     await announceChangelogEntry(entry(audience));
     expect(mocks.notifyAllUsers).toHaveBeenCalledTimes(1);
     expect(mocks.sendChangelogCampaignEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["owner", "all"] as const)("emails a %s entry without in-app or push notifications when requested", async (audience) => {
+    const result = await announceChangelogEntry(entry(audience), { emailOnly: true });
+    expect(mocks.notifyAllUsers).not.toHaveBeenCalled();
+    expect(mocks.sendChangelogCampaignEmail).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("reports a failed campaign rather than claiming delivery", async () => {
+    mocks.sendChangelogCampaignEmail.mockResolvedValue({ ok: false });
+    const result = await announceChangelogEntry(entry("owner"), { emailOnly: true });
+    expect(result).toEqual({ ok: false });
+    expect(mocks.notifyAllUsers).not.toHaveBeenCalled();
   });
 });

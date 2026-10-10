@@ -79,7 +79,6 @@ function mapAlertRow(row: AlertRow): Alert {
  * alerts appear instantly without a page reload.
  */
 export function LiveAlertsPanel({
-  restaurantId,
   initial,
   className,
 }: {
