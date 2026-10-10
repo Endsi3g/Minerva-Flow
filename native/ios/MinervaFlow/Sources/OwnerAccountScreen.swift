@@ -62,6 +62,7 @@ struct OwnerAccountScreen: View {
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @State private var showSignOut = false
     @State private var showWebSetup = false
+    @State private var showDeleteAccount = false
     private var L: Lx { Lx(storedLanguage) }
     private var email: String { supabase.client.auth.currentUser?.email ?? "" }
 
@@ -96,6 +97,12 @@ struct OwnerAccountScreen: View {
                                  subtitle: L("Vos cartes, récompenses et commandes personnelles", "Your own cards, rewards and orders"), chevron: true).padding(.horizontal, 10).padding(.vertical, 4)
                     }.buttonStyle(.plain)
                 }
+                group(L("Suivi", "Insights")) {
+                    NavigationLink { OwnerStatisticsScreen() } label: {
+                        OwnerRow(icon: "chart.line.uptrend.xyaxis", title: L("Statistiques", "Statistics"),
+                                 subtitle: L("Fidélité, meilleurs articles, heures de pointe", "Loyalty, best sellers, busiest hours"), chevron: true).padding(.horizontal, 10).padding(.vertical, 4)
+                    }.buttonStyle(.plain)
+                }
                 group(L("Préférences et aide", "Preferences and help")) {
                     NavigationLink { OwnerSettingsView() } label: {
                         OwnerRow(icon: "slider.horizontal.3", title: L("Paramètres", "Settings"), subtitle: L("Apparence, notifications, suppression du compte", "Appearance, notifications, account deletion"), chevron: true).padding(.horizontal, 10).padding(.vertical, 4)
@@ -105,15 +112,22 @@ struct OwnerAccountScreen: View {
                         OwnerRow(icon: "sparkles", title: L("Mises à jour", "Updates"), chevron: true).padding(.horizontal, 10).padding(.vertical, 4)
                     }.buttonStyle(.plain)
                     OwnerDivider()
-                    Link(destination: SupportContact.emailURL) {
-                        OwnerRow(icon: "lifepreserver.fill", title: L("Aide et support", "Help and support"), subtitle: Config.supportEmail, chevron: true).padding(.horizontal, 10).padding(.vertical, 4)
+                    NavigationLink { SupportView() } label: {
+                        OwnerRow(icon: "lifepreserver.fill", title: L("Aide et support", "Help and support"), subtitle: L("Nous écrire, documents légaux", "Contact us, legal documents"), chevron: true).padding(.horizontal, 10).padding(.vertical, 4)
                     }.buttonStyle(.plain)
                 }
                 Button(role: .destructive) { showSignOut = true } label: {
                     Label(L("Se déconnecter", "Sign out"), systemImage: "rectangle.portrait.and.arrow.right")
                 }
                 .buttonStyle(OwnerSecondaryButtonStyle(tint: OwnerTone.bad.color))
+                // Apple 5.1.1(v): account deletion must start inside the app.
+                Button(role: .destructive) { showDeleteAccount = true } label: {
+                    Text(L("Supprimer mon compte", "Delete my account")).font(.mv(size: 13, weight: .medium))
+                }
+                .foregroundStyle(OwnerTone.bad.color)
+                .frame(maxWidth: .infinity, minHeight: 36)
             }
+            .sheet(isPresented: $showDeleteAccount) { DeleteAccountSheet(isOwner: true).environmentObject(supabase) }
             .confirmationDialog(L("Se déconnecter ?", "Sign out?"), isPresented: $showSignOut, titleVisibility: .visible) {
                 Button(L("Se déconnecter", "Sign out"), role: .destructive) { Task { await supabase.signOut() } }
                 Button(L("Annuler", "Cancel"), role: .cancel) {}

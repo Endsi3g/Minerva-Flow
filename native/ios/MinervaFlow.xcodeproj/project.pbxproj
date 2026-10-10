@@ -28,6 +28,7 @@
 		2D6C6790FA8B36E2A6A6663F /* NFCTags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09B3C61FE3004848F24E46D6 /* NFCTags.swift */; };
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
 		31C2B1DC693A37CD2CCA402A /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC74D7EFE8F6B593AB50D654 /* FavoritesView.swift */; };
+		32EE6625F2FA7533DA6DDEB4 /* AppUpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AF2085788A90200CD001376 /* AppUpdateChecker.swift */; };
 		334B756E8CFD91AFED64561A /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */; };
 		36D3A8D17A24057F7F769B91 /* OwnerCustomerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34473048B6BEC18CA01E6D28 /* OwnerCustomerDetail.swift */; };
 		3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */; };
@@ -163,6 +164,7 @@
 		1DD9888337DDE60E67B4F8CE /* OtherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherView.swift; sourceTree = "<group>"; };
 		2322CAFF570744A7B01CEE6B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		2AF2085788A90200CD001376 /* AppUpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateChecker.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2F39A7BD582C92D40EAA2DF7 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
 		2F43CD223D0431DB07587435 /* OwnerPhotoField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerPhotoField.swift; sourceTree = "<group>"; };
@@ -348,6 +350,7 @@
 				55E48B3C5F8034FE0368F020 /* AnnouncementCardView.swift */,
 				2F39A7BD582C92D40EAA2DF7 /* AppleSignInCoordinator.swift */,
 				42673197942F95CE65959FCA /* AppLog.swift */,
+				2AF2085788A90200CD001376 /* AppUpdateChecker.swift */,
 				02F66981C3B41C8B5FD69ECE /* AuthView.swift */,
 				48489698C6B750A6E75FEFEE /* BiometricLock.swift */,
 				B6DD4195058E28201E851A8F /* BottomTabBar.swift */,
@@ -716,6 +719,7 @@
 				A11560C286ECE829D4999997 /* Analytics.swift in Sources */,
 				F995BC16AB779BDC25E406DD /* AnnouncementCardView.swift in Sources */,
 				FF249FCA37372FEA775B5FF0 /* AppLog.swift in Sources */,
+				32EE6625F2FA7533DA6DDEB4 /* AppUpdateChecker.swift in Sources */,
 				FF3391041F1589D1059B7FE7 /* AppleSignInCoordinator.swift in Sources */,
 				EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */,
 				9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */,
