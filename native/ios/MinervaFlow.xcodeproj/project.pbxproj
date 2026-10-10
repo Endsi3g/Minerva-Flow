@@ -896,7 +896,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlowWidget/MinervaFlowWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlowWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -927,7 +927,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlow/Resources/MinervaFlow.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlow/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1008,7 +1008,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MinervaFlowWidget/MinervaFlowWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlowWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1078,7 +1078,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlow/Resources/MinervaFlow.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlow/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
