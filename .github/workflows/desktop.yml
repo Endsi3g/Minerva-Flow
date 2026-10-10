@@ -8,6 +8,9 @@ name: Desktop apps
 #   macOS:   APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
 #            APPLE_ID, APPLE_PASSWORD (app-specific password), APPLE_TEAM_ID
 #   Windows: not configured yet (SmartScreen will warn on unsigned installers)
+# Auto-update signing (separate from OS code signing): TAURI_SIGNING_PRIVATE_KEY (already set).
+#   The matching public key is in desktop/src-tauri/tauri.conf.json; losing the private key
+#   means installed apps can no longer receive updates.
 
 on:
   workflow_dispatch:
@@ -73,6 +76,8 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: desktop
           tagName: ${{ github.event.inputs.version_tag || github.ref_name }}
@@ -80,6 +85,7 @@ jobs:
           releaseBody: "Installateurs macOS et Windows de Minerva Flow."
           releaseDraft: true
           prerelease: false
+          includeUpdaterJson: true
           args: ${{ matrix.args }}
 
       - name: Build and draft the release (unsigned)
@@ -87,6 +93,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: desktop
           tagName: ${{ github.event.inputs.version_tag || github.ref_name }}
@@ -94,4 +102,5 @@ jobs:
           releaseBody: "Installateurs macOS et Windows de Minerva Flow (non signés si aucun certificat n'est configuré)."
           releaseDraft: true
           prerelease: false
+          includeUpdaterJson: true
           args: ${{ matrix.args }}

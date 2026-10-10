@@ -23,9 +23,16 @@ Les icônes sont générées pendant la construction depuis `public/icon-512.png
 
 ## Signature
 
-- **macOS** : ajoutez les secrets `APPLE_CERTIFICATE` (base64 du .p12), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` (mot de passe d'app), `APPLE_TEAM_ID`. Sans eux, le `.dmg` n'est pas signé.
-- **Windows** : pas de certificat configuré; SmartScreen avertit à l'installation.
-- **Mises à jour automatiques** : pas encore activées (nécessitent une paire de clés Tauri et le plugin `updater`).
+- **macOS** : il faut un certificat **« Developer ID Application »** (distinct des certificats « Apple Development » et « Apple Distribution », qui servent à l'App Store). Il se crée sur developer.apple.com > Certificates par le titulaire du compte. Ensuite, ajoutez dans GitHub > Settings > Secrets : `APPLE_CERTIFICATE` (le .p12 en base64), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY` (« Developer ID Application: … »), `APPLE_ID`, `APPLE_PASSWORD` (mot de passe d'app créé sur appleid.apple.com) et `APPLE_TEAM_ID`. Le flux signe et notarise alors automatiquement. Sans eux, le `.dmg` n'est pas signé et la page `/download/macos` explique le clic droit > Ouvrir.
+- **Windows** : pas de certificat configuré. La page `/download/windows` présente l'avertissement SmartScreen (étapes illustrées) avant le bouton de téléchargement.
+
+## Mises à jour automatiques
+
+Déjà actives (indépendantes de la signature Apple et Microsoft) :
+
+- Au démarrage (versions publiées seulement), l'application interroge `https://www.minervaflow.app/api/desktop/update`, qui sert le `latest.json` de la dernière version **publiée** (jamais un brouillon). Si une version plus récente existe, une fenêtre propose « Mettre à jour » ou « Plus tard », puis l'application redémarre.
+- Les installateurs sont signés avec une clé de mise à jour Tauri : clé publique dans `src-tauri/tauri.conf.json`, clé privée dans le secret GitHub `TAURI_SIGNING_PRIVATE_KEY` et en copie locale `~/.minerva-secrets/minerva-flow-updater.key` (sans mot de passe). **Sauvegardez cette clé** : sans elle, les applications déjà installées ne pourraient plus recevoir de mise à jour.
+- Pour publier une mise à jour : augmentez `version` dans `tauri.conf.json` et `Cargo.toml`, poussez un tag `desktop-vX.Y.Z`, vérifiez le brouillon, puis publiez-le.
 
 ## Développer en local (facultatif)
 

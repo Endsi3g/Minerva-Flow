@@ -71,6 +71,7 @@ export async function proxy(request: NextRequest) {
     pathWithoutLocale.startsWith("/h/") ||
     pathWithoutLocale.startsWith("/e/") ||
     pathWithoutLocale.startsWith("/legal/") ||
+    pathWithoutLocale.startsWith("/download/") ||
     // Team and ambassador sign-in must be reachable before any session exists.
     pathWithoutLocale === "/equipe/connexion" ||
     pathWithoutLocale === "/equipe/connexion/" ||

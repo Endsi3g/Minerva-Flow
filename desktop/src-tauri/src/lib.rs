@@ -3,6 +3,8 @@ use std::net::{IpAddr, TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
 use tauri::Manager;
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+use tauri_plugin_updater::UpdaterExt;
 
 /// Receipt printers are reached over the local network only. The web portal is
 /// remote content, so this refuses anything that is not a private address.
@@ -63,9 +65,38 @@ fn app_info() -> serde_json::Value {
     })
 }
 
+/// Looks for a newer signed release at start-up (release builds only), asks
+/// before installing, then restarts. Runs on its own thread so a slow or
+/// offline network never delays the window.
+fn check_for_updates(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let Ok(updater) = app.updater() else { return };
+        let Ok(Some(update)) = tauri::async_runtime::block_on(updater.check()) else { return };
+        let wants_update = app
+            .dialog()
+            .message(format!(
+                "La version {} de Minerva Flow est disponible. Voulez-vous l'installer maintenant ? L'application redémarrera.",
+                update.version
+            ))
+            .title("Mise à jour disponible")
+            .buttons(MessageDialogButtons::OkCancelCustom(
+                "Mettre à jour".to_string(),
+                "Plus tard".to_string(),
+            ))
+            .blocking_show();
+        if wants_update
+            && tauri::async_runtime::block_on(update.download_and_install(|_, _| {}, || {})).is_ok()
+        {
+            app.restart();
+        }
+    });
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
@@ -73,6 +104,11 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
+        .setup(|_app| {
+            #[cfg(not(debug_assertions))]
+            check_for_updates(_app.handle().clone());
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![set_kiosk, print_page, print_escpos, app_info])
         .run(tauri::generate_context!())
         .expect("erreur au démarrage de Minerva Flow");
