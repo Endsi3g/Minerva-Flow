@@ -1,4 +1,3 @@
-import { ANNUAL_DISCOUNT_RATE, PLANS } from "@/lib/billing/plans";
 
 /**
  * Académie — formation interne (équipe + ambassadeurs). Une seule source de
@@ -33,7 +32,6 @@ export type AcademyPage = {
   sections: AcademySection[];
 };
 
-const cad = (value: number | null) => (value === null ? "sur devis" : `${value} $ CA`);
 
 const PRODUCT_PAGE: AcademyPage = {
   slug: "produit",
@@ -61,12 +59,12 @@ const PRODUCT_PAGE: AcademyPage = {
     },
     {
       id: "forfaits",
-      title: "Forfaits et prix",
-      intro: `Prix publics en dollars canadiens, par mois. Facturation annuelle : ${Math.round(ANNUAL_DISCOUNT_RATE * 100)} % de moins. Essai propriétaire : 14 jours.`,
+      title: "Modèle à la performance",
+      intro: "Aucun forfait ni prix publié. Minerva est rémunérée par un pourcentage des revenus additionnels mesurés, convenu par écrit avec chaque restaurant.",
       items: [
-        { text: `${PLANS.essentiel.name} — ${cad(PLANS.essentiel.monthlyPriceCad)} : ${PLANS.essentiel.description.toLowerCase()}.`, tag: "vérifié" },
-        { text: `${PLANS.croissance.name} — ${cad(PLANS.croissance.monthlyPriceCad)} : ${PLANS.croissance.description.toLowerCase()} (fidélité, campagnes, parrainage, Flow AI).`, tag: "vérifié" },
-        { text: `${PLANS.marque_blanche.name} — ${cad(PLANS.marque_blanche.monthlyPriceCad)} : ${PLANS.marque_blanche.description.toLowerCase()}.`, tag: "vérifié" },
+        { text: "Période de développement : accès gratuit, sans carte de crédit. Avant toute facturation, un avis écrit d’au moins 30 jours et l’acceptation expresse du restaurant.", tag: "vérifié" },
+        { text: "S’il n’y a aucun revenu additionnel mesuré pour un mois, rien n’est dû.", tag: "vérifié" },
+        { text: "Ne jamais promettre un résultat : dire « jusqu’à 5 à 10 % de revenus selon le panier », jamais une moyenne.", tag: "vérifié" },
       ],
     },
     {
@@ -137,7 +135,7 @@ const GTM_PAGE: AcademyPage = {
         { text: "Preuve : aucun résultat mesuré chez un restaurant payant. Priorité n° 1 : trois pilotes suivis de bout en bout, Mains Magique en premier.", tag: "vérifié" },
         { text: "Délai : configuration guidée d’environ 15 minutes.", tag: "à confirmer" },
         { text: "Effort : un QR (puis un chevalet NFC) et la caisse connectée si elle est compatible.", tag: "vérifié" },
-        { text: "Entrée : essai de 14 jours, sans carte de crédit.", tag: "vérifié" },
+        { text: "Entrée : accès gratuit pendant le développement, sans carte de crédit.", tag: "vérifié" },
         { text: "Deux chevalets NFC offerts à l’activation : idée non produite, coût et logistique à chiffrer.", tag: "à confirmer" },
       ],
     },

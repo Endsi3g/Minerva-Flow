@@ -35,7 +35,7 @@ struct OwnerManageHub: View {
                 group(L("Équipe et lieux", "Team and locations")) {
                     row(.team, "person.3.fill", L("Équipe", "Team"), L("\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "membre" : "membres")", "\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "member" : "members")"))
                     OwnerDivider()
-                    row(.locations, "mappin.and.ellipse", L("Emplacements", "Locations"), L("\(supabase.ownerRestaurants.count) établissement(s)", "\(supabase.ownerRestaurants.count) location(s)"))
+                    row(.locations, "mappin.and.ellipse", L("Emplacements", "Locations"), L("\(supabase.ownerRestaurants.count) \(supabase.ownerRestaurants.count > 1 ? "établissements" : "établissement")", "\(supabase.ownerRestaurants.count) \(supabase.ownerRestaurants.count == 1 ? "location" : "locations")"))
                 }
                 group(L("Développement", "Growth")) {
                     Button { showAmbassadorProgram = true } label: {

@@ -26,7 +26,7 @@ export default function AmbassadorLandingPage() {
       <h1 className="mt-3 max-w-3xl font-display text-4xl leading-tight text-mv-ink sm:text-5xl">Aidez les restaurants à mieux tourner. Soyez récompensé quand vous les mettez en relation.</h1>
       <p className="mt-4 max-w-2xl text-[14px] leading-relaxed text-mv-ink-soft">Rejoignez gratuitement Minerva Flow comme restaurateur, membre d’équipe, créateur ou partenaire. Votre lien suit les nouvelles inscriptions et votre espace dédié vous accompagne à chaque étape.</p>
       <div className="mt-6 flex flex-wrap gap-3"><Button href="/sign-up">Créer mon compte gratuit <ArrowRight size={15} /></Button><Link href="/login" className="inline-flex items-center rounded-lg px-4 py-2 text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft">J’ai déjà un compte</Link></div>
-      <p className="mt-3 text-[11px] text-mv-ink-faint">Essai propriétaire actuel : 14 jours. Aucune remise additionnelle annoncée.</p>
+      <p className="mt-3 text-[11px] text-mv-ink-faint">Accès gratuit pendant le développement. Aucune remise additionnelle annoncée.</p>
     </section>
     <div className="grid gap-4 md:grid-cols-3">
       <Card><CardHeader eyebrow="01 · Recommandations" title="Un lien personnel" /><p className="text-[12.5px] leading-relaxed text-mv-ink-soft">Partagez-le à un restaurateur. Les créations de workspace issues du lien sont attribuées à votre tableau de bord.</p></Card>

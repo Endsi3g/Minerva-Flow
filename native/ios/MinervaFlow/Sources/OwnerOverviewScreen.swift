@@ -43,7 +43,7 @@ struct OwnerOverviewScreen: View {
     private var hero: some View {
         OwnerHeroCard(eyebrow: L("Ventes ce mois-ci", "Sales this month"),
                       value: supabase.ownerMetrics.monthRevenue.cad,
-                      caption: L("\(supabase.ownerMetrics.monthOrders) commandes · \(todayOrders) aujourd'hui", "\(supabase.ownerMetrics.monthOrders) orders · \(todayOrders) today")) {
+                      caption: L("\(supabase.ownerMetrics.monthOrders) \(supabase.ownerMetrics.monthOrders > 1 ? "commandes" : "commande") · \(todayOrders) aujourd'hui", "\(supabase.ownerMetrics.monthOrders) \(supabase.ownerMetrics.monthOrders == 1 ? "order" : "orders") · \(todayOrders) today")) {
             if supabase.isLoadingOwnerOperations {
                 HStack(spacing: 8) {
                     ProgressView().tint(.white)
@@ -78,7 +78,7 @@ struct OwnerOverviewScreen: View {
                         if !lowStock.isEmpty {
                             if !newOrders.isEmpty || !activeOrders.isEmpty { OwnerDivider() }
                             attentionRow(icon: "exclamationmark.triangle.fill", tone: .bad,
-                                         title: L("\(lowStock.count) article(s) à réapprovisionner", "\(lowStock.count) item(s) to restock"),
+                                         title: L("\(lowStock.count) \(lowStock.count > 1 ? "articles à réapprovisionner" : "article à réapprovisionner")", "\(lowStock.count) \(lowStock.count == 1 ? "item" : "items") to restock"),
                                          subtitle: lowStock.prefix(2).map(\.name).joined(separator: ", ")) { onOpenRoute(.inventory) }
                         }
                         if unansweredReviews > 0 {
@@ -141,7 +141,7 @@ struct OwnerOverviewScreen: View {
             VStack(spacing: 0) {
                 Button { onOpenRoute(.locations) } label: {
                     OwnerRow(icon: "mappin.and.ellipse", title: L("Emplacements", "Locations"),
-                             subtitle: L("\(supabase.ownerRestaurants.count) établissement(s)", "\(supabase.ownerRestaurants.count) location(s)"), chevron: true)
+                             subtitle: L("\(supabase.ownerRestaurants.count) \(supabase.ownerRestaurants.count > 1 ? "établissements" : "établissement")", "\(supabase.ownerRestaurants.count) \(supabase.ownerRestaurants.count == 1 ? "location" : "locations")"), chevron: true)
                         .padding(.horizontal, 10).padding(.vertical, 4)
                 }.buttonStyle(.plain)
             }

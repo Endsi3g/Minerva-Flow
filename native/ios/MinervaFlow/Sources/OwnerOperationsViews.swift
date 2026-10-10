@@ -242,8 +242,10 @@ struct OwnerEmployeesView: View {
     @State private var employee: NativeOwnerEmployee?
 
     var body: some View {
-        OwnerScreen(title: L("Équipe", "Team"), subtitle: L("\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "membre" : "membres") · touchez pour modifier",
-                                                           "\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "member" : "members") · tap to edit")) {
+        OwnerScreen(title: L("Équipe", "Team"), subtitle: supabase.ownerEmployees.isEmpty
+                                ? L("Aucun membre pour l'instant", "No members yet")
+                                : L("\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "membre" : "membres") · touchez pour modifier",
+                                    "\(supabase.ownerEmployees.count) \(supabase.ownerEmployees.count == 1 ? "member" : "members") · tap to edit")) {
             if supabase.ownerEmployees.isEmpty {
                 OwnerCard { OwnerEmptyState(icon: "person.3", title: L("Aucun membre d'équipe", "No team members"),
                                             message: L("Ajoutez votre équipe depuis l'application web. Elle apparaîtra ici.", "Add your team from the web app. It will appear here.")) }
