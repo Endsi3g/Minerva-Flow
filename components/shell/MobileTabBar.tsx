@@ -59,7 +59,7 @@ export function MobileTabBar() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] items-stretch border-t border-mv-border bg-mv-cream-soft/95 backdrop-blur-sm md:hidden">
+      <nav className="mv-tabbar fixed inset-x-0 bottom-0 z-50 flex h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] items-stretch border-t border-mv-border bg-mv-cream-soft/95 backdrop-blur-sm md:hidden">
         {tabs.map((tab) => {
           const active = pathname.startsWith(tab.href);
           const Icon = tab.icon;

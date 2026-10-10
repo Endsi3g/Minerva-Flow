@@ -45,4 +45,23 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
   // doesn't depend on an implicit consent flow this app doesn't implement.
   capture_pageview: true,
   opt_out_capturing_by_default: false,
+  // Session replay is opt-in (Loi 25): it never starts on its own, even once the
+  // project setting is enabled. See lib/analytics-consent.ts. Everything the
+  // recorder sees is masked.
+  disable_session_recording: true,
+  session_recording: {
+    maskAllInputs: true,
+    maskTextSelector: "*",
+    blockSelector: "[data-ph-no-capture]",
+  },
 });
+
+// Replay restarts only for people who agreed (see lib/analytics-consent.ts).
+try {
+  if (window.localStorage.getItem("mv_session_replay_consent") === "1") {
+    posthog.set_config({ disable_session_recording: false });
+    posthog.startSessionRecording();
+  }
+} catch {
+  // Storage can be blocked: replay simply stays off.
+}

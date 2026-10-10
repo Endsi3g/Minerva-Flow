@@ -15,6 +15,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
 import { SettingsNav } from "../SettingsNav";
+import { Switch } from "@/components/ui/Switch";
+import { hasSessionReplayConsent, setSessionReplayConsent } from "@/lib/analytics-consent";
 
 const deviceIcon: Record<string, typeof Monitor> = {
   iPhone: Smartphone,
@@ -30,7 +32,31 @@ export default function SettingsSecuritePage() {
       <PageHeader eyebrow="Configuration" title={t("security")} />
       <SettingsNav active="securite" />
       <SecuritySessions />
+      <ReplayConsentCard />
     </div>
+  );
+}
+
+function ReplayConsentCard() {
+  const [enabled, setEnabled] = useState(() => hasSessionReplayConsent());
+  return (
+    <Card className="mt-6 max-w-2xl">
+      <h2 className="font-display text-[20px] font-semibold text-mv-ink">Enregistrement des sessions</h2>
+      <p className="mt-2 text-[14px] leading-relaxed text-mv-ink-soft">
+        Aide Minerva Flow à repérer les écrans qui posent problème. Tous les textes et champs sont masqués et rien n&apos;est enregistré sans votre accord. Vous pouvez le retirer à tout moment.
+      </p>
+      <label className="mt-4 flex items-center justify-between gap-4 text-[14px] text-mv-ink">
+        <span>Enregistrer mes sessions sur cet appareil</span>
+        <Switch
+          checked={enabled}
+          onCheckedChange={(checked) => {
+            setEnabled(checked);
+            setSessionReplayConsent(checked);
+          }}
+          aria-label="Enregistrement des sessions"
+        />
+      </label>
+    </Card>
   );
 }
 

@@ -3,7 +3,7 @@
 import type { Restaurant, Role } from "@/lib/types";
 import type { WorkspaceBranding } from "@/lib/branding/workspace-branding";
 import { useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 
 export type Period = "jour" | "semaine" | "mois" | "custom";
 
@@ -33,6 +33,37 @@ type AppState = {
 
 const AppContext = createContext<AppState | null>(null);
 
+const SIDEBAR_KEY = "mv_sidebar_collapsed";
+const sidebarListeners = new Set<() => void>();
+let sidebarFallback = false;
+
+function subscribeSidebar(listener: () => void) {
+  sidebarListeners.add(listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    sidebarListeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+function readSidebar(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_KEY) === "1";
+  } catch {
+    return sidebarFallback;
+  }
+}
+
+function writeSidebar(value: boolean) {
+  sidebarFallback = value;
+  try {
+    window.localStorage.setItem(SIDEBAR_KEY, value ? "1" : "0");
+  } catch {
+    // Storage can be blocked; the toggle then lasts for this session.
+  }
+  sidebarListeners.forEach((listener) => listener());
+}
+
 export function AppProvider({
   children,
   authUser = null,
@@ -57,7 +88,9 @@ export function AppProvider({
   const router = useRouter();
   const [restaurantId, setRestaurantIdState] = useState(initialRestaurantId);
   const [period, setPeriod] = useState<Period>("mois");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Remembered per computer so the desktop app reopens as it was left.
+  const sidebarCollapsed = useSyncExternalStore(subscribeSidebar, readSidebar, () => false);
+  const setSidebarCollapsed = useCallback((value: boolean) => writeSidebar(value), []);
   const [localAuthUser, setLocalAuthUser] = useState<AuthUser | null>(authUser);
 
   const setRestaurantId = useCallback((id: string) => {
@@ -87,7 +120,7 @@ export function AppProvider({
       authUser: localAuthUser,
       updateAuthUser,
     }),
-    [role, sidebarPermissions, isPlatformAdmin, restaurantId, restaurants, workspaces, branding, period, sidebarCollapsed, localAuthUser, setRestaurantId]
+    [role, sidebarPermissions, isPlatformAdmin, restaurantId, restaurants, workspaces, branding, period, sidebarCollapsed, setSidebarCollapsed, localAuthUser, setRestaurantId]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
