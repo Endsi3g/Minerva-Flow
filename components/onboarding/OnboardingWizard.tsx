@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import posthog from "posthog-js";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import QRCode from "qrcode";
@@ -509,6 +510,7 @@ export function OnboardingWizard({
   );
 }
 
+const ONBOARDING_STEP_NAMES: Record<number, string> = { 1: "profile", 2: "menu", 3: "loyalty", 4: "team" };
 const STEP_LABEL_KEYS: Record<number, string> = { 1: "stepLabelProfile", 2: "stepLabelMenu", 3: "stepLabelLoyalty", 4: "stepLabelTeam" };
 
 /**
@@ -523,6 +525,15 @@ const STEP_LABEL_KEYS: Record<number, string> = { 1: "stepLabelProfile", 2: "ste
 function OnboardingProgressHeader() {
   const t = useTranslations("onboardingWizard");
   const { currentStep, totalSteps } = useOnboarding();
+
+  // One event per step reached: the funnel shows exactly where owners drop off.
+  useEffect(() => {
+    posthog.capture("onboarding_step_viewed", {
+      step: currentStep,
+      total_steps: totalSteps,
+      step_name: ONBOARDING_STEP_NAMES[currentStep] ?? `step_${currentStep}`,
+    });
+  }, [currentStep, totalSteps]);
 
   return (
     <div className="mb-6">

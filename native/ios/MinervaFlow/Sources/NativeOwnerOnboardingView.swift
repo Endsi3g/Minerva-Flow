@@ -53,6 +53,7 @@ struct NativeOwnerOnboardingView: View {
         }.background(MinervaColor.cream.ignoresSafeArea()).foregroundStyle(MinervaColor.ink)
             .scrollDismissesKeyboard(.interactively)
             .onAppear {
+                Analytics.capture("onboarding_step_viewed", ["step": 1, "total_steps": 1, "step_name": "restaurant_name", "platform": "ios"])
                 let name = supabase.selectedOwnerRestaurant?.name ?? ""
                 restaurantName = ["mon restaurant", "minerva flow"].contains(name.lowercased()) ? "" : name
             }
@@ -61,7 +62,10 @@ struct NativeOwnerOnboardingView: View {
     private func save() async {
         isSaving = true; errorMessage = nil
         defer { isSaving = false }
-        if await supabase.updateOwnerRestaurantName(restaurantName) { onComplete() }
+        if await supabase.updateOwnerRestaurantName(restaurantName) {
+            Analytics.capture("onboarding_completed", ["platform": "ios"])
+            onComplete()
+        }
         else { errorMessage = supabase.lastError ?? (isFrench ? "Réessayez dans un instant." : "Try again shortly.") }
     }
 }

@@ -1,5 +1,14 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
+## Barre d'onglets en bas sur iPad, conditions d'utilisation, entonnoir d'onboarding — phase 4 (10 octobre 2026, branche `feat/desktop-apps`)
+
+- **iPad** : iPadOS 18+ place la barre système en haut et aucune API ne permet de la déplacer. Sur largeur « regular », la barre système est masquée (`hidesSystemTabBarOnRegular()` appliqué à chaque onglet) et remplacée par une barre flottante en bas (`BottomTabBar.swift`, mêmes onglets, badge Commandes, teinte verte). iPhone = barre native inchangée. Propriétaire et client. Vérifié à l'écran sur iPad Pro 13" et iPhone 17 Pro.
+- **Écrans vérifiés à l'écran** : Gestion, Rapports, Finances (iPhone avec données de démo, iPad en état vide), Équipe (iPad, vide). Accords singulier/pluriel corrigés (commande(s), établissement(s), membres, articles).
+- **Conditions d'utilisation** (`app/[locale]/legal/terms/page.tsx`, FR + EN) réécrites pour le modèle à la performance : aucun forfait, % des revenus additionnels mesurés, rien dû sans revenu mesuré, aucun résultat garanti, période de développement gratuite avec avis écrit de 30 jours avant facturation, relevé mensuel contestable 30 jours, résiliation sans pénalité. **Texte à faire relire par un juriste** (Loi sur la protection du consommateur, Loi 25) avant de s'en prévaloir. Retrait des mentions « essai de 14 jours » dans la méta de `/sign-up`, `/ambassadeurs`, `messages/{fr,en}.json` et `lib/data/team-academy.ts`.
+- **Restent liés à l'ancien modèle** (décision produit à prendre) : commission ambassadeur « 10 % de la première facture d'abonnement » (`/ambassadeurs`, académie), `app/api/stripe/webhook/route.ts` (courriel de fin d'essai) et `billing/page.tsx` (affichage `trialEndsAt`).
+- **PostHog** : événement `onboarding_step_viewed` (web, par étape : profile/menu/loyalty/team) et `onboarding_step_viewed` + `onboarding_completed` côté iOS, pour localiser l'abandon (entonnoir à 15 % observé).
+- **Non vérifié** : rendu du mode bureau dans l'app Tauri (pas de build Rust local, disque presque plein) et `/settings/poste`; à ouvrir dans l'installateur.
+
 ## Application bureau (Tauri), navigation unifiée et PostHog — phase 3 (10 octobre 2026, branche `feat/desktop-apps`)
 
 - **Navigation** : plus de barre latérale. iPad = mêmes 5 onglets que l'iPhone (`TabView`, `.tabBarOnly`; iPadOS 26 la place en haut); application bureau = barre d'onglets flottante du mobile (Aperçu, Fidélité, Menu, Commandes + sélecteur de lieu) via `html[data-desktop="1"]` (`app/globals.css`, `MobileTabBar`, `AppShell`). Le web dans un navigateur garde sa barre latérale. Accent vert partout : le ton « info » n'est plus bleu.

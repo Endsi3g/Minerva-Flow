@@ -66,7 +66,7 @@ struct OwnerOverviewScreen: View {
                     VStack(spacing: 0) {
                         if !newOrders.isEmpty {
                             attentionRow(icon: "bell.badge.fill", tone: .warn,
-                                         title: L("\(newOrders.count) nouvelle(s) commande(s)", "\(newOrders.count) new order(s)"),
+                                         title: L(newOrders.count > 1 ? "\(newOrders.count) nouvelles commandes" : "\(newOrders.count) nouvelle commande", newOrders.count == 1 ? "\(newOrders.count) new order" : "\(newOrders.count) new orders"),
                                          subtitle: L("À accepter ou refuser", "Accept or decline")) { onSelectTab(1) }
                         }
                         if !activeOrders.isEmpty {
@@ -84,7 +84,7 @@ struct OwnerOverviewScreen: View {
                         if unansweredReviews > 0 {
                             if !newOrders.isEmpty || !activeOrders.isEmpty || !lowStock.isEmpty { OwnerDivider() }
                             attentionRow(icon: "star.bubble.fill", tone: .neutral,
-                                         title: L("\(unansweredReviews) avis sans réponse", "\(unansweredReviews) review(s) without a reply"),
+                                         title: L("\(unansweredReviews) avis sans réponse", unansweredReviews == 1 ? "\(unansweredReviews) review without a reply" : "\(unansweredReviews) reviews without a reply"),
                                          subtitle: L("Répondez pour rassurer vos clients", "Reply to reassure your guests")) { onSelectTab(3) }
                         }
                     }
