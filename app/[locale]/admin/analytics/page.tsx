@@ -9,6 +9,7 @@ import {
   getChannelBreakdown,
   getRetentionCohorts,
   getHourlyHeatmap,
+  getOnboardingFunnel,
 } from "@/lib/data/posthog-insights";
 
 export default async function AdminAnalyticsPage() {
@@ -17,7 +18,7 @@ export default async function AdminAnalyticsPage() {
   const dashboardUrl = host.includes(".i.posthog.com") ? host.replace(".i.posthog.com", ".posthog.com") : null;
 
   const queryConfigured = isPostHogQueryConfigured();
-  const [overview, countries, browsers, channels, retention, heatmap] = queryConfigured
+  const [overview, countries, browsers, channels, retention, heatmap, onboardingFunnel] = queryConfigured
     ? await Promise.all([
         getTrafficOverview(),
         getCountryBreakdown(),
@@ -25,8 +26,9 @@ export default async function AdminAnalyticsPage() {
         getChannelBreakdown(),
         getRetentionCohorts(),
         getHourlyHeatmap(),
+        getOnboardingFunnel(),
       ])
-    : [null, null, null, null, null, null];
+    : [null, null, null, null, null, null, null];
 
   return (
     <div>
@@ -63,6 +65,7 @@ export default async function AdminAnalyticsPage() {
           channels={channels}
           retention={retention}
           heatmap={heatmap}
+          onboardingFunnel={onboardingFunnel}
         />
       )}
     </div>

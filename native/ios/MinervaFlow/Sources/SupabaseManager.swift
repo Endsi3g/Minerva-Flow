@@ -972,26 +972,16 @@ final class SupabaseManager: ObservableObject {
         guard let userId = authUserID else { return }
         let restaurantId = selectedOwnerRestaurantId
         guard let workspaceId = selectedOwnerRestaurant?.workspaceId else { return }
-        struct Branding: Decodable {
-            let brandName: String
-            let logoUrl: String?
-            let primaryColor: String
-            let secondaryColor: String
-            let accentColor: String
-            enum CodingKeys: String, CodingKey {
-                case brandName = "brand_name", logoUrl = "logo_url", primaryColor = "primary_color", secondaryColor = "secondary_color", accentColor = "accent_color"
-            }
-        }
         do {
-            let branding: NativeOwnerBranding = try await client
+            let brandings: [NativeOwnerBranding] = try await client
                 .from("workspace_brand_settings")
                 .select("brand_name, logo_url, primary_color, secondary_color, accent_color")
                 .eq("workspace_id", value: workspaceId)
-                .single()
+                .limit(1)
                 .execute()
                 .value
             guard isCurrentSession(userId), selectedOwnerRestaurantId == restaurantId else { return }
-            ownerBranding = branding
+            ownerBranding = brandings.first
             if let ownerBranding {
                 UserDefaults.standard.set(ownerBranding.primaryColor, forKey: "activeTenantPrimaryColor")
                 UserDefaults.standard.set(ownerBranding.secondaryColor, forKey: "activeTenantSecondaryColor")

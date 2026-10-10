@@ -46,6 +46,38 @@ function fallbackVariant(userId: string): OfferVariant {
 }
 
 /**
+ * Feature flag `onboarding-step-order`:
+ *   "classic"     → [1,2,3,4,5]  (current order, default)
+ *   "offer-first" → [1,4,2,3,5]  (show pricing/offer before qualification)
+ *
+ * Falls back to a deterministic hash split (50/50) so the test is measurable
+ * in PostHog even before the flag is created in the dashboard.
+ */
+type StepOrder = "classic" | "offer-first";
+const STEP_SEQUENCES: Record<StepOrder, number[]> = {
+  classic:       [1, 2, 3, 4, 5],
+  "offer-first": [1, 4, 2, 3, 5],
+};
+
+function fallbackStepOrder(userId: string): StepOrder {
+  let hash = 0;
+  for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return hash % 2 === 0 ? "classic" : "offer-first";
+}
+
+function useStepOrder(userId: string): StepOrder {
+  const [order, setOrder] = useState<StepOrder>(() => fallbackStepOrder(userId));
+  useEffect(() => {
+    const apply = () => {
+      const flag = posthog.getFeatureFlag?.("onboarding-step-order");
+      if (flag === "classic" || flag === "offer-first") setOrder(flag);
+    };
+    return posthog.onFeatureFlags?.(apply);
+  }, []);
+  return order;
+}
+
+/**
  * PostHog feature flag `onboarding-offer-variant` decides the variant when it
  * exists; otherwise a stable hash of the user id splits traffic 50/50, so the
  * test runs (and is measurable via the `offer_variant` property) even before
@@ -149,6 +181,25 @@ const TXT = {
     ],
     guarantee: "Garantie : aucun frais tant qu'aucun revenu additionnel n'est mesuré. Résiliation en tout temps, sans pénalité.",
     scarcity: "Accès gratuit pendant la période de développement. Avant toute facturation : avis écrit d'au moins 30 jours et votre accord explicite.",
+    faqHeading: "Questions fréquentes",
+    faq: [
+      {
+        q: "Comment êtes-vous rémunéré ?",
+        a: "Une petite part des revenus additionnels que nous mesurons ensemble — et rien si vos revenus n'augmentent pas. Aucun frais fixe, jamais.",
+      },
+      {
+        q: "Mes données clients m'appartiennent-elles ?",
+        a: "Oui, à 100 %. Vos listes de clients sont exportables en un clic depuis votre tableau de bord. Minerva Flow ne vend ni ne partage vos données.",
+      },
+      {
+        q: "Puis-je annuler quand je veux ?",
+        a: "Oui, sans pénalité et sans préavis minimum. Résiliation en tout temps, depuis vos paramètres.",
+      },
+      {
+        q: "Combien de temps pour configurer ?",
+        a: "Moins de 5 minutes ici. Votre QR code est prêt avant la fin de cet onboarding.",
+      },
+    ],
     s5Title: "Dernière étape : lancez-vous",
     s5Body: "Rien d'obligatoire ici. Chaque action rend Minerva Flow plus utile, et vous pouvez tout faire plus tard.",
     s5Menu: "Importer mon menu (PDF)",
@@ -268,6 +319,25 @@ const TXT = {
     ],
     guarantee: "Guarantee: no fees until additional revenue is measured. Cancel any time, no penalty.",
     scarcity: "Free access during the development period. Before any billing: written notice of at least 30 days and your explicit agreement.",
+    faqHeading: "Frequently asked questions",
+    faq: [
+      {
+        q: "How are you compensated?",
+        a: "A small share of the additional revenue we measure together — and nothing at all if your revenue does not grow. No fixed fees, ever.",
+      },
+      {
+        q: "Do I own my customer data?",
+        a: "Yes, 100%. Your customer lists are exportable in one click from your dashboard. Minerva Flow never sells or shares your data.",
+      },
+      {
+        q: "Can I cancel whenever I want?",
+        a: "Yes, with no penalty and no minimum notice period. Cancel any time from your settings.",
+      },
+      {
+        q: "How long does setup take?",
+        a: "Under 5 minutes here. Your QR code will be ready before you finish this onboarding.",
+      },
+    ],
     s5Title: "Last step: launch",
     s5Body: "Nothing mandatory here. Each action makes Minerva Flow more useful, and you can do it all later.",
     s5Menu: "Import my menu (PDF)",
@@ -328,6 +398,14 @@ export function OnboardingWizard({
   const lang: Lang = locale === "en" ? "en" : "fr";
   const t = TXT[lang];
   const { variant, source: variantSource } = useOfferVariant(userId);
+  const stepOrder = useStepOrder(userId);
+  const stepSequence = STEP_SEQUENCES[stepOrder];
+
+  // Report the variant once on mount so PostHog can split results by step order.
+  useEffect(() => {
+    posthog.capture("onboarding_step_order_assigned", { variant: stepOrder, step_sequence: stepSequence });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // getMyProfile() falls back to the account email when no real name was ever
   // set; showing that raw email as a "prefilled" name reads as broken.
@@ -421,7 +499,9 @@ export function OnboardingWizard({
       setLoyaltyQrDataUrl(qr);
       posthog.capture("onboarding_program_created");
     } catch (error) {
-      setLoyaltyError(error instanceof Error ? error.message : t.s3Error);
+      const msg = error instanceof Error ? error.message : t.s3Error;
+      posthog.capture("onboarding_step_failed", { step: 3, step_name: STEP_NAMES[3] ?? "loyalty_program", error: msg });
+      setLoyaltyError(msg);
     } finally {
       setPreparingLoyalty(false);
     }
@@ -450,6 +530,7 @@ export function OnboardingWizard({
       }
     }
     setCopiedLoyalty(true);
+    posthog.capture("onboarding_qr_copied", { restaurant_id: currentRestaurantId });
     setTimeout(() => setCopiedLoyalty(false), 2000);
   }
 
@@ -491,11 +572,31 @@ export function OnboardingWizard({
       } catch {
         // storage can be unavailable (private mode): the 30-minute prompt just won't show
       }
+      posthog.capture("onboarding_step_completed", {
+        step: 5,
+        visual_position: stepSequence.indexOf(5) + 1,
+        step_name: STEP_NAMES[5] ?? "launch",
+        total_steps: TOTAL_STEPS,
+        has_menu: Boolean(menuImportedCount),
+        has_google: googlePlaceLinked,
+        has_team: inviteSent,
+      });
       posthog.capture("onboarding_finished", { offer_variant: variant, goals });
+      // Client-side capture attaches $session_id automatically for Session Replay & Replay Vision
+      posthog.capture("onboarding_completed", {
+        offer_variant: variant,
+        goals,
+        service_model: serviceModel,
+        has_menu: Boolean(menuImportedCount),
+        has_google: googlePlaceLinked,
+        has_team: inviteSent,
+      });
       setDone(true);
       setSubmitting(false);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : t.errGeneric);
+      const msg = err instanceof Error ? err.message : t.errGeneric;
+      posthog.capture("onboarding_step_failed", { step: 5, step_name: STEP_NAMES[5] ?? "launch", error: msg });
+      setSubmitError(msg);
       setSubmitting(false);
     }
   }
@@ -560,7 +661,8 @@ export function OnboardingWizard({
 
   return (
     <Onboarding
-      defaultValue={1}
+      defaultValue={stepSequence[0]}
+      stepSequence={stepSequence}
       totalSteps={TOTAL_STEPS}
       onComplete={handleFinish}
       canGoNext={(step) => {
@@ -570,7 +672,7 @@ export function OnboardingWizard({
       }}
       className="border-none bg-transparent p-0 shadow-none"
     >
-      <ProgressHeader lang={lang} />
+      <ProgressHeader lang={lang} stepSequence={stepSequence} />
       <StepEnter step={3} onEnter={autoPrepareLoyalty} />
       <StepEnter step={4} onEnter={onOfferShown} />
 
@@ -728,6 +830,30 @@ export function OnboardingWizard({
           </div>
           <p className="rounded-xl bg-mv-ink/[0.04] p-3 text-[13px] font-medium leading-snug text-mv-ink">{t.guarantee}</p>
           <p className="text-[11.5px] leading-relaxed text-mv-ink-faint">{t.scarcity}</p>
+
+          {/* FAQ — réponses aux objections avant le CTA */}
+          <div className="rounded-2xl border border-mv-border bg-mv-surface">
+            <p className="border-b border-mv-border px-4 py-2.5 text-[13px] font-semibold text-mv-ink">{t.faqHeading}</p>
+            <div className="divide-y divide-mv-border">
+              {t.faq.map(({ q, a }) => (
+                <details
+                  key={q}
+                  className="group"
+                  onToggle={(e) => {
+                    if ((e.currentTarget as HTMLDetailsElement).open) {
+                      posthog.capture("onboarding_faq_opened", { question: q });
+                    }
+                  }}
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[13px] font-medium text-mv-ink">
+                    <span>{q}</span>
+                    <span className="shrink-0 text-mv-ink-faint transition-transform group-open:rotate-45" aria-hidden>+</span>
+                  </summary>
+                  <p className="px-4 pb-3 text-[12.5px] leading-relaxed text-mv-ink-soft">{a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
         </div>
       </Onboarding.Step>
 
@@ -803,6 +929,26 @@ export function OnboardingWizard({
         }}
         onStepTwoContinue={saveQualification}
         onOfferAccepted={onOfferAccepted}
+        onStepCompleted={(step) => {
+          const visualPosition = stepSequence.indexOf(step) + 1;
+          let extraMeta: Record<string, unknown> = {};
+          if (step === 1) {
+            extraMeta = { restaurant_name: restaurantNameInput.trim() || restaurantName, service_model: serviceModel };
+          } else if (step === 2) {
+            extraMeta = { goals_count: goals.length, has_pos: Boolean(posSystem), size_band: sizeBand };
+          } else if (step === 3) {
+            extraMeta = { points_per_dollar: pointsPerDollar, qr_generated: Boolean(loyaltyQrDataUrl) };
+          } else if (step === 4) {
+            extraMeta = { offer_variant: variant, variant_source: variantSource };
+          }
+          posthog.capture("onboarding_step_completed", {
+            step,
+            visual_position: visualPosition,
+            step_name: STEP_NAMES[step] ?? `step_${step}`,
+            total_steps: TOTAL_STEPS,
+            ...extraMeta,
+          });
+        }}
       />
     </Onboarding>
   );
@@ -837,22 +983,25 @@ function StepEnter({ step, onEnter }: { step: number; onEnter: () => void }) {
 }
 
 /** Progress shown to the user, plus one analytics event per step reached (where owners drop off). */
-function ProgressHeader({ lang }: { lang: Lang }) {
+function ProgressHeader({ lang, stepSequence }: { lang: Lang; stepSequence: number[] }) {
   const { currentStep, totalSteps } = useOnboarding();
-  const minutesLeft = Math.max(1, totalSteps - currentStep + 1);
+  // The visual position is the index in the ordered sequence (1-based for display).
+  const visualPosition = stepSequence.indexOf(currentStep) + 1;
+  const minutesLeft = Math.max(1, totalSteps - visualPosition + 1);
 
   useEffect(() => {
     posthog.capture("onboarding_step_viewed", {
       step: currentStep,
+      visual_position: visualPosition,
       total_steps: totalSteps,
       step_name: STEP_NAMES[currentStep] ?? `step_${currentStep}`,
     });
-  }, [currentStep, totalSteps]);
+  }, [currentStep, visualPosition, totalSteps]);
 
   return (
     <div className="mb-6 flex items-center gap-3">
-      <StepIndicator currentStep={currentStep} totalSteps={totalSteps} variant="pills" className="max-w-[120px] flex-1 justify-start" />
-      <span className="font-mono text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">{TXT[lang].stepOf(currentStep, minutesLeft)}</span>
+      <StepIndicator currentStep={visualPosition} totalSteps={totalSteps} variant="pills" className="max-w-[120px] flex-1 justify-start" />
+      <span className="font-mono text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">{TXT[lang].stepOf(visualPosition, minutesLeft)}</span>
     </div>
   );
 }
@@ -866,6 +1015,7 @@ function WizardFooter({
   onStepOneContinue,
   onStepTwoContinue,
   onOfferAccepted,
+  onStepCompleted,
 }: {
   lang: Lang;
   submitting: boolean;
@@ -875,11 +1025,11 @@ function WizardFooter({
   onStepOneContinue: () => Promise<string | null>;
   onStepTwoContinue: () => Promise<void>;
   onOfferAccepted: () => void;
+  onStepCompleted: (step: number) => void;
 }) {
   const t = TXT[lang];
-  const { currentStep, totalSteps, canGoBack, canGoNext, handleBack, setStep, handleComplete } = useOnboarding();
+  const { currentStep, canGoBack, canGoNext, isLastStep, handleBack, handleNext, handleComplete } = useOnboarding();
   const [pending, setPending] = useState(false);
-  const isLastStep = currentStep === totalSteps;
 
   async function advanceFrom(step: number) {
     setPending(true);
@@ -887,6 +1037,7 @@ function WizardFooter({
       if (step === 1) {
         const error = await onStepOneContinue();
         if (error) {
+          posthog.capture("onboarding_step_failed", { step: 1, step_name: STEP_NAMES[1] ?? "core_profile", error });
           setPending(false);
           return;
         }
@@ -895,7 +1046,8 @@ function WizardFooter({
       } else if (step === 4) {
         onOfferAccepted();
       }
-      setStep(step + 1);
+      onStepCompleted(step);
+      handleNext();
     } catch (error) {
       console.error("Onboarding step failed", error);
     } finally {

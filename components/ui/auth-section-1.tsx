@@ -1,8 +1,13 @@
 "use client";
 
-import { GrainGradient } from "@paper-design/shaders-react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import type { ReactNode } from "react";
+
+const GrainGradient = dynamic(
+  () => import("@paper-design/shaders-react").then((mod) => mod.GrainGradient),
+  { ssr: false }
+);
 
 const formFields = [
   { label: "First Name", value: "Harshit", type: "text" },
@@ -76,7 +81,7 @@ export default function AuthSectionOne() {
 
               <div className="space-y-4 pt-2 text-sm leading-5 text-black/30 dark:text-white/35 sm:text-[15px]">
                 <CheckboxLine>
-                  I don't want to receive emails about solaceui feature updates
+                  I don&apos;t want to receive emails about solaceui feature updates
                 </CheckboxLine>
                 <CheckboxLine>{termsText}</CheckboxLine>
               </div>

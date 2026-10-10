@@ -11,6 +11,7 @@ import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { Google, Apple } from "@/components/ui/BrandIcons";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { cn } from "@/lib/utils";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { signUpAction, checkEmailAuthMethodAction } from "@/app/[locale]/sign-up/actions";
 
 type AuthParams = {
@@ -20,6 +21,7 @@ type AuthParams = {
   inviteToken: string | null;
   workspaceInviteToken: string | null;
 };
+
 
 function SearchParamsReader({ onParams }: { onParams: (params: AuthParams) => void }) {
   const searchParams = useSearchParams();
@@ -45,6 +47,7 @@ function AuthCardInner({
 }) {
   const t = useTranslations("auth");
   const locale = useLocale();
+  const isHydrated = useHydrated();
 
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
@@ -103,6 +106,12 @@ function AuthCardInner({
 
   async function handleAuth(e: FormEvent) {
     e.preventDefault();
+    // Read the submitted controls directly. Autofill and fast input can
+    // arrive before React has committed the corresponding state update.
+    const fields = new FormData(e.currentTarget as HTMLFormElement);
+    const email = String(fields.get("email") ?? "").trim();
+    const password = String(fields.get("password") ?? "");
+    const repeatPassword = String(fields.get("passwordConfirmation") ?? "");
     setError(null);
     setIsLoading(true);
 
@@ -119,6 +128,9 @@ function AuthCardInner({
               setIsLoading(false);
               return;
             }
+            setError(t("errorInvalidCredentials"));
+            setIsLoading(false);
+            return;
           }
           throw authErr;
         }
@@ -132,7 +144,11 @@ function AuthCardInner({
         // server layout evaluates onboarding state.
         window.location.assign(localizedPostAuthPath);
       } else {
-        if (password !== repeatPassword) throw new Error(t("errorPasswordMismatch"));
+        if (password !== repeatPassword) {
+          setError(t("errorPasswordMismatch"));
+          setIsLoading(false);
+          return;
+        }
 
         const signUpRes = await signUpAction({
           email,
@@ -148,7 +164,11 @@ function AuthCardInner({
 
         if (!signUpRes.success) {
           if (signUpRes.error === "ALREADY_REGISTERED") {
-            throw new Error(t("errorAlreadyRegistered"));
+            // User already has an account: transition to login mode with the email preserved
+            setMode("login");
+            setError(t("errorAlreadyRegistered"));
+            setIsLoading(false);
+            return;
           }
           throw new Error(signUpRes.message || t("errorGeneric"));
         }
@@ -170,7 +190,19 @@ function AuthCardInner({
         window.location.assign(localizedPostSignUpPath);
       }
     } catch (err) {
-      posthog.captureException(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      const lower = msg.toLowerCase();
+      const isExpectedAuthError =
+        lower.includes("invalid login credentials") ||
+        lower.includes("already registered") ||
+        lower.includes("already exists") ||
+        msg === t("errorPasswordMismatch") ||
+        msg === t("errorAlreadyRegistered") ||
+        msg === t("errorInvalidCredentials");
+
+      if (!isExpectedAuthError) {
+        posthog.captureException(err);
+      }
       setError(err instanceof Error ? mapErrorMessage(err.message) : t("errorGeneric"));
       setIsLoading(false);
     }
@@ -288,14 +320,18 @@ function AuthCardInner({
             <div className="h-px flex-1 bg-mv-border" />
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-4">
+          <form onSubmit={handleAuth} className="space-y-4" aria-busy={!isHydrated || isLoading}>
             <div>
-              <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("emailLabel")}</label>
+              <label htmlFor="auth-email" className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("emailLabel")}</label>
               <input
+                id="auth-email"
+                name="email"
+                autoComplete="email"
+                disabled={!isHydrated || isLoading}
                 type="email"
                 placeholder={t("emailPlaceholder")}
                 required
-                value={email}
+                defaultValue={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
               />
@@ -303,7 +339,7 @@ function AuthCardInner({
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-[12px] font-semibold text-mv-ink-soft">{t("passwordLabel")}</label>
+                <label htmlFor="auth-password" className="text-[12px] font-semibold text-mv-ink-soft">{t("passwordLabel")}</label>
                 {mode === "login" && (
                   <Link href="/forgot-password" className="text-[12px] font-semibold text-mv-green-dark hover:underline">
                     {t("forgotShort")}
@@ -311,10 +347,14 @@ function AuthCardInner({
                 )}
               </div>
               <input
+                id="auth-password"
+                name="password"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                disabled={!isHydrated || isLoading}
                 type="password"
                 placeholder="••••••••••••"
                 required
-                value={password}
+                defaultValue={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
               />
@@ -322,12 +362,16 @@ function AuthCardInner({
 
             {mode === "signup" && (
               <div>
-                <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("confirmPasswordLabel")}</label>
+                <label htmlFor="auth-password-confirmation" className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("confirmPasswordLabel")}</label>
                 <input
+                  id="auth-password-confirmation"
+                  name="passwordConfirmation"
+                  autoComplete="new-password"
+                  disabled={!isHydrated || isLoading}
                   type="password"
                   placeholder="••••••••••••"
                   required
-                  value={repeatPassword}
+                  defaultValue={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
                   className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
                 />
@@ -355,7 +399,7 @@ function AuthCardInner({
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={!isHydrated || isLoading}
               className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-mv-green text-[13px] font-semibold tracking-wide text-white shadow-mv-sm transition-all hover:bg-mv-green-dark active:translate-y-px disabled:opacity-50"
             >
               {isLoading ? (

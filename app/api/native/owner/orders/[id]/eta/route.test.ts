@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveNativeRestaurantManager } from "@/lib/auth/native-bearer";
 import { POST } from "./route";
 
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("@/lib/auth/native-bearer", () => ({ resolveNativeRestaurantManager: vi.fn() }));
+vi.mock("@/lib/orders/owner-updates", () => ({ notifyOrderEtaChanged: vi.fn().mockResolvedValue([]) }));
 
 const mockAdmin = vi.mocked(createAdminClient);
 const mockManager = vi.mocked(resolveNativeRestaurantManager);

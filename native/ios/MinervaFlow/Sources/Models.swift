@@ -30,6 +30,37 @@ struct NativeOwnerBranding: Codable {
     let primaryColor: String
     let secondaryColor: String
     let accentColor: String
+
+    enum CodingKeys: String, CodingKey {
+        case brandName = "brand_name"
+        case logoUrl = "logo_url"
+        case primaryColor = "primary_color"
+        case secondaryColor = "secondary_color"
+        case accentColor = "accent_color"
+    }
+
+    init(
+        brandName: String,
+        logoUrl: String? = nil,
+        primaryColor: String = "#167F5B",
+        secondaryColor: String = "#0E5A40",
+        accentColor: String = "#DFFF5F"
+    ) {
+        self.brandName = brandName
+        self.logoUrl = logoUrl
+        self.primaryColor = primaryColor
+        self.secondaryColor = secondaryColor
+        self.accentColor = accentColor
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.brandName = try container.decodeIfPresent(String.self, forKey: .brandName) ?? "Minerva Flow"
+        self.logoUrl = try container.decodeIfPresent(String.self, forKey: .logoUrl)
+        self.primaryColor = try container.decodeIfPresent(String.self, forKey: .primaryColor) ?? "#167F5B"
+        self.secondaryColor = try container.decodeIfPresent(String.self, forKey: .secondaryColor) ?? "#0E5A40"
+        self.accentColor = try container.decodeIfPresent(String.self, forKey: .accentColor) ?? "#DFFF5F"
+    }
 }
 
 /// Branding that is safe to return to an authenticated customer app. It is

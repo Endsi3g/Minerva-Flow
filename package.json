@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.57",
+    "@ai-sdk/otel": "^1.0.137",
     "@ai-sdk/react": "^4.0.23",
     "@assistant-ui/react": "^0.15.16",
     "@assistant-ui/react-ai-sdk": "^1.4.7",
@@ -23,7 +24,10 @@
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@modelcontextprotocol/server": "^2.0.0",
+    "@opentelemetry/resources": "^2.12.0",
+    "@opentelemetry/sdk-node": "^0.223.0",
     "@paper-design/shaders-react": "^0.0.80",
+    "@posthog/ai": "^8.13.5",
     "@radix-ui/react-use-controllable-state": "^1.2.3",
     "@sentry/nextjs": "^10.65.0",
     "@shadcn/react": "^0.2.1",

@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
 import { DesktopMode } from "@/components/desktop/DesktopMode";
+import { StaleDeploymentReloader } from "@/components/providers/StaleDeploymentReloader";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
 import { hasLocale } from "next-intl";
@@ -308,6 +309,7 @@ export default async function LocaleLayout({
             <Toaster />
             <ServiceWorkerManager />
             <DesktopMode />
+            <StaleDeploymentReloader />
             <Analytics />
           </NextIntlClientProvider>
         </ThemeProvider>
