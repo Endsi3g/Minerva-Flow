@@ -21,6 +21,7 @@ export function buildGoogleWalletSaveUrl(input: {
   tierLabel: string;
   portalUrl: string;
   brandColorHex: string;
+  language?: "fr" | "en";
 }): string {
   const payload = buildGoogleLoyaltyPayload({
     issuerId: process.env.GOOGLE_WALLET_ISSUER_ID!,

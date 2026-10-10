@@ -12,6 +12,39 @@ import { getLocalPhoneDigits } from "@/lib/phone";
  */
 export const GOOGLE_WALLET_LOGO_URL = "https://www.minervaflow.app/icon-512.png";
 
+export type WalletLanguage = "fr" | "en";
+
+const WALLET_COPY = {
+  fr: {
+    points: "Points",
+    tier: "Palier",
+    howHeader: "Comment ça marche",
+    howBody: "Montrez ce code au comptoir à chaque visite pour cumuler des points et obtenir vos récompenses.",
+    linkLabel: "Ouvrir mon espace fidélité",
+  },
+  en: {
+    points: "Points",
+    tier: "Tier",
+    howHeader: "How it works",
+    howBody: "Show this code at the counter on every visit to earn points and unlock your rewards.",
+    linkLabel: "Open my loyalty account",
+  },
+} as const;
+
+/** Stable ids: the same customer always maps to the same Wallet object, so a balance update can find it. */
+export function googleLoyaltyObjectId(issuerId: string, customerId: string): string {
+  return `${issuerId}.customer_${customerId.replace(/-/g, "")}`;
+}
+
+/** Fields Wallet shows as the balance; used for the initial pass and for later PATCH updates. */
+export function buildGoogleBalanceFields(input: { points: number; tierLabel: string; language?: WalletLanguage }) {
+  const copy = WALLET_COPY[input.language ?? "fr"];
+  return {
+    loyaltyPoints: { label: copy.points, balance: { string: String(Math.max(0, Math.round(input.points))) } },
+    secondaryLoyaltyPoints: { label: copy.tier, balance: { string: input.tierLabel } },
+  };
+}
+
 export function buildGoogleLoyaltyPayload(input: {
   issuerId: string;
   serviceAccountEmail: string;
@@ -26,9 +59,11 @@ export function buildGoogleLoyaltyPayload(input: {
   tierLabel: string;
   portalUrl: string;
   brandColorHex: string;
+  language?: WalletLanguage;
 }) {
+  const copy = WALLET_COPY[input.language ?? "fr"];
   const classId = `${input.issuerId}.minerva_${input.restaurantId.replace(/-/g, "")}`;
-  const objectId = `${input.issuerId}.customer_${input.customerId.replace(/-/g, "")}`;
+  const objectId = googleLoyaltyObjectId(input.issuerId, input.customerId);
 
   const loyaltyClass = {
     id: classId,
@@ -38,6 +73,7 @@ export function buildGoogleLoyaltyPayload(input: {
       sourceUri: { uri: GOOGLE_WALLET_LOGO_URL },
     },
     hexBackgroundColor: input.brandColorHex,
+    countryCode: "CA",
     reviewStatus: "UNDER_REVIEW",
   };
 
@@ -56,8 +92,9 @@ export function buildGoogleLoyaltyPayload(input: {
     state: "ACTIVE",
     accountId: input.customerId,
     accountName: input.customerName,
-    loyaltyPoints: { label: "Points", balance: { string: String(input.points) } },
-    secondaryLoyaltyPoints: { label: "Palier", balance: { string: input.tierLabel } },
+    ...buildGoogleBalanceFields({ points: input.points, tierLabel: input.tierLabel, language: input.language }),
+    textModulesData: [{ id: "how_it_works", header: copy.howHeader, body: copy.howBody }],
+    linksModuleData: { uris: [{ id: "portal", uri: input.portalUrl, description: copy.linkLabel }] },
     barcode: { type: "QR_CODE", value: barcodeValue, alternateText: barcodeAltText },
     hexBackgroundColor: input.brandColorHex,
   };

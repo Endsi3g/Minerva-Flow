@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { signJwtRS256 } from "../jwt";
-import { buildGoogleLoyaltyPayload } from "../google-loyalty-payload";
+import { buildGoogleBalanceFields, buildGoogleLoyaltyPayload, googleLoyaltyObjectId } from "../google-loyalty-payload";
 
 /**
  * google-wallet.ts itself carries "server-only" and reads real service-
@@ -119,5 +119,39 @@ describe("buildGoogleLoyaltyPayload", () => {
       points: 1, tierLabel: "T", portalUrl: "https://www.minervaflow.app/portal", brandColorHex: "#167f5b",
     });
     expect(payload.payload.loyaltyObjects[0].barcode.value).toBe("5145550100");
+  });
+
+  const base = {
+    issuerId: "1", serviceAccountEmail: "a@b.iam.gserviceaccount.com", appUrl: "https://www.minervaflow.app",
+    customerId: "c1", customerName: "N", restaurantId: "r1", restaurantName: "R", points: 12, tierLabel: "Habitué",
+    portalUrl: "https://www.minervaflow.app/portal?customer=c1", brandColorHex: "#167f5b",
+  };
+
+  it("explains how the card works and links to the customer's space, in French by default", () => {
+    const object = buildGoogleLoyaltyPayload(base).payload.loyaltyObjects[0];
+    expect(object.textModulesData[0]).toMatchObject({ header: "Comment ça marche" });
+    expect(object.linksModuleData.uris[0]).toMatchObject({ uri: base.portalUrl, description: "Ouvrir mon espace fidélité" });
+    expect(object.loyaltyPoints.label).toBe("Points");
+    expect(object.secondaryLoyaltyPoints.label).toBe("Palier");
+  });
+
+  it("speaks English to English-speaking customers", () => {
+    const object = buildGoogleLoyaltyPayload({ ...base, language: "en" }).payload.loyaltyObjects[0];
+    expect(object.textModulesData[0].header).toBe("How it works");
+    expect(object.secondaryLoyaltyPoints.label).toBe("Tier");
+    expect(object.linksModuleData.uris[0].description).toBe("Open my loyalty account");
+  });
+
+  it("maps a customer to one stable Wallet object so balance updates can find the saved pass", () => {
+    expect(googleLoyaltyObjectId("3388", "abc-123-def")).toBe("3388.customer_abc123def");
+    expect(buildGoogleLoyaltyPayload({ ...base, issuerId: "3388", customerId: "abc-123-def" }).payload.loyaltyObjects[0].id).toBe("3388.customer_abc123def");
+  });
+
+  it("builds the balance fields used for later updates (never negative, rounded)", () => {
+    expect(buildGoogleBalanceFields({ points: 41.6, tierLabel: "Privilégié" })).toEqual({
+      loyaltyPoints: { label: "Points", balance: { string: "42" } },
+      secondaryLoyaltyPoints: { label: "Palier", balance: { string: "Privilégié" } },
+    });
+    expect(buildGoogleBalanceFields({ points: -5, tierLabel: "x", language: "en" }).loyaltyPoints.balance.string).toBe("0");
   });
 });
