@@ -16,24 +16,37 @@ struct MainTabView: View {
     var body: some View {
         Group {
           if horizontalSizeClass == .regular {
-            NavigationSplitView {
-                List {
-                    tabletTab(.home, title: isFrench ? "Accueil" : "Home", icon: "house.fill")
-                    tabletTab(.order, title: "Menu", icon: "fork.knife")
-                    tabletTab(.orders, title: isFrench ? "Commandes" : "Orders", icon: "bag.fill")
-                    tabletTab(.rewards, title: isFrench ? "Fidélité" : "Loyalty", icon: "heart.fill")
-                    tabletTab(.cards, title: isFrench ? "Mes cartes" : "My cards", icon: "creditcard.fill")
-                    tabletTab(.profile, title: isFrench ? "Compte" : "Account", icon: "person.crop.circle.fill")
+            // Hand-built sidebar: NavigationSplitView re-ran its update pass
+            // endlessly on iPad and pinned the CPU.
+            HStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 10) {
+                        Image("LogoMark").resizable().frame(width: 32, height: 32).accessibilityHidden(true)
+                        Text("Minerva Flow").font(.mv(size: 18, weight: .semibold))
+                    }
+                    .padding(.horizontal, 20).padding(.top, 28).padding(.bottom, 20)
+                    VStack(spacing: 4) {
+                        tabletTab(.home, title: isFrench ? "Accueil" : "Home", icon: "house.fill")
+                        tabletTab(.order, title: "Menu", icon: "fork.knife")
+                        tabletTab(.orders, title: isFrench ? "Commandes" : "Orders", icon: "bag.fill")
+                        tabletTab(.rewards, title: isFrench ? "Fidélité" : "Loyalty", icon: "heart.fill")
+                        tabletTab(.cards, title: isFrench ? "Mes cartes" : "My cards", icon: "creditcard.fill")
+                        tabletTab(.profile, title: isFrench ? "Compte" : "Account", icon: "person.crop.circle.fill")
+                    }
+                    .padding(.horizontal, 12)
+                    Spacer(minLength: 12)
                 }
-                .listStyle(.sidebar)
-                .navigationTitle("Minerva Flow")
-                .navigationSplitViewColumnWidth(min: 220, ideal: 260)
-            } detail: {
+                .frame(width: 260)
+                .frame(maxHeight: .infinity)
+                .background(MinervaColor.creamSoft.ignoresSafeArea())
+                Rectangle().fill(MinervaColor.border).frame(width: 1)
                 selectedContent
+                    .id(selection)
                     .frame(maxWidth: 1100)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(MinervaColor.cream.ignoresSafeArea())
             }
-            .navigationSplitViewStyle(.balanced)
+            .background(MinervaColor.cream.ignoresSafeArea())
           } else {
             TabView(selection: $selection) {
             HomeView()
@@ -81,11 +94,20 @@ struct MainTabView: View {
     }
 
     private func tabletTab(_ tab: AppTab, title: String, icon: String) -> some View {
-        Button { selection = tab } label: {
-            Label(title, systemImage: icon).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        let selected = selection == tab
+        return Button { withAnimation(.easeOut(duration: 0.15)) { selection = tab } } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon).font(.mv(size: 16, weight: .semibold)).frame(width: 24)
+                Text(title).font(.mv(size: 16, weight: selected ? .semibold : .medium))
+                Spacer(minLength: 8)
+            }
+            .foregroundStyle(selected ? MinervaColor.emeraldDark : MinervaColor.ink)
+            .padding(.horizontal, 14).frame(minHeight: 48)
+            .background(selected ? MinervaColor.emerald.opacity(0.14) : Color.clear, in: RoundedRectangle(cornerRadius: 14))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .listRowBackground(selection == tab ? MinervaColor.emerald.opacity(0.14) : Color.clear)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     @ViewBuilder
