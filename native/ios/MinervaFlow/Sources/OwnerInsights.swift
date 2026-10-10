@@ -147,3 +147,30 @@ func ownerPercentChange(current: Double, previous: Double) -> Double? {
     guard previous > 0 else { return nil }
     return (current - previous) / previous * 100
 }
+
+/// Plain-language reading of the sales series: which weekday sells most and
+/// which is quietest (average over the days that actually recorded sales).
+struct OwnerWeekdayInsight: Equatable {
+    struct Entry: Equatable { let weekday: Int; let average: Double }
+    let best: Entry
+    let weakest: Entry?
+}
+
+func ownerWeekdayInsight(_ daily: [OwnerDailySales]) -> OwnerWeekdayInsight? {
+    let calendar = Calendar.current
+    var buckets: [Int: [Double]] = [:]
+    for day in daily where day.revenue > 0 {
+        buckets[calendar.component(.weekday, from: day.day), default: []].append(day.revenue)
+    }
+    let averages = buckets.filter { $0.value.count >= 2 }.map {
+        OwnerWeekdayInsight.Entry(weekday: $0.key, average: $0.value.reduce(0, +) / Double($0.value.count))
+    }
+    guard averages.count >= 3, let best = averages.max(by: { $0.average < $1.average }) else { return nil }
+    let weakest = averages.min(by: { $0.average < $1.average })
+    return OwnerWeekdayInsight(best: best, weakest: weakest?.weekday == best.weekday ? nil : weakest)
+}
+
+func ownerWeekdayName(_ weekday: Int, french: Bool) -> String {
+    let symbols = Locale(identifier: french ? "fr_CA" : "en_CA").calendar.weekdaySymbols
+    return symbols[(weekday - 1) % symbols.count]
+}

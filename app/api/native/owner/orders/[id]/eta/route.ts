@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveNativeRestaurantManager } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyOrderEtaChanged } from "@/lib/orders/owner-updates";
 
 /** Owner/manager ETA override, shared by the native apps. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -29,5 +30,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .maybeSingle();
   if (error) return NextResponse.json({ ok: false }, { status: 500 });
   if (!data) return NextResponse.json({ ok: false, error: "Order not found" }, { status: 404 });
-  return NextResponse.json({ ok: true, estimatedReadyAt });
+  // Tell the customer the new time right away (their phone, not only the web).
+  const channels = estimatedReadyAt ? await notifyOrderEtaChanged(membership.restaurantId, id, new Date(estimatedReadyAt)) : [];
+  return NextResponse.json({ ok: true, estimatedReadyAt, channels });
 }

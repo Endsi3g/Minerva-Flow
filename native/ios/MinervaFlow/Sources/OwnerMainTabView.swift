@@ -1,4 +1,5 @@
 import SwiftUI
+import AudioToolbox
 
 /// Owner shell. Tabs: Aperçu, Commandes, Gestion (menu, inventaire, rapports,
 /// équipe, finances), Fidélité, Compte. Same floating tab bar as the client.
@@ -6,12 +7,17 @@ struct OwnerMainTabView: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @EnvironmentObject private var router: DeepLinkRouter
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    @StateObject private var insights = OwnerInsightsStore()
     @State private var selection = 0
     @State private var managePath: [OwnerManagementRoute] = []
     @State private var showWebSetup = false
+    /// Ids of new orders already seen; nil until the first load so existing
+    /// orders never ring on launch.
+    @State private var knownNewOrderIDs: Set<String>?
 
     private var L: Lx { Lx(storedLanguage) }
     private var pendingOrderCount: Int { supabase.ownerOrders.filter { $0.status == "soumise" }.count }
+    private var newOrderIDs: Set<String> { Set(supabase.ownerOrders.filter { $0.status == "soumise" }.map(\.id)) }
 
     private var tabs: [(tag: Int, title: String, icon: String)] {
         [(0, L("Aperçu", "Overview"), "rectangle.grid.2x2.fill"),
@@ -24,7 +30,17 @@ struct OwnerMainTabView: View {
     var body: some View {
         tabContainer
         .tint(MinervaColor.emeraldDark)
-        .task { await supabase.refreshOwnerOperations() }
+        .environmentObject(insights)
+        .task {
+            await supabase.refreshOwnerOperations()
+            knownNewOrderIDs = newOrderIDs
+        }
+        .onChange(of: newOrderIDs) { _, current in
+            guard let known = knownNewOrderIDs else { return }
+            if !current.subtracting(known).isEmpty { OwnerOrderAlert.ring() }
+            knownNewOrderIDs = current
+        }
+        .task(id: supabase.selectedOwnerRestaurantId) { await insights.load(supabase) }
         .onAppear {
             applyPendingNotificationSection()
             presentWebSetupIfFirstLaunch()
@@ -103,5 +119,17 @@ extension Double {
         formatter.currencyCode = "CAD"
         formatter.locale = Locale(identifier: "fr_CA")
         return formatter.string(from: NSNumber(value: self)) ?? "—"
+    }
+}
+
+/// Sound and haptics when a new order arrives while the app is open. In the
+/// background the same event reaches the phone as a push notification.
+enum OwnerOrderAlert {
+    @MainActor static func ring() {
+        AudioServicesPlayAlertSound(SystemSoundID(1007))
+        let feedback = UINotificationFeedbackGenerator()
+        feedback.notificationOccurred(.warning)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { feedback.notificationOccurred(.success) }
+        Analytics.capture("owner_new_order_alert")
     }
 }

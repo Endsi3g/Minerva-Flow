@@ -37,6 +37,7 @@ struct OwnerSalesHeroCard: View {
 
     @State private var range: OwnerSalesRange = .week
     @State private var selectedDate: Date?
+    @State private var showExplainer = false
 
     private var daily: [OwnerDailySales] {
         guard let last = rawDaily.last, last.revenue == 0, Calendar.current.isDateInToday(last.day) else { return rawDaily }
@@ -57,14 +58,19 @@ struct OwnerSalesHeroCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(selectedPoint.map { $0.day.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)).capitalized } ?? range.caption(L))
-                    .font(.mv(size: 13.5, weight: .medium)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+                    .font(.mv(size: 12.5, weight: .medium)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+                Button { showExplainer = true } label: {
+                    Image(systemName: "info.circle").font(.mv(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.75))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(L("À quoi sert ce graphique ?", "What is this chart for?")))
                 Spacer(minLength: 8)
                 rangePicker
             }
 
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text((selectedPoint?.revenue ?? total).cad)
-                    .font(MinervaFont.display(40, weight: .semibold)).foregroundStyle(.white)
+                    .font(MinervaFont.display(30, weight: .semibold)).foregroundStyle(.white)
                     .lineLimit(1).minimumScaleFactor(0.6)
                     .contentTransition(.numericText())
                 if selectedPoint == nil {
@@ -87,11 +93,27 @@ struct OwnerSalesHeroCard: View {
                     .font(.mv(size: 12.5)).foregroundStyle(.white.opacity(0.78))
                 if isRefreshing { ProgressView().controlSize(.mini).tint(.white) }
             }
+            if let insight = ownerWeekdayInsight(rawDaily) {
+                Text(insightText(insight))
+                    .font(.mv(size: 12)).foregroundStyle(.white.opacity(0.78))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .padding(20)
+        .sheet(isPresented: $showExplainer) { OwnerChartExplainerSheet(L: L) }
+        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(MinervaColor.emeraldDeep, in: RoundedRectangle(cornerRadius: 28))
         .animation(.easeOut(duration: 0.18), value: selectedPoint?.day)
+    }
+
+    private func insightText(_ insight: OwnerWeekdayInsight) -> String {
+        let best = ownerWeekdayName(insight.best.weekday, french: L.fr)
+        var text = L("Votre meilleur jour : \(best) (≈ \(insight.best.average.cad) en moyenne).", "Your best day: \(best) (≈ \(insight.best.average.cad) on average).")
+        if let weakest = insight.weakest {
+            let quiet = ownerWeekdayName(weakest.weekday, french: L.fr)
+            text += L(" Le plus calme : \(quiet) (≈ \(weakest.average.cad)).", " Quietest: \(quiet) (≈ \(weakest.average.cad)).")
+        }
+        return text
     }
 
     private var rangePicker: some View {
@@ -102,9 +124,9 @@ struct OwnerSalesHeroCard: View {
                     withAnimation(.easeInOut(duration: 0.25)) { range = option }
                 } label: {
                     Text(option.title(L))
-                        .font(.mv(size: 12, weight: .semibold))
+                        .font(.mv(size: 11.5, weight: .semibold))
                         .foregroundStyle(option == range ? MinervaColor.emeraldDeep : .white.opacity(0.8))
-                        .padding(.horizontal, 10).frame(minHeight: 28)
+                        .padding(.horizontal, 8).frame(minHeight: 24)
                         .background(option == range ? Color.white : Color.clear, in: Capsule())
                         .contentShape(Capsule())
                 }
@@ -301,7 +323,101 @@ struct OwnerPeakHoursCard: View {
                 .frame(height: 84)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(peak.map { L("Heure de pointe : \($0.hour) h", "Peak hour: \($0.hour):00") } ?? ""))
+                Text(L("Préparez l'équipe avant cette heure : c'est là que l'attente coûte le plus cher.", "Prepare your team before this hour: that's where waiting costs the most."))
+                    .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
             }
+        }
+    }
+}
+
+/// "What is this for?" sheet behind the ⓘ on the sales chart.
+struct OwnerChartExplainerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let L: Lx
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    block("eye.fill", L("Ce que vous voyez", "What you see"),
+                          L("Vos ventes jour après jour. Glissez le doigt sur la courbe pour lire un jour précis. La pastille compare la période avec la précédente, de même durée.",
+                            "Your sales day by day. Drag along the line to read a single day. The badge compares the period with the previous one of the same length."))
+                    block("lightbulb.fill", L("Pourquoi c'est utile", "Why it matters"),
+                          L("Vous repérez vos jours forts et faibles pour planifier l'équipe et les achats, et vous voyez si une action (offre, nouveau plat) a vraiment fait bouger vos ventes.",
+                            "You spot your strong and weak days to plan staff and purchasing, and you see whether an action (offer, new dish) really moved your sales."))
+                    block("bolt.fill", L("Quoi en faire", "What to do next"),
+                          L("Jour faible : lancez une offre ce jour-là (onglet Fidélité).\nHausse après une offre : elle fonctionne, relancez-la.\nBaisse inhabituelle : vérifiez le menu, le stock et les avis.",
+                            "Weak day: run an offer that day (Loyalty tab).\nRise after an offer: it works, repeat it.\nUnusual drop: check the menu, stock and reviews."))
+                    Text(L("Les ventes viennent du journal de service (caisse synchronisée ou saisie). Un jour encore à 0 $ n'est pas tracé tant que le service est en cours.",
+                           "Sales come from the service log (synced POS or manual entry). A day still at $0 is not plotted while service is in progress."))
+                        .font(.mv(size: 12)).foregroundStyle(MinervaColor.inkFaint)
+                }
+                .padding(20)
+            }
+            .background(MinervaColor.cream.ignoresSafeArea())
+            .navigationTitle(L("À propos de ce graphique", "About this chart"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("OK", "OK")) { dismiss() } } }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func block(_ icon: String, _ title: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            OwnerIconTile(icon: icon, size: 30)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.mv(size: 14.5, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                Text(text).font(.mv(size: 13.5)).foregroundStyle(MinervaColor.inkSoft).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+/// Dedicated statistics page: everything the home no longer carries, each
+/// block with one line saying why it matters and what to do with it.
+struct OwnerStatisticsScreen: View {
+    @EnvironmentObject private var supabase: SupabaseManager
+    @EnvironmentObject private var insights: OwnerInsightsStore
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    private var L: Lx { Lx(storedLanguage) }
+
+    var body: some View {
+        OwnerScreen(title: L("Statistiques", "Statistics"), subtitle: supabase.selectedOwnerRestaurant?.name) {
+            if let data = insights.insights {
+                section(L("Clients et fidélité", "Customers and loyalty"),
+                        why: L("Combien de clients rejoignent et reviennent. Un taux de retour qui baisse : relancez avec une offre.",
+                               "How many customers join and come back. A falling return rate: re-engage with an offer.")) {
+                    OwnerWeekCard(week: data.week, L: L)
+                }
+                if !data.topItems.isEmpty {
+                    section(L("Ce qui se vend", "Best sellers"),
+                            why: L("Mettez ces plats en avant. Un plat qui ne se vend jamais : à revoir ou à retirer.",
+                                   "Feature these dishes. A dish that never sells: rework or remove it.")) {
+                        OwnerTopItemsCard(items: data.topItems, L: L)
+                    }
+                }
+                if !data.hourly.isEmpty {
+                    section(L("Heures de pointe", "Busiest hours"),
+                            why: L("Planifiez l'équipe et la préparation avant la pointe pour réduire l'attente.",
+                                   "Schedule staff and prep before the rush to cut waiting time.")) {
+                        OwnerPeakHoursCard(hourly: data.hourly, L: L)
+                    }
+                }
+            } else if insights.failed {
+                OwnerCard { OwnerEmptyState(icon: "wifi.exclamationmark", title: L("Statistiques indisponibles", "Statistics unavailable"),
+                                            message: L("Vérifiez votre connexion, puis tirez pour actualiser.", "Check your connection, then pull to refresh.")) }
+            } else {
+                ProgressView().frame(maxWidth: .infinity).padding(.top, 60)
+            }
+        }
+        .refreshable { await insights.load(supabase) }
+    }
+
+    private func section<Content: View>(_ title: String, why: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            OwnerSectionHeader(title: title)
+            content()
+            Text(why).font(.mv(size: 12)).foregroundStyle(MinervaColor.inkSoft).padding(.horizontal, 4)
         }
     }
 }

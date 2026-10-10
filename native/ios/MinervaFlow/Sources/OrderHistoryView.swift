@@ -122,6 +122,16 @@ struct OrderHistoryView: View {
                         .font(.mv(size: 12)).foregroundStyle(MinervaColor.emeraldDark)
                 }
             }
+            if let note = order.ownerMessage, !note.isEmpty, !["servie", "annulee"].contains(order.status) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "text.bubble.fill").font(.mv(size: 12)).foregroundStyle(MinervaColor.emeraldDark)
+                    Text(note).font(.mv(size: 12.5, weight: .medium)).foregroundStyle(MinervaColor.ink)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(MinervaColor.emerald.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                .accessibilityLabel(Text((isFrench ? "Message du restaurant : " : "Message from the restaurant: ") + note))
+            }
             if order.status == "annulee", let reason = order.cancellationReason {
                 Text(reason).font(.mv(size: 12)).foregroundStyle(MinervaColor.inkSoft)
             }

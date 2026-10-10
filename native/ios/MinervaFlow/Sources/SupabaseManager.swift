@@ -1393,7 +1393,6 @@ final class SupabaseManager: ObservableObject {
         guard ownerRestaurants.contains(where: { $0.id == restaurantId }),
               minutesFromNow == nil || (1...720).contains(minutesFromNow!) else { return false }
         struct Body: Encodable { let restaurantId: String; let minutesFromNow: Int? }
-        struct Response: Decodable { let ok: Bool }
         do {
             let body = try JSONEncoder().encode(Body(restaurantId: restaurantId, minutesFromNow: minutesFromNow))
             let data = try await authorizedRequest(
@@ -1401,10 +1400,33 @@ final class SupabaseManager: ObservableObject {
                 method: "POST",
                 body: body
             )
-            let response = try JSONDecoder().decode(Response.self, from: data)
+            struct EtaResponse: Decodable { let ok: Bool; let channels: [String]? }
+            let response = try JSONDecoder().decode(EtaResponse.self, from: data)
+            lastCustomerNotifyChannels = response.channels ?? []
             if response.ok { await refreshOwnerOperations() }
             return response.ok
         } catch { AppLog.failure("updateOwnerOrderETA", error); return false }
+    }
+
+    /// Sends the owner's short note about an order (saved on the order, pushed
+    /// to the customer's phone). `lastCustomerNotifyChannels` tells what reached them.
+    func sendOwnerOrderMessage(_ orderId: String, restaurantId: String, message: String) async -> Bool {
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard ownerRestaurants.contains(where: { $0.id == restaurantId }), !trimmed.isEmpty, trimmed.count <= 240 else { return false }
+        struct Body: Encodable { let restaurantId: String; let message: String }
+        struct Delivery: Decodable { let ok: Bool; let channels: [String]? }
+        do {
+            let body = try JSONEncoder().encode(Body(restaurantId: restaurantId, message: trimmed))
+            let data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/native/owner/orders/\(orderId)/message"),
+                method: "POST",
+                body: body
+            )
+            let delivery = try JSONDecoder().decode(Delivery.self, from: data)
+            lastCustomerNotifyChannels = delivery.channels ?? []
+            Analytics.capture("owner_order_message_sent")
+            return delivery.ok
+        } catch { AppLog.failure("sendOwnerOrderMessage", error); return false }
     }
 
     func updateOwnerReviewResponse(_ reviewId: String, response: String) async -> Bool {
@@ -1513,7 +1535,7 @@ final class SupabaseManager: ObservableObject {
         guard let restaurantId = selectedOwnerRestaurantId else { return nil }
         do {
             let detail: NativeOwnerOrderDetail = try await client.from("orders")
-                .select("guest_phone, notes, payment_status, fulfillment_mode, subtotal, tax_amount, tip_amount, total, delivery_address, order_items(id, item_name, unit_price, quantity, notes)")
+                .select("guest_phone, notes, payment_status, fulfillment_mode, subtotal, tax_amount, tip_amount, total, delivery_address, owner_message, order_items(id, item_name, unit_price, quantity, notes)")
                 .eq("restaurant_id", value: restaurantId)
                 .eq("id", value: orderId)
                 .single().execute().value
@@ -2049,7 +2071,7 @@ final class SupabaseManager: ObservableObject {
         do {
             let orders: [CustomerOrder] = try await client
                 .from("orders")
-                .select("id, status, total, created_at, estimated_ready_at, cancellation_reason, order_items(id, menu_item_id, item_name, unit_price, quantity)")
+                .select("id, status, total, created_at, estimated_ready_at, cancellation_reason, owner_message, order_items(id, menu_item_id, item_name, unit_price, quantity)")
                 .eq("customer_id", value: customerId)
                 .eq("restaurant_id", value: restaurantId)
                 .order("created_at", ascending: false)

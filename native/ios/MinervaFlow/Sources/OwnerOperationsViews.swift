@@ -228,6 +228,7 @@ struct OwnerManagementDestination: View {
         case .inventory: OwnerInventoryScreen()
         case .finance: OwnerFinanceView()
         case .reports: OwnerReportsScreen()
+        case .statistics: OwnerStatisticsScreen()
         case .team: OwnerEmployeesView()
         case .settings: OwnerSettingsView()
         case .locations: BrandLocationsView(isOwner: true)

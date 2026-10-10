@@ -7,7 +7,7 @@ struct OwnerOverviewScreen: View {
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     let onSelectTab: (Int) -> Void
     let onOpenRoute: (OwnerManagementRoute) -> Void
-    @StateObject private var insights = OwnerInsightsStore()
+    @EnvironmentObject private var insights: OwnerInsightsStore
     @State private var showAddItem = false
     @State private var showAddInventory = false
 
@@ -34,15 +34,14 @@ struct OwnerOverviewScreen: View {
             OwnerScreen(title: greeting, subtitle: supabase.selectedOwnerRestaurant?.name ?? supabase.ownerBranding?.brandName) {
                 hero
                 today
+                peakHours
                 attention
                 quickActions
                 stats
-                insightCards
                 moreLinks
             }
             .sheet(isPresented: $showAddItem) { OwnerAddMenuItemSheet() }
             .sheet(isPresented: $showAddInventory) { OwnerAddInventorySheet() }
-            .task(id: supabase.selectedOwnerRestaurantId) { await insights.load(supabase) }
             .refreshable { await insights.load(supabase) }
         }
     }
@@ -73,17 +72,17 @@ struct OwnerOverviewScreen: View {
         }
     }
 
-    @ViewBuilder private var insightCards: some View {
-        if let data = insights.insights {
-            OwnerWeekCard(week: data.week, L: L)
-            if !data.topItems.isEmpty { OwnerTopItemsCard(items: data.topItems, L: L) }
-            if !data.hourly.isEmpty { OwnerPeakHoursCard(hourly: data.hourly, L: L) }
+    /// Right under the sales figures, above the to-do list, so owners reach
+    /// the analysis before the operational shortcuts.
+    @ViewBuilder private var peakHours: some View {
+        if let data = insights.insights, !data.hourly.isEmpty {
+            OwnerPeakHoursCard(hourly: data.hourly, L: L)
         }
     }
 
     @ViewBuilder private var attention: some View {
         let hasAttention = !newOrders.isEmpty || !lowStock.isEmpty || unansweredReviews > 0 || !activeOrders.isEmpty
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             OwnerSectionHeader(title: L("À faire maintenant", "To do now"))
             OwnerCard(padding: 6) {
                 if !hasAttention {
@@ -133,7 +132,7 @@ struct OwnerOverviewScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             OwnerSectionHeader(title: L("Actions rapides", "Quick actions"))
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     quickChip(L("Nouvel article", "New item"), "plus.circle.fill") { showAddItem = true }
                     quickChip(L("Ajouter au stock", "Add stock"), "shippingbox.fill") { showAddInventory = true }
                     quickChip(L("Créditer une visite", "Credit a visit"), "heart.text.square.fill") { onSelectTab(3) }
@@ -147,18 +146,18 @@ struct OwnerOverviewScreen: View {
     private func quickChip(_ title: String, _ icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Image(systemName: icon).font(.mv(size: 15, weight: .semibold))
-                Text(title).font(.mv(size: 14, weight: .semibold))
+                Image(systemName: icon).font(.mv(size: 13, weight: .semibold))
+                Text(title).font(.mv(size: 13, weight: .semibold))
             }
             .foregroundStyle(MinervaColor.emeraldDark)
-            .padding(.horizontal, 16).frame(minHeight: 48)
+            .padding(.horizontal, 12).frame(minHeight: 36)
             .background(MinervaColor.emerald.opacity(0.12), in: Capsule())
         }
         .buttonStyle(PressableButtonStyle())
     }
 
     private var stats: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
             OwnerStatTile(icon: "person.2.fill", value: "\(supabase.ownerCustomers.count)", label: L("Clients fidélité", "Loyalty customers"))
             OwnerStatTile(icon: "fork.knife", value: "\(supabase.ownerMenuItems.filter { $0.active }.count)", label: L("Articles au menu", "Menu items live"))
         }
@@ -167,6 +166,12 @@ struct OwnerOverviewScreen: View {
     private var moreLinks: some View {
         OwnerCard(padding: 6) {
             VStack(spacing: 0) {
+                Button { onOpenRoute(.statistics) } label: {
+                    OwnerRow(icon: "chart.line.uptrend.xyaxis", title: L("Statistiques", "Statistics"),
+                             subtitle: L("Fidélité, meilleurs articles, heures de pointe", "Loyalty, best sellers, busiest hours"), chevron: true)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                }.buttonStyle(.plain)
+                OwnerDivider()
                 Button { onOpenRoute(.locations) } label: {
                     OwnerRow(icon: "mappin.and.ellipse", title: L("Emplacements", "Locations"),
                              subtitle: L("\(supabase.ownerRestaurants.count) \(supabase.ownerRestaurants.count > 1 ? "établissements" : "établissement")", "\(supabase.ownerRestaurants.count) \(supabase.ownerRestaurants.count == 1 ? "location" : "locations")"), chevron: true)

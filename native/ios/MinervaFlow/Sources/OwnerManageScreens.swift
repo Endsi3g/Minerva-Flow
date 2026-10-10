@@ -30,6 +30,8 @@ struct OwnerManageHub: View {
                     OwnerDivider()
                     row(.reports, "chart.bar.fill", L("Rapports", "Reports"), L("Ventes, clients et activité", "Sales, customers and activity"))
                     OwnerDivider()
+                    row(.statistics, "chart.line.uptrend.xyaxis", L("Statistiques", "Statistics"), L("Fidélité, meilleurs articles, heures de pointe", "Loyalty, best sellers, busiest hours"))
+                    OwnerDivider()
                     row(.finance, "creditcard.fill", L("Finances", "Finance"), L("Revenus et dépenses", "Revenue and expenses"))
                 }
                 group(L("Équipe et lieux", "Team and locations")) {

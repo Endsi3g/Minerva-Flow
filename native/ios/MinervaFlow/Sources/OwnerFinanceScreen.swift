@@ -167,7 +167,7 @@ struct OwnerFinanceView: View {
                 rangePicker
             }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(net.cad).font(MinervaFont.display(40, weight: .semibold)).foregroundStyle(.white)
+                Text(net.cad).font(MinervaFont.display(30, weight: .semibold)).foregroundStyle(.white)
                     .lineLimit(1).minimumScaleFactor(0.6).contentTransition(.numericText())
                 if picked == nil { OwnerDeltaChip(percent: change, onDark: true) }
             }
@@ -217,9 +217,9 @@ struct OwnerFinanceView: View {
                     selectedDate = nil
                     withAnimation(.easeInOut(duration: 0.25)) { range = option }
                 } label: {
-                    Text(option.title(L)).font(.mv(size: 12, weight: .semibold))
+                    Text(option.title(L)).font(.mv(size: 11.5, weight: .semibold))
                         .foregroundStyle(option == range ? MinervaColor.emeraldDeep : .white.opacity(0.8))
-                        .padding(.horizontal, 10).frame(minHeight: 28)
+                        .padding(.horizontal, 8).frame(minHeight: 24)
                         .background(option == range ? Color.white : Color.clear, in: Capsule())
                         .contentShape(Capsule())
                 }

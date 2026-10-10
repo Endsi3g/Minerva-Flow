@@ -43,15 +43,15 @@ struct OwnerPill: View {
 
 /// Soft white surface used for lists and grouped content.
 struct OwnerCard<Content: View>: View {
-    var padding: CGFloat = 16
+    var padding: CGFloat = 14
     @ViewBuilder var content: Content
 
     var body: some View {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(MinervaColor.creamSoft, in: RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(MinervaColor.border.opacity(0.7), lineWidth: 1))
+            .background(MinervaColor.creamSoft, in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(MinervaColor.border.opacity(0.7), lineWidth: 1))
     }
 }
 
@@ -62,7 +62,7 @@ struct OwnerSectionHeader: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title).font(.mv(size: 17, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+            Text(title).font(.mv(size: 15.5, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             if let actionTitle, let action {
@@ -77,7 +77,7 @@ struct OwnerSectionHeader: View {
 struct OwnerIconTile: View {
     let icon: String
     var tint: Color = MinervaColor.emeraldDark
-    var size: CGFloat = 40
+    var size: CGFloat = 34
 
     var body: some View {
         Image(systemName: icon)
@@ -98,18 +98,18 @@ struct OwnerRow<Trailing: View>: View {
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             OwnerIconTile(icon: icon, tint: tint)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.mv(size: 15, weight: .semibold)).foregroundStyle(MinervaColor.ink).lineLimit(2)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.mv(size: 14.5, weight: .semibold)).foregroundStyle(MinervaColor.ink).lineLimit(2)
                 if let subtitle {
-                    Text(subtitle).font(.mv(size: 12.5)).foregroundStyle(MinervaColor.inkSoft).lineLimit(3)
+                    Text(subtitle).font(.mv(size: 12)).foregroundStyle(MinervaColor.inkSoft).lineLimit(3)
                 }
             }
             Spacer(minLength: 8)
             trailing
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: 42)
         .contentShape(Rectangle())
     }
 }
@@ -123,7 +123,7 @@ extension OwnerRow where Trailing == AnyView {
 }
 
 struct OwnerDivider: View {
-    var body: some View { Rectangle().fill(MinervaColor.border.opacity(0.8)).frame(height: 1).padding(.leading, 52) }
+    var body: some View { Rectangle().fill(MinervaColor.border.opacity(0.8)).frame(height: 1).padding(.leading, 46) }
 }
 
 struct OwnerPrimaryButtonStyle: ButtonStyle {
@@ -131,10 +131,10 @@ struct OwnerPrimaryButtonStyle: ButtonStyle {
     var compact = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.mv(size: compact ? 14 : 16, weight: .semibold))
+            .font(.mv(size: compact ? 13 : 15, weight: .semibold))
             .foregroundStyle(.white)
-            .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 40 : 52)
-            .padding(.horizontal, compact ? 16 : 0)
+            .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 34 : 44)
+            .padding(.horizontal, compact ? 14 : 0)
             .background(tint, in: Capsule())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(configuration.isPressed ? 0.9 : 1)
@@ -147,10 +147,10 @@ struct OwnerSecondaryButtonStyle: ButtonStyle {
     var compact = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.mv(size: compact ? 14 : 16, weight: .semibold))
+            .font(.mv(size: compact ? 13 : 15, weight: .semibold))
             .foregroundStyle(tint)
-            .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 40 : 52)
-            .padding(.horizontal, compact ? 16 : 0)
+            .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 34 : 44)
+            .padding(.horizontal, compact ? 14 : 0)
             .background(tint.opacity(0.10), in: Capsule())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
@@ -166,15 +166,15 @@ struct OwnerEmptyState: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            OwnerIconTile(icon: icon, size: 56)
-            Text(title).font(.mv(size: 17, weight: .semibold)).foregroundStyle(MinervaColor.ink).multilineTextAlignment(.center)
-            Text(message).font(.mv(size: 14)).foregroundStyle(MinervaColor.inkSoft).multilineTextAlignment(.center)
+            OwnerIconTile(icon: icon, size: 46)
+            Text(title).font(.mv(size: 15.5, weight: .semibold)).foregroundStyle(MinervaColor.ink).multilineTextAlignment(.center)
+            Text(message).font(.mv(size: 13)).foregroundStyle(MinervaColor.inkSoft).multilineTextAlignment(.center)
             if let actionTitle, let action {
                 Button(actionTitle, action: action).buttonStyle(OwnerPrimaryButtonStyle(compact: true)).padding(.top, 4)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 28).padding(.horizontal, 20)
+        .padding(.vertical, 20).padding(.horizontal, 16)
     }
 }
 
@@ -187,17 +187,17 @@ struct OwnerHeroCard<Footer: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(eyebrow).font(.mv(size: 14, weight: .medium)).foregroundStyle(.white.opacity(0.82))
-            Text(value).font(MinervaFont.display(40, weight: .semibold)).foregroundStyle(.white)
+            Text(eyebrow).font(.mv(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.82))
+            Text(value).font(MinervaFont.display(30, weight: .semibold)).foregroundStyle(.white)
                 .lineLimit(1).minimumScaleFactor(0.6)
             if let caption {
                 Text(caption).font(.mv(size: 13)).foregroundStyle(.white.opacity(0.78))
             }
             footer
         }
-        .padding(22)
+        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MinervaColor.emeraldDeep, in: RoundedRectangle(cornerRadius: 28))
+        .background(MinervaColor.emeraldDeep, in: RoundedRectangle(cornerRadius: 24))
     }
 }
 
@@ -208,16 +208,16 @@ struct OwnerStatTile: View {
     var tone: OwnerTone = .good
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            OwnerIconTile(icon: icon, tint: tone.color, size: 34)
-            Text(value).font(MinervaFont.display(24, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+        VStack(alignment: .leading, spacing: 6) {
+            OwnerIconTile(icon: icon, tint: tone.color, size: 28)
+            Text(value).font(MinervaFont.display(20, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                 .lineLimit(1).minimumScaleFactor(0.7)
-            Text(label).font(.mv(size: 12.5)).foregroundStyle(MinervaColor.inkSoft).lineLimit(2)
+            Text(label).font(.mv(size: 12)).foregroundStyle(MinervaColor.inkSoft).lineLimit(2)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
-        .background(MinervaColor.creamSoft, in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(MinervaColor.border.opacity(0.7), lineWidth: 1))
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
+        .background(MinervaColor.creamSoft, in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(MinervaColor.border.opacity(0.7), lineWidth: 1))
         .accessibilityElement(children: .combine)
     }
 }
@@ -246,18 +246,17 @@ struct OwnerLocationMenu: View {
                     }
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Text(name).font(.mv(size: 15)).lineLimit(1)
-                    Image(systemName: "chevron.down").font(.mv(size: 10, weight: .bold))
+                HStack(spacing: 3) {
+                    Text(name).font(.mv(size: 13.5)).lineLimit(1)
+                    Image(systemName: "chevron.down").font(.mv(size: 9, weight: .bold))
                 }
                 .foregroundStyle(MinervaColor.inkSoft)
-                .frame(minHeight: 32)
-                .contentShape(Rectangle())
+                .fixedSize()
             }
             .accessibilityLabel(Text("Emplacement : \(name)"))
             .accessibilityHint(Text("Changer de restaurant"))
         } else {
-            Text(name).font(.mv(size: 15)).foregroundStyle(MinervaColor.inkSoft)
+            Text(name).font(.mv(size: 13.5)).foregroundStyle(MinervaColor.inkSoft)
         }
     }
 }
@@ -274,9 +273,9 @@ struct OwnerScreen<Content: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(MinervaFont.display(34, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(MinervaFont.display(30, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                         .lineLimit(2).minimumScaleFactor(0.7)
                         .accessibilityAddTraits(.isHeader)
                     if let subtitle {
@@ -289,7 +288,7 @@ struct OwnerScreen<Content: View>: View {
                 }
                 content
             }
-            .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 32)
+            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 28)
             .frame(maxWidth: 760).frame(maxWidth: .infinity)
         }
         .background(MinervaColor.cream.ignoresSafeArea())

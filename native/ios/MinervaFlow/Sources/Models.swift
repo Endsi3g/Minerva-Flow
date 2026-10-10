@@ -848,6 +848,8 @@ struct CustomerOrder: Codable, Identifiable {
     var items: [CustomerOrderItem]
     let estimatedReadyAt: Date?
     let cancellationReason: String?
+    /// Short note the restaurant sent about this order ("About 20 min, busy tonight").
+    let ownerMessage: String?
 
     enum CodingKeys: String, CodingKey {
         case id, status, total
@@ -855,6 +857,7 @@ struct CustomerOrder: Codable, Identifiable {
         case items = "order_items"
         case estimatedReadyAt = "estimated_ready_at"
         case cancellationReason = "cancellation_reason"
+        case ownerMessage = "owner_message"
     }
 }
 
@@ -1197,9 +1200,11 @@ struct NativeOwnerOrderDetail: Codable {
     let tipAmount: Double
     let total: Double
     let deliveryAddress: String?
+    let ownerMessage: String?
     let items: [NativeOwnerOrderLine]
     enum CodingKeys: String, CodingKey {
         case notes, subtotal, total
+        case ownerMessage = "owner_message"
         case guestPhone = "guest_phone"
         case paymentStatus = "payment_status"
         case fulfillmentMode = "fulfillment_mode"

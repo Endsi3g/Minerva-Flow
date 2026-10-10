@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 enum AppTab: Int {
     case home, order, scan, rewards, cards, profile, orders
@@ -7,7 +8,7 @@ enum AppTab: Int {
 /// Pushed destinations inside the Compte tab. A deep link to "cards" lands on
 /// Compte and opens `.cards` (phones have five tabs; Mes cartes lives there).
 enum OwnerManagementRoute: Hashable {
-    case menu, inventory, finance, reports, team, settings, locations
+    case menu, inventory, finance, reports, statistics, team, settings, locations
 }
 
 enum CompteRoute: Hashable {
@@ -92,6 +93,12 @@ final class DeepLinkRouter: ObservableObject {
     /// Resolve known destinations into native sections instead of opening
     /// a web URL inside the app.
     func handleNotificationLink(_ rawLink: String?, isOwner: Bool) {
+        // A Google review request carries the review page itself.
+        if let rawLink, let url = URL(string: rawLink), url.scheme == "https", let host = url.host?.lowercased(),
+           host.hasSuffix("google.com") || host.hasSuffix("goo.gl") || host == "g.page" {
+            UIApplication.shared.open(url)
+            return
+        }
         guard let rawLink, !rawLink.isEmpty else {
             if isOwner { pendingOwnerSection = 0 } else { pendingTab = .home }
             return
