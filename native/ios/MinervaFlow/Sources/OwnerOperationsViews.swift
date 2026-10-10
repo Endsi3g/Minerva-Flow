@@ -364,65 +364,6 @@ struct InventoryEditor: View {
     }
 }
 
-struct OwnerFinanceView: View {
-    @EnvironmentObject private var supabase: SupabaseManager
-    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
-    private var L: Lx { Lx(storedLanguage) }
-
-    private var revenue: Double { supabase.ownerTransactions.filter { $0.direction == "in" }.reduce(0) { $0 + $1.amount } }
-    private var expenses: Double { supabase.ownerTransactions.filter { $0.direction == "out" }.reduce(0) { $0 + $1.amount } }
-
-    private struct FlowPoint: Identifiable { let id = UUID(); let label: String; let value: Double; let isRevenue: Bool }
-    private var revenueVsExpenses: [FlowPoint] {
-        [FlowPoint(label: L("Revenus", "Revenue"), value: revenue, isRevenue: true), FlowPoint(label: L("Dépenses", "Expenses"), value: expenses, isRevenue: false)]
-    }
-
-    var body: some View {
-        OwnerScreen(title: L("Finances", "Finance"), subtitle: supabase.selectedOwnerRestaurant?.name) {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                OwnerStatTile(icon: "arrow.down.circle.fill", value: revenue.cad, label: L("Revenus", "Revenue"))
-                OwnerStatTile(icon: "arrow.up.circle.fill", value: expenses.cad, label: L("Dépenses", "Expenses"), tone: .bad)
-            }
-            OwnerStatTile(icon: "equal.circle.fill", value: (revenue - expenses).cad, label: L("Net", "Net"), tone: revenue >= expenses ? .good : .bad)
-
-            if !supabase.ownerTransactions.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    OwnerSectionHeader(title: L("Revenus contre dépenses", "Revenue vs expenses"))
-                    OwnerCard {
-                        Chart(revenueVsExpenses) { point in
-                            BarMark(x: .value(L("Catégorie", "Category"), point.label), y: .value(L("Montant", "Amount"), point.value))
-                                .foregroundStyle(point.isRevenue ? MinervaColor.emerald : OwnerTone.bad.color)
-                                .cornerRadius(8)
-                        }
-                        .frame(height: 180).chartYAxis { AxisMarks(position: .leading) }
-                    }
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                OwnerSectionHeader(title: L("Transactions", "Transactions"))
-                OwnerCard(padding: 6) {
-                    if supabase.ownerTransactions.isEmpty {
-                        OwnerEmptyState(icon: "dollarsign.circle", title: L("Aucune transaction", "No transactions"),
-                                        message: L("Les transactions de ce lieu apparaîtront ici.", "Transactions from this location will appear here."))
-                    } else {
-                        VStack(spacing: 0) {
-                            ForEach(Array(supabase.ownerTransactions.enumerated()), id: \.element.id) { index, tx in
-                                if index > 0 { OwnerDivider() }
-                                OwnerRow(icon: tx.direction == "in" ? "arrow.down.circle.fill" : "arrow.up.circle.fill", title: tx.description,
-                                         subtitle: "\(tx.category) · \(tx.date)", tint: tx.direction == "in" ? MinervaColor.emeraldDark : OwnerTone.bad.color) {
-                                    Text((tx.direction == "in" ? "+" : "−") + tx.amount.cad).font(.mv(size: 14, weight: .semibold))
-                                        .foregroundStyle(tx.direction == "in" ? MinervaColor.emeraldDark : OwnerTone.bad.color)
-                                }.padding(.horizontal, 10).padding(.vertical, 4)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 struct OwnerSettingsView: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @AppStorage("appAppearance") private var storedAppearance = AppAppearance.light.rawValue

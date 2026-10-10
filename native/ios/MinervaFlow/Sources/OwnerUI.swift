@@ -224,8 +224,12 @@ struct OwnerStatTile: View {
 
 /// One location switcher for the whole owner space. Shown in the toolbar of
 /// root screens only, and only when the owner has more than one location.
+/// The restaurant line under a screen title. With several locations it is
+/// the switcher itself: plain text with a small chevron, no pill, so the
+/// header stays quiet. With one location it is just text.
 struct OwnerLocationMenu: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    let name: String
 
     var body: some View {
         if supabase.ownerRestaurants.count > 1 {
@@ -242,17 +246,18 @@ struct OwnerLocationMenu: View {
                     }
                 }
             } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "storefront.fill").font(.mv(size: 13, weight: .semibold))
-                    Text(supabase.selectedOwnerRestaurant?.name ?? "—").font(.mv(size: 13, weight: .semibold)).lineLimit(1)
-                        .frame(maxWidth: 140)
+                HStack(spacing: 4) {
+                    Text(name).font(.mv(size: 15)).lineLimit(1)
                     Image(systemName: "chevron.down").font(.mv(size: 10, weight: .bold))
                 }
-                .foregroundStyle(MinervaColor.emeraldDark)
-                .padding(.horizontal, 12).frame(minHeight: 36)
-                .background(MinervaColor.emerald.opacity(0.12), in: Capsule())
+                .foregroundStyle(MinervaColor.inkSoft)
+                .frame(minHeight: 32)
+                .contentShape(Rectangle())
             }
-            .accessibilityLabel(Text("Emplacement"))
+            .accessibilityLabel(Text("Emplacement : \(name)"))
+            .accessibilityHint(Text("Changer de restaurant"))
+        } else {
+            Text(name).font(.mv(size: 15)).foregroundStyle(MinervaColor.inkSoft)
         }
     }
 }
@@ -272,9 +277,14 @@ struct OwnerScreen<Content: View>: View {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title).font(MinervaFont.display(34, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                        .lineLimit(2).minimumScaleFactor(0.7)
                         .accessibilityAddTraits(.isHeader)
                     if let subtitle {
-                        Text(subtitle).font(.mv(size: 15)).foregroundStyle(MinervaColor.inkSoft)
+                        if showsLocationMenu, subtitle == supabase.selectedOwnerRestaurant?.name {
+                            OwnerLocationMenu(name: subtitle)
+                        } else {
+                            Text(subtitle).font(.mv(size: 15)).foregroundStyle(MinervaColor.inkSoft)
+                        }
                     }
                 }
                 content
@@ -287,9 +297,6 @@ struct OwnerScreen<Content: View>: View {
         .scrollDismissesKeyboard(.interactively)
         .modifier(OwnerRefresh(enabled: refreshable))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if showsLocationMenu { ToolbarItem(placement: .topBarTrailing) { OwnerLocationMenu() } }
-        }
     }
 }
 

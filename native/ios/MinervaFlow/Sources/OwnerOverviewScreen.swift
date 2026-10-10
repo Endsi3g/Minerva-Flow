@@ -7,6 +7,7 @@ struct OwnerOverviewScreen: View {
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     let onSelectTab: (Int) -> Void
     let onOpenRoute: (OwnerManagementRoute) -> Void
+    @StateObject private var insights = OwnerInsightsStore()
     @State private var showAddItem = false
     @State private var showAddInventory = false
 
@@ -23,33 +24,60 @@ struct OwnerOverviewScreen: View {
     private var unansweredReviews: Int { supabase.ownerReviews.filter { ($0.ownerResponse ?? "").isEmpty }.count }
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
-        return hour < 12 ? L("Bonjour", "Good morning") : (hour < 18 ? L("Bon après-midi", "Good afternoon") : L("Bonsoir", "Good evening"))
+        let base = hour < 12 ? L("Bonjour", "Good morning") : (hour < 18 ? L("Bon après-midi", "Good afternoon") : L("Bonsoir", "Good evening"))
+        guard let name = insights.firstName, !name.isEmpty else { return base }
+        return "\(base), \(name)"
     }
 
     var body: some View {
         NavigationStack {
             OwnerScreen(title: greeting, subtitle: supabase.selectedOwnerRestaurant?.name ?? supabase.ownerBranding?.brandName) {
                 hero
+                today
                 attention
                 quickActions
                 stats
+                insightCards
                 moreLinks
             }
             .sheet(isPresented: $showAddItem) { OwnerAddMenuItemSheet() }
             .sheet(isPresented: $showAddInventory) { OwnerAddInventorySheet() }
+            .task(id: supabase.selectedOwnerRestaurantId) { await insights.load(supabase) }
+            .refreshable { await insights.load(supabase) }
         }
     }
 
-    private var hero: some View {
-        OwnerHeroCard(eyebrow: L("Ventes ce mois-ci", "Sales this month"),
-                      value: supabase.ownerMetrics.monthRevenue.cad,
-                      caption: L("\(supabase.ownerMetrics.monthOrders) \(supabase.ownerMetrics.monthOrders > 1 ? "commandes" : "commande") · \(todayOrders) aujourd'hui", "\(supabase.ownerMetrics.monthOrders) \(supabase.ownerMetrics.monthOrders == 1 ? "order" : "orders") · \(todayOrders) today")) {
-            if supabase.isLoadingOwnerOperations {
-                HStack(spacing: 8) {
-                    ProgressView().tint(.white)
-                    Text(L("Actualisation…", "Refreshing…")).font(.mv(size: 12.5)).foregroundStyle(.white.opacity(0.8))
+    @ViewBuilder private var hero: some View {
+        if let data = insights.insights, !data.daily.isEmpty {
+            OwnerSalesHeroCard(rawDaily: data.daily, monthOrders: supabase.ownerMetrics.monthOrders, todayOrders: todayOrders,
+                               isRefreshing: supabase.isLoadingOwnerOperations, L: L)
+        } else {
+            // First paint (or a failed insights call): the plain monthly figure
+            // from the operations refresh, so the screen never looks empty.
+            OwnerHeroCard(eyebrow: L("Ventes ce mois-ci", "Sales this month"),
+                          value: supabase.ownerMetrics.monthRevenue.cad,
+                          caption: L("\(supabase.ownerMetrics.monthOrders) \(supabase.ownerMetrics.monthOrders > 1 ? "commandes" : "commande") · \(todayOrders) aujourd'hui", "\(supabase.ownerMetrics.monthOrders) \(supabase.ownerMetrics.monthOrders == 1 ? "order" : "orders") · \(todayOrders) today")) {
+                if supabase.isLoadingOwnerOperations || insights.insights == nil && !insights.failed {
+                    HStack(spacing: 8) {
+                        ProgressView().tint(.white)
+                        Text(L("Actualisation…", "Refreshing…")).font(.mv(size: 12.5)).foregroundStyle(.white.opacity(0.8))
+                    }
                 }
             }
+        }
+    }
+
+    @ViewBuilder private var today: some View {
+        if let data = insights.insights, !data.daily.isEmpty {
+            OwnerTodayCard(daily: data.daily, liveOrdersToday: todayOrders, L: L)
+        }
+    }
+
+    @ViewBuilder private var insightCards: some View {
+        if let data = insights.insights {
+            OwnerWeekCard(week: data.week, L: L)
+            if !data.topItems.isEmpty { OwnerTopItemsCard(items: data.topItems, L: L) }
+            if !data.hourly.isEmpty { OwnerPeakHoursCard(hourly: data.hourly, L: L) }
         }
     }
 

@@ -131,7 +131,7 @@ struct OwnerOrdersScreen: View {
                                 .padding(.top, 2)
                         }
                         Spacer(minLength: 8)
-                        VStack(alignment: .trailing, spacing: 6) {
+                        HStack(spacing: 6) {
                             Text(order.total.cad).font(.mv(size: 16, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                             Image(systemName: "chevron.right").font(.mv(size: 12, weight: .semibold)).foregroundStyle(MinervaColor.inkFaint)
                         }

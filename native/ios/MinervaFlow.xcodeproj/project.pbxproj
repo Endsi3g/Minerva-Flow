@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		006EB054257CBD3CCD3F7F25 /* RewardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639E5AD94A1648D1C2D5F907 /* RewardDetailView.swift */; };
+		0495357F2293E777E693FFF9 /* OwnerOverviewComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CFA46CF73B721451B3E513 /* OwnerOverviewComponents.swift */; };
 		068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */; };
 		09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8ABC1E0681608032F18B9B5 /* Assets.xcassets */; };
@@ -16,6 +17,7 @@
 		10C0C5419F672163010D89E7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8895010156F5D764817E886D /* PrivacyInfo.xcprivacy */; };
 		111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA484AE32471A39B3214052F /* QRScannerView.swift */; };
 		18918555C1D1F51C5DB40AA8 /* XCUIApplication+TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */; };
+		1975EC03744AB0F8CDA9BCF0 /* OwnerFinanceScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA3D11519756F718ABABD7D /* OwnerFinanceScreen.swift */; };
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
 		1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBD59C80CE3B06A999142A6E /* Config.swift */; };
 		29C4557136585B08D1659B8D /* NFCTagURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8060170DC73F2C645B4A1B /* NFCTagURLTests.swift */; };
@@ -68,6 +70,7 @@
 		A11560C286ECE829D4999997 /* Analytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DC2EB559CFE5AB44D791A0 /* Analytics.swift */; };
 		A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */; };
 		A4FF9ABA69E8115D0845A981 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 33E9C17D0D39AFF0D025E0F2 /* Supabase */; };
+		AAE53B27AAED0A5FE81499CA /* OwnerInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45AF6D6F9EAECFF6744C7889 /* OwnerInsights.swift */; };
 		AC72046626AE493C392810B2 /* NativeRealtimeStatusPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727DA186E9C381DB419BDA27 /* NativeRealtimeStatusPill.swift */; };
 		B4383B27555C80878549E9EF /* ClientUpdatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF37FC58F8C72617B6A3B772 /* ClientUpdatesTests.swift */; };
 		B452FFE84A4A20AE63CF45BA /* RestaurantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */; };
@@ -159,10 +162,12 @@
 		2F39A7BD582C92D40EAA2DF7 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
 		3205D4D5215353DA7D12F483 /* TeamMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamMainView.swift; sourceTree = "<group>"; };
 		376F3EEA99798EAF0012A1A4 /* ScannerTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerTabView.swift; sourceTree = "<group>"; };
+		3BA3D11519756F718ABABD7D /* OwnerFinanceScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerFinanceScreen.swift; sourceTree = "<group>"; };
 		3FDF4D1B53C09BD25A26EEDF /* MinervaFlowWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlowWidget.entitlements; sourceTree = "<group>"; };
 		4010F1012ABA1F318CBAF125 /* MinervaFlowUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		42673197942F95CE65959FCA /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		442686E96CEA070F53FB728F /* EditProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileSheet.swift; sourceTree = "<group>"; };
+		45AF6D6F9EAECFF6744C7889 /* OwnerInsights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerInsights.swift; sourceTree = "<group>"; };
 		471F651B424DBE91D0FC0A0E /* MyCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyCardView.swift; sourceTree = "<group>"; };
 		47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		48489698C6B750A6E75FEFEE /* BiometricLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLock.swift; sourceTree = "<group>"; };
@@ -228,6 +233,7 @@
 		DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDataUITests.swift; sourceTree = "<group>"; };
 		E001F62368824618EE0ACB49 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		E2E090EEC92389630D46D97E /* ScreenshotTourUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTourUITests.swift; sourceTree = "<group>"; };
+		E3CFA46CF73B721451B3E513 /* OwnerOverviewComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerOverviewComponents.swift; sourceTree = "<group>"; };
 		E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDetailView.swift; sourceTree = "<group>"; };
 		E88C447FC71E7BD8671FADD6 /* PlusJakartaSans.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = PlusJakartaSans.ttf; sourceTree = "<group>"; };
 		E935B33BAE2ADE10859A54E0 /* CompteComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompteComponents.swift; sourceTree = "<group>"; };
@@ -366,13 +372,16 @@
 				EA427B759305A43BF018AB62 /* OrderTotals.swift */,
 				1DD9888337DDE60E67B4F8CE /* OtherView.swift */,
 				81569723AC09D6788DF5EAC1 /* OwnerAccountScreen.swift */,
+				3BA3D11519756F718ABABD7D /* OwnerFinanceScreen.swift */,
 				8C9CE03254A37BA24BE73AC7 /* OwnerGoogleBusinessProfileView.swift */,
+				45AF6D6F9EAECFF6744C7889 /* OwnerInsights.swift */,
 				B7A2751C1C420892B62F811B /* OwnerLoyaltyScreen.swift */,
 				D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */,
 				93E0C4713BF1C2DB98A15598 /* OwnerManageScreens.swift */,
 				6B1569E775588C2FD619D005 /* OwnerNFCView.swift */,
 				5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */,
 				855F057FAD3DD0BABBC880CA /* OwnerOrdersScreen.swift */,
+				E3CFA46CF73B721451B3E513 /* OwnerOverviewComponents.swift */,
 				6A8D908D671D58893AB1BE44 /* OwnerOverviewScreen.swift */,
 				F711B3EFAD45C54F77276B73 /* OwnerUI.swift */,
 				AF27DE9A4FC86CD170C6592A /* PointsHistoryView.swift */,
@@ -727,13 +736,16 @@
 				9BC5FB157B434B491741712A /* OrderTotals.swift in Sources */,
 				71C78FA6B78748548AE57D71 /* OtherView.swift in Sources */,
 				0F10BBBAE4E0A577ADF58A88 /* OwnerAccountScreen.swift in Sources */,
+				1975EC03744AB0F8CDA9BCF0 /* OwnerFinanceScreen.swift in Sources */,
 				570AB4FD46A6A85C98B3C6AE /* OwnerGoogleBusinessProfileView.swift in Sources */,
+				AAE53B27AAED0A5FE81499CA /* OwnerInsights.swift in Sources */,
 				43D2C2D3DCE916474D542A8B /* OwnerLoyaltyScreen.swift in Sources */,
 				DEDC40321085D36EBF1F9A8E /* OwnerMainTabView.swift in Sources */,
 				C318F9F8FAE87B4C6C959DD7 /* OwnerManageScreens.swift in Sources */,
 				CAA23FFC5163988353E01A6B /* OwnerNFCView.swift in Sources */,
 				5F9EF1186433358348AA47D6 /* OwnerOperationsViews.swift in Sources */,
 				DD40AA19055504E4C44C5F78 /* OwnerOrdersScreen.swift in Sources */,
+				0495357F2293E777E693FFF9 /* OwnerOverviewComponents.swift in Sources */,
 				9E7A9289DFF36249EE62450B /* OwnerOverviewScreen.swift in Sources */,
 				D03E6A4E03EF6FCB2ECFF994 /* OwnerUI.swift in Sources */,
 				B8068A7B59C3AB391FE1F959 /* PointsHistoryView.swift in Sources */,

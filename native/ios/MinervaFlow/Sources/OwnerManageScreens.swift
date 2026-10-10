@@ -388,7 +388,7 @@ struct OwnerReportsScreen: View {
     }
 
     var body: some View {
-        OwnerScreen(title: L("Rapports", "Reports"), subtitle: L("Ce mois-ci · ", "This month · ") + (supabase.selectedOwnerRestaurant?.name ?? "")) {
+        OwnerScreen(title: L("Rapports", "Reports"), subtitle: supabase.selectedOwnerRestaurant?.name) {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                 OwnerStatTile(icon: "chart.line.uptrend.xyaxis", value: supabase.ownerMetrics.monthRevenue.cad, label: L("Ventes", "Sales"))
                 OwnerStatTile(icon: "list.clipboard", value: "\(supabase.ownerMetrics.monthOrders)", label: L("Commandes", "Orders"))
