@@ -1,0 +1,9 @@
+{
+  "identifier": "default",
+  "description": "Local splash screen and the Minerva Flow web portal (remote origin) in the main window.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["https://www.minervaflow.app/*", "https://minervaflow.app/*"]
+  },
+  "permissions": ["core:default", "notification:default"]
+}

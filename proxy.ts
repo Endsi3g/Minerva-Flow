@@ -55,6 +55,7 @@ export async function proxy(request: NextRequest) {
     "/customer-sign-up",
     "/customer-join",
     "/app-support",
+    "/download",
   ];
   // skipTrailingSlashRedirect (next.config.ts) means "/login" and "/login/"
   // are both live, distinct paths — strip the trailing slash before matching

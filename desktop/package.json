@@ -1,0 +1,15 @@
+{
+  "name": "minerva-flow-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Minerva Flow desktop shell (Tauri 2) for macOS and Windows",
+  "scripts": {
+    "tauri": "tauri",
+    "icons": "tauri icon ../public/icon-512.png",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

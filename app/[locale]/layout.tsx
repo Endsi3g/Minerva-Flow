@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
+import { DesktopMode } from "@/components/desktop/DesktopMode";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
 import { hasLocale } from "next-intl";
@@ -306,6 +307,7 @@ export default async function LocaleLayout({
             <TooltipProvider delay={150}>{children}</TooltipProvider>
             <Toaster />
             <ServiceWorkerManager />
+            <DesktopMode />
             <Analytics />
           </NextIntlClientProvider>
         </ThemeProvider>
