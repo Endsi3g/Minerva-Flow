@@ -71,8 +71,8 @@ const PRODUCT_PAGE: AcademyPage = {
       id: "ambassadeurs",
       title: "Programme ambassadeur",
       items: [
-        { text: "Commission de 10 % sur la première facture d’abonnement payée d’un restaurant recommandé via votre lien.", tag: "vérifié" },
-        { text: "Elle devient payable après 30 jours, sous réserve d’annulation ou de remboursement ; versement par Stripe après vérification d’identité.", tag: "vérifié" },
+        { text: "Rétribution fixée par contrat simple convenu avec l’équipe avant l’activation du lien : l’ambassadeur écrit à flow@minervaflow.app, on convient des conditions, il signe, son lien est activé.", tag: "vérifié" },
+        { text: "Les modalités de versement figurent dans le contrat. Ne jamais promettre un pourcentage ou un montant avant la signature.", tag: "vérifié" },
         { text: "Contenu (UGC) : seuls les restaurants qui ont accepté de participer peuvent apparaître ; chaque publication est vérifiée avant réutilisation et doit mentionner votre relation commerciale (#MinervaFlow).", tag: "vérifié" },
       ],
     },
@@ -144,7 +144,7 @@ const GTM_PAGE: AcademyPage = {
       title: "Les canaux",
       items: [
         { text: "Terrain : visite en heures creuses (14 h 30 à 16 h 30) avec une démo personnalisée sur le téléphone du gérant.", tag: "hypothèse" },
-        { text: "Ambassadeurs de la restauration (barmans, chefs, consultants, fournisseurs) : 10 % de la première facture.", tag: "vérifié" },
+        { text: "Ambassadeurs de la restauration (barmans, chefs, consultants, fournisseurs) : rétribution convenue par contrat.", tag: "vérifié" },
         { text: "Contenu : nos marques personnelles aujourd’hui, des vidéos produit à partir de 2027.", tag: "cible" },
         { text: "Incubateurs et financement gouvernemental pour accélérer.", tag: "cible" },
       ],
