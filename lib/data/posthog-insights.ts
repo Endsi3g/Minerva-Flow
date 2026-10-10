@@ -200,24 +200,24 @@ export type OnboardingFunnelData = {
 };
 
 /**
- * 5-step onboarding funnel breakdown from captured events:
- * 1. Profil Établissement (step 1)
- * 2. Qualification (step 2)
- * 3. Programme Fidélité (step 3)
- * 4. Offre & Tarifs (step 4)
- * 5. Lancement (step 5)
- * 6. Complétion Finale (onboarding_completed)
+ * 5-screen onboarding funnel. Counts distinct PEOPLE (not events: going back
+ * and forth, or the server and the browser both reporting completion, would
+ * otherwise inflate it) and groups by `visual_position`, the screen's place
+ * in the order the person actually saw. Screens 1 (profile) and 5 (launch)
+ * are fixed; screens 2 to 4 are qualification, program and offer in the
+ * `classic` order, or offer, qualification and program in `offer-first`
+ * (A/B flag `onboarding-step-order`).
  */
 export async function getOnboardingFunnel(days = 30): Promise<OnboardingFunnelData | null> {
   const result = await runHogQL(`
     SELECT
-      countIf(event = 'onboarding_step_viewed' AND JSONExtractInt(properties, 'step') = 1) AS step_1_viewed,
-      countIf(event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'step') = 1) AS step_1_completed,
-      countIf(event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'step') = 2) AS step_2_completed,
-      countIf(event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'step') = 3) AS step_3_completed,
-      countIf(event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'step') = 4) AS step_4_completed,
-      countIf(event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'step') = 5) AS step_5_completed,
-      countIf(event = 'onboarding_completed') AS completed
+      uniqIf(person_id, event = 'onboarding_step_viewed' AND JSONExtractInt(properties, 'visual_position') = 1) AS step_1_viewed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 1) AS step_1_completed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 2) AS step_2_completed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 3) AS step_3_completed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 4) AS step_4_completed,
+      uniqIf(person_id, event = 'onboarding_step_completed' AND JSONExtractInt(properties, 'visual_position') = 5) AS step_5_completed,
+      uniqIf(person_id, event = 'onboarding_completed') AS completed
     FROM events
     WHERE timestamp >= now() - INTERVAL ${days} DAY
   `);
@@ -227,11 +227,11 @@ export async function getOnboardingFunnel(days = 30): Promise<OnboardingFunnelDa
   const base = Math.max(s1v, s1c, 1);
 
   const rawSteps = [
-    { step: 1, name: "profil_etablissement", label: "1. Profil Établissement", count: s1c },
-    { step: 2, name: "qualification", label: "2. Qualification & Objectifs", count: s2c },
-    { step: 3, name: "programme_fidelite", label: "3. Programme Fidélité & QR", count: s3c },
-    { step: 4, name: "offre_commerciale", label: "4. Choix de l'Offre", count: s4c },
-    { step: 5, name: "lancement_final", label: "5. Lancement & Équipe", count: s5c },
+    { step: 1, name: "profil_etablissement", label: "Écran 1 · Profil établissement", count: s1c },
+    { step: 2, name: "ecran_2", label: "Écran 2 · Qualification ou offre", count: s2c },
+    { step: 3, name: "ecran_3", label: "Écran 3 · Programme, qualification ou offre", count: s3c },
+    { step: 4, name: "ecran_4", label: "Écran 4 · Offre ou programme", count: s4c },
+    { step: 5, name: "lancement_final", label: "Écran 5 · Lancement", count: s5c },
     { step: 6, name: "onboarding_completed", label: "Complété (Compte Actif)", count: completed },
   ];
 

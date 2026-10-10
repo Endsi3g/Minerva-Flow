@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
-import React, { Component, useState, useEffect, type ReactNode } from "react";
+import React, { Component, useSyncExternalStore, type ReactNode } from "react";
 
 const GrainGradient = dynamic(
   () => import("@paper-design/shaders-react").then((mod) => mod.GrainGradient),
@@ -41,17 +41,21 @@ class ShaderErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
+let webglSupportCache: boolean | undefined;
+
 function checkWebGLSupport(): boolean {
   if (typeof window === "undefined") return false;
+  if (webglSupportCache !== undefined) return webglSupportCache;
   try {
     const canvas = document.createElement("canvas");
-    return Boolean(
+    webglSupportCache = Boolean(
       window.WebGLRenderingContext &&
         (canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
     );
   } catch {
-    return false;
+    webglSupportCache = false;
   }
+  return webglSupportCache;
 }
 
 function CssGradientFallback() {
@@ -68,11 +72,12 @@ function CssGradientFallback() {
 }
 
 function SafeGrainGradient() {
-  const [supported, setSupported] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    setSupported(checkWebGLSupport());
-  }, []);
+  // null on the server and during hydration (CSS fallback), then the real answer.
+  const supported = useSyncExternalStore(
+    () => () => {},
+    () => checkWebGLSupport(),
+    () => null,
+  );
 
   if (supported === false || supported === null) {
     return <CssGradientFallback />;

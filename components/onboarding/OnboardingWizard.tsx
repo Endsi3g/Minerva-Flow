@@ -65,15 +65,18 @@ function fallbackStepOrder(userId: string): StepOrder {
   return hash % 2 === 0 ? "classic" : "offer-first";
 }
 
-function useStepOrder(userId: string): StepOrder {
+function useStepOrder(userId: string, locked: boolean): StepOrder {
   const [order, setOrder] = useState<StepOrder>(() => fallbackStepOrder(userId));
   useEffect(() => {
+    // Once the person has moved past the first screen the order is frozen:
+    // a late-arriving flag must never reshuffle screens mid-flow.
+    if (locked) return;
     const apply = () => {
       const flag = posthog.getFeatureFlag?.("onboarding-step-order");
       if (flag === "classic" || flag === "offer-first") setOrder(flag);
     };
     return posthog.onFeatureFlags?.(apply);
-  }, []);
+  }, [locked]);
   return order;
 }
 
@@ -83,9 +86,10 @@ function useStepOrder(userId: string): StepOrder {
  * test runs (and is measurable via the `offer_variant` property) even before
  * the flag is created in the PostHog dashboard.
  */
-function useOfferVariant(userId: string): { variant: OfferVariant; source: "flag" | "hash" } {
+function useOfferVariant(userId: string, locked: boolean): { variant: OfferVariant; source: "flag" | "hash" } {
   const [state, setState] = useState<{ variant: OfferVariant; source: "flag" | "hash" }>(() => ({ variant: fallbackVariant(userId), source: "hash" }));
   useEffect(() => {
+    if (locked) return;
     const apply = () => {
       const flag = posthog.getFeatureFlag?.("onboarding-offer-variant");
       if (typeof flag === "string" && (OFFER_VARIANTS as readonly string[]).includes(flag)) {
@@ -93,7 +97,7 @@ function useOfferVariant(userId: string): { variant: OfferVariant; source: "flag
       }
     };
     return posthog.onFeatureFlags?.(apply);
-  }, []);
+  }, [locked]);
   return state;
 }
 
@@ -185,15 +189,15 @@ const TXT = {
     faq: [
       {
         q: "Comment êtes-vous rémunéré ?",
-        a: "Une petite part des revenus additionnels que nous mesurons ensemble — et rien si vos revenus n'augmentent pas. Aucun frais fixe, jamais.",
+        a: "Une petite part des revenus additionnels que nous mesurons ensemble, et rien si aucun revenu additionnel n'est mesuré. Pas d'abonnement ni de frais fixe.",
       },
       {
         q: "Mes données clients m'appartiennent-elles ?",
-        a: "Oui, à 100 %. Vos listes de clients sont exportables en un clic depuis votre tableau de bord. Minerva Flow ne vend ni ne partage vos données.",
+        a: "Oui. Vos listes de clients sont exportables en un clic depuis votre tableau de bord, et Minerva Flow ne vend jamais vos données.",
       },
       {
         q: "Puis-je annuler quand je veux ?",
-        a: "Oui, sans pénalité et sans préavis minimum. Résiliation en tout temps, depuis vos paramètres.",
+        a: "Oui, sans pénalité ni frais de résiliation. Elle prend effet à la fin du mois en cours.",
       },
       {
         q: "Combien de temps pour configurer ?",
@@ -323,15 +327,15 @@ const TXT = {
     faq: [
       {
         q: "How are you compensated?",
-        a: "A small share of the additional revenue we measure together — and nothing at all if your revenue does not grow. No fixed fees, ever.",
+        a: "A small share of the additional revenue we measure together, and nothing if no additional revenue is measured. No subscription or fixed fee.",
       },
       {
         q: "Do I own my customer data?",
-        a: "Yes, 100%. Your customer lists are exportable in one click from your dashboard. Minerva Flow never sells or shares your data.",
+        a: "Yes. Your customer lists are exportable in one click from your dashboard, and Minerva Flow never sells your data.",
       },
       {
         q: "Can I cancel whenever I want?",
-        a: "Yes, with no penalty and no minimum notice period. Cancel any time from your settings.",
+        a: "Yes, with no penalty or cancellation fee. It takes effect at the end of the current month.",
       },
       {
         q: "How long does setup take?",
@@ -397,15 +401,12 @@ export function OnboardingWizard({
   const locale = useLocale();
   const lang: Lang = locale === "en" ? "en" : "fr";
   const t = TXT[lang];
-  const { variant, source: variantSource } = useOfferVariant(userId);
-  const stepOrder = useStepOrder(userId);
+  // Experiment assignments are frozen once the first screen is completed, and
+  // only then reported, so the logged variant is the one the person really saw.
+  const [started, setStarted] = useState(false);
+  const { variant, source: variantSource } = useOfferVariant(userId, started);
+  const stepOrder = useStepOrder(userId, started);
   const stepSequence = STEP_SEQUENCES[stepOrder];
-
-  // Report the variant once on mount so PostHog can split results by step order.
-  useEffect(() => {
-    posthog.capture("onboarding_step_order_assigned", { variant: stepOrder, step_sequence: stepSequence });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // getMyProfile() falls back to the account email when no real name was ever
   // set; showing that raw email as a "prefilled" name reads as broken.
@@ -461,6 +462,10 @@ export function OnboardingWizard({
       setCurrentRestaurantId(created.id);
     }
     await setMyRoleAction(targetRestaurantId, role);
+    if (!started) {
+      setStarted(true);
+      posthog.capture("onboarding_step_order_assigned", { variant: stepOrder, step_sequence: stepSequence, offer_variant: variant, variant_source: variantSource });
+    }
     return null;
   }
 

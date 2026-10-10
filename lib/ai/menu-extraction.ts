@@ -2,6 +2,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { getGeminiApiKey, GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL } from "@/lib/ai/gemini";
+import { createAiTelemetry, flushAiObservability } from "@/lib/ai/observability";
 
 const ExtractedItemSchema = z.object({
   name: z.string().describe("Nom du plat ou de la boisson, tel qu'écrit sur le menu"),
@@ -47,6 +48,7 @@ export async function extractMenuFromFile(
     try {
       const { object } = await generateObject({
         model: google(modelName),
+        telemetry: createAiTelemetry("menu_extraction"),
         schema: ExtractedMenuSchema,
         messages: [
           {
@@ -62,6 +64,8 @@ export async function extractMenuFromFile(
       return { items: object.items };
     } catch (err) {
       console.error(`[menu-extraction] ${modelName} failed:`, err instanceof Error ? err.message : err);
+    } finally {
+      await flushAiObservability();
     }
   }
 

@@ -7,43 +7,51 @@ import { registerTelemetry } from "ai";
 let posthogSpanProcessor: PostHogSpanProcessor | undefined;
 let initialized = false;
 
+/**
+ * Opt-in (POSTHOG_AI_OBSERVABILITY=1). It starts an OpenTelemetry NodeSDK, and
+ * @sentry/nextjs also owns the global OpenTelemetry tracer provider: enabling
+ * both without a check on a real deployment could drop one of the two trace
+ * streams. Verify ingestion in PostHog and Sentry on a preview before turning
+ * it on in production. Never throws: telemetry must not stop the server.
+ */
 export function initializeAiObservability() {
   if (initialized) return;
   initialized = true;
+  if (process.env.POSTHOG_AI_OBSERVABILITY !== "1") return;
 
   const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
-  const host = process.env.POSTHOG_HOST;
-
+  const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || process.env.POSTHOG_HOST;
   if (!projectToken || !host) {
-    if (process.env.NODE_ENV !== "production") {
-      throw new Error(
-        "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN is configured"
-      );
-    }
+    console.warn("[AI observability] PostHog token or host missing: AI traces are not sent.");
     return;
   }
 
-  posthogSpanProcessor = new PostHogSpanProcessor({ projectToken, host });
+  try {
+    posthogSpanProcessor = new PostHogSpanProcessor({ projectToken, host });
 
-  const sdk = new NodeSDK({
-    resource: resourceFromAttributes({
-      "service.name": "minerva-flow",
-    }),
-    spanProcessors: [posthogSpanProcessor],
-  });
-
-  sdk.start();
-
-  registerTelemetry(
-    new OpenTelemetry({
-      enrichSpan: ({ runtimeContext }) => ({
-        "posthog.distinct_id":
-          typeof runtimeContext?.distinctId === "string" ? runtimeContext.distinctId : undefined,
-        "$ai_session_id": typeof runtimeContext?.sessionId === "string" ? runtimeContext.sessionId : undefined,
-        "$ai_trace_name": typeof runtimeContext?.traceName === "string" ? runtimeContext.traceName : undefined,
+    const sdk = new NodeSDK({
+      resource: resourceFromAttributes({
+        "service.name": "minerva-flow",
       }),
-    }) as never
-  );
+      spanProcessors: [posthogSpanProcessor],
+    });
+
+    sdk.start();
+
+    registerTelemetry(
+      new OpenTelemetry({
+        enrichSpan: ({ runtimeContext }) => ({
+          "posthog.distinct_id":
+            typeof runtimeContext?.distinctId === "string" ? runtimeContext.distinctId : undefined,
+          "$ai_session_id": typeof runtimeContext?.sessionId === "string" ? runtimeContext.sessionId : undefined,
+          "$ai_trace_name": typeof runtimeContext?.traceName === "string" ? runtimeContext.traceName : undefined,
+        }),
+      }) as never
+    );
+  } catch (error) {
+    console.warn("[AI observability] Initialization failed, continuing without it:", error);
+    posthogSpanProcessor = undefined;
+  }
 }
 
 export function createAiRuntimeContext(

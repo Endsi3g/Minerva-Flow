@@ -4,6 +4,10 @@
  * Efficience maximale des tokens : support du thinkingBudget (0 = pas de tokens gaspillés, 1024 = analyse profonde)
  */
 
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
+import { createAiRuntimeContext, createAiTelemetry } from "@/lib/ai/observability";
+
 export const GEMINI_DEFAULT_MODEL = "gemini-3.7-flash";
 export const GEMINI_FALLBACK_MODEL = "gemini-3.5-flash";
 
@@ -76,69 +80,41 @@ export async function runGeminiWithUsage(
   const maxOutputTokens = options?.maxOutputTokens ?? 4096;
   const temperature = options?.temperature ?? 0.7;
 
-  const payload = {
-    ...(options?.systemPrompt && {
-      system_instruction: {
-        parts: [{ text: options.systemPrompt }],
-      },
-    }),
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: prompt }],
-      },
-    ],
-    generationConfig: {
-      temperature,
-      maxOutputTokens,
-      ...(thinkingBudget >= 0 && {
-        thinkingConfig: {
-          thinkingBudget,
-        },
-      }),
-    },
-  };
-
+  const google = createGoogleGenerativeAI({ apiKey });
   const modelsToTry = [requestedModel, GEMINI_FALLBACK_MODEL];
 
   for (const model of modelsToTry) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+      const result = await generateText({
+        model: google(model),
+        system: options?.systemPrompt,
+        prompt,
+        temperature,
+        maxOutputTokens,
+        abortSignal: controller.signal,
+        providerOptions: {
+          google: {
+            thinkingConfig: { thinkingBudget },
           },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        }
-      );
+        },
+        runtimeContext: createAiRuntimeContext("gemini_review"),
+        telemetry: createAiTelemetry("gemini_review"),
+      });
       clearTimeout(timeoutId);
 
-      if (!res.ok) {
-        const errText = await res.text();
-        console.warn(`[Gemini AI] Modèle ${model} a retourné ${res.status}: ${errText}`);
-        continue; // Essayer le modèle de fallback
-      }
+      if (!result.text) continue;
 
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) continue;
-
-      const meta = data.usageMetadata;
       const usage: GeminiUsage = {
-        promptTokens: meta?.promptTokenCount ?? 0,
-        candidatesTokens: meta?.candidatesTokenCount ?? 0,
-        thoughtsTokens: meta?.thoughtsTokenCount ?? 0,
-        totalTokens: meta?.totalTokenCount ?? (meta?.promptTokenCount ?? 0) + (meta?.candidatesTokenCount ?? 0),
+        promptTokens: result.usage.inputTokens ?? 0,
+        candidatesTokens: result.usage.outputTokens ?? 0,
+        thoughtsTokens: 0,
+        totalTokens: result.usage.totalTokens ?? (result.usage.inputTokens ?? 0) + (result.usage.outputTokens ?? 0),
       };
 
       return {
-        text,
+        text: result.text,
         usage,
         model,
       };
